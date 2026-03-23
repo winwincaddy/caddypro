@@ -542,6 +542,28 @@ tr:hover td{background:rgba(201,168,76,0.05);}
         <div class="stat-card"><div class="stat-label">報酬合計</div><div class="stat-value" id="monthTotalWage">¥0</div></div>
         <div class="stat-card"><div class="stat-label">従業員数</div><div class="stat-value" id="empTotalCount">0<span>名</span></div></div>
       </div>
+      <div class="card mb-20">
+        <div class="card-title">＋ 過去の出勤を手動追加</div>
+        <div class="grid-2">
+          <div>
+            <div class="form-group"><label>日付</label><input type="date" id="manualAttDate"></div>
+            <div class="form-group"><label>従業員</label><select id="manualAttEmp" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px;"><option value="">-- 選択 --</option></select></div>
+            <div class="form-group"><label>ゴルフ場</label><select id="manualAttCourse" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px;"><option value="">-- 選択 --</option></select></div>
+          </div>
+          <div>
+            <div class="form-group"><label>出勤時刻</label><input type="time" id="manualAttIn"></div>
+            <div class="form-group"><label>退勤時刻（任意）</label><input type="time" id="manualAttOut"></div>
+            <div class="form-group"><label>ラウンド数</label>
+              <select id="manualAttRounds" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px;">
+                <option value="0.5">0.5 R</option>
+                <option value="1" selected>1 R</option>
+                <option value="1.5">1.5 R</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="addManualAttendance()" style="width:100%;justify-content:center;">＋ 出勤を追加</button>
+          </div>
+        </div>
+      </div>
       <div class="card">
         <div class="card-title">勤怠履歴</div>
         <div class="table-wrap">
@@ -1309,7 +1331,7 @@ function showPage(id,btn){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');btn.classList.add('active');
   if(id==='shift')initShiftPage();
-  if(id==='attendance')renderAttendanceTable();
+  if(id==='attendance'){renderAttendanceTable();initManualAttForm();}
   if(id==='sales'){renderSalesTable();updateSalesStats();}
   if(id==='invoice'){populateCourseSelects();updateInvoicePreview();}
   if(id==='empinvoice'){populateEmpInvSelect();updateEmpInvoicePreview();}
@@ -1970,8 +1992,9 @@ function renderNoticeList(){
   const list=document.getElementById('noticeList');if(!list)return;
   const recent=state.notices.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20);
   if(!recent.length){list.innerHTML='<div class="empty-state">送信済みの連絡はありません</div>';return;}
-  const groups={};recent.forEach(n=>{const key=n.date+'_'+n.courseId;if(!groups[key])groups[key]={date:n.date,courseName:n.courseName,time:n.time,memo:n.memo,members:[]};const emp=state.employees.find(e=>String(e.id)===String(n.empId));groups[key].members.push({name:emp?emp.name:'−',confirmed:n.confirmed});});
-  list.innerHTML=Object.values(groups).map(g=>{const[y,m,d]=g.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(g.date).getDay()];const memberHtml=g.members.map(mb=>`<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${mb.confirmed?'rgba(74,140,92,0.3)':'rgba(201,168,76,0.1)'};color:${mb.confirmed?'#6dbf7e':'var(--goldl)'};">${mb.confirmed?'✅ ':'⏳ '}${mb.name}</span>`).join(' ');return `<div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px;margin-bottom:8px;"><div style="font-weight:700;color:var(--cream);font-size:13px;">${parseInt(m)}月${parseInt(d)}日（${dow}）${g.time} 集合</div><div style="font-size:12px;color:#6dbf7e;margin-top:2px;">📍 ${g.courseName}</div>${g.memo?`<div style="font-size:11px;color:var(--gray);margin-top:2px;">${g.memo}</div>`:''}<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">${memberHtml}</div></div>`;}).join('');
+  const groups={};recent.forEach(n=>{const key=n.date+'_'+n.courseId;if(!groups[key])groups[key]={date:n.date,courseId:n.courseId,courseName:n.courseName,time:n.time,memo:n.memo,members:[]};const emp=state.employees.find(e=>String(e.id)===String(n.empId));groups[key].members.push({name:emp?emp.name:'−',confirmed:n.confirmed});});
+  const groupKeys=Object.keys(groups);
+  list.innerHTML=Object.values(groups).map((g,gi)=>{const[y,m,d]=g.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(g.date).getDay()];const memberHtml=g.members.map(mb=>`<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${mb.confirmed?'rgba(74,140,92,0.3)':'rgba(201,168,76,0.1)'};color:${mb.confirmed?'#6dbf7e':'var(--goldl)'};">${mb.confirmed?'✅ ':'⏳ '}${mb.name}</span>`).join(' ');const key=groupKeys[gi];return `<div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px;margin-bottom:8px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;"><div><div style="font-weight:700;color:var(--cream);font-size:13px;">${parseInt(m)}月${parseInt(d)}日（${dow}）${g.time} 集合</div><div style="font-size:12px;color:#6dbf7e;margin-top:2px;">📍 ${g.courseName}</div>${g.memo?`<div style="font-size:11px;color:var(--gray);margin-top:2px;">${g.memo}</div>`:''}</div><button onclick="deleteNoticeGroup('${g.date}','${g.courseId||''}')" style="background:rgba(192,57,43,0.3);border:1px solid rgba(192,57,43,0.4);border-radius:6px;padding:4px 8px;color:#e88;font-size:11px;cursor:pointer;flex-shrink:0;margin-left:8px;">🗑️ 削除</button></div><div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">${memberHtml}</div></div>`;}).join('');
 }
 function showEmpNotices(){renderEmpNoticeList();showScreen('empNoticeScreen');}
 function renderEmpNoticeList(){
@@ -1982,6 +2005,49 @@ function renderEmpNoticeList(){
 }
 async function confirmNotice(id){const n=state.notices.find(x=>x.id===id);if(n){n.confirmed=true;await saveState();renderEmpNoticeList();updateEmpNoticeBadge();showToast('✅ 確認しました！');}}
 function updateEmpNoticeBadge(){const btn=document.getElementById('empNoticeBtn');if(!btn)return;const unread=state.notices.filter(n=>String(n.empId)===String(currentEmpId)&&!n.confirmed).length;btn.innerHTML=unread>0?`🔔 明日の出勤確認 <span style="background:#e88;color:#fff;font-size:12px;padding:2px 8px;border-radius:10px;margin-left:6px;">${unread}件</span>`:'🔔 明日の出勤確認';}
+
+// =====================================================
+// 手動出勤追加
+// =====================================================
+function initManualAttForm(){
+  const empSel=document.getElementById('manualAttEmp');
+  const courseSel=document.getElementById('manualAttCourse');
+  if(empSel)empSel.innerHTML='<option value="">-- 選択 --</option>'+state.employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  if(courseSel)courseSel.innerHTML='<option value="">-- 選択 --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  // 日付を今日にセット
+  const d=document.getElementById('manualAttDate');if(d&&!d.value)d.value=todayStr();
+}
+async function addManualAttendance(){
+  const date=document.getElementById('manualAttDate').value;
+  const empId=document.getElementById('manualAttEmp').value;
+  const courseId=document.getElementById('manualAttCourse').value;
+  const punchIn=document.getElementById('manualAttIn').value;
+  const punchOut=document.getElementById('manualAttOut').value;
+  const rounds=Number(document.getElementById('manualAttRounds').value)||1;
+  if(!date){alert('日付を入力してください');return;}
+  if(!empId){alert('従業員を選択してください');return;}
+  if(!punchIn){alert('出勤時刻を入力してください');return;}
+  const emp=state.employees.find(e=>String(e.id)===String(empId));
+  const course=state.courses.find(c=>String(c.id)===String(courseId));
+  // 同日同従業員の重複チェック
+  const dup=state.attendance.find(a=>String(a.empId)===String(empId)&&a.date===date);
+  if(dup){if(!confirm(`${emp.name} さんの ${date} の出勤記録がすでにあります。上書きしますか？`))return;state.attendance=state.attendance.filter(a=>!(String(a.empId)===String(empId)&&a.date===date));}
+  let hours=null;
+  if(punchOut){const[ih,im]=punchIn.split(':').map(Number);const[oh,om]=punchOut.split(':').map(Number);hours=Math.max(0,((oh*60+om)-(ih*60+im))/60).toFixed(1);}
+  state.attendance.push({id:Date.now(),empId:emp.id,empName:emp.name,date,punchIn,punchOut:punchOut||null,hours,wage:emp.wage,courseId:courseId||'',courseName:course?course.name:'',rounds});
+  if(courseId)autoAddSales(empId,emp.name,courseId,course?course.name:'',date,rounds);
+  await saveState();renderAttendanceTable();showToast(`✅ ${emp.name} さんの ${date} の出勤を追加しました`);
+  // フォームリセット
+  document.getElementById('manualAttIn').value='';document.getElementById('manualAttOut').value='';
+}
+
+// 出勤連絡を削除
+function deleteNoticeGroup(date,courseId){
+  showConfirm('この出勤連絡を削除しますか？',async()=>{
+    state.notices=state.notices.filter(n=>!(n.date===date&&(String(n.courseId||'')===(courseId||''))));
+    await saveState();renderNoticeList();showToast('🗑️ 出勤連絡を削除しました');
+  });
+}
 
 // =====================================================
 // GOOGLE SPREADSHEET
