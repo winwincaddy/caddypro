@@ -2200,9 +2200,58 @@ function renderShiftCalendar(){
 }
 function renderRequestList(){
   const ym=`${shiftYear}-${String(shiftMonth+1).padStart(2,'0')}`;const list=document.getElementById('requestList');
-  const reqs=state.requests.filter(r=>r.date&&r.date.startsWith(ym)).sort((a,b)=>a.date.localeCompare(b.date));
+  const filterCourseId=document.getElementById('shiftCalCourseFilter')?document.getElementById('shiftCalCourseFilter').value:'';
+  const reqs=state.requests.filter(r=>r.date&&r.date.startsWith(ym)&&(!filterCourseId||String(r.courseId)===String(filterCourseId))).sort((a,b)=>a.date.localeCompare(b.date));
   if(!reqs.length){list.innerHTML='<div class="empty-state">この月の要請はありません</div>';return;}
-  list.innerHTML=reqs.map(r=>{const course=state.courses.find(c=>String(c.id)===String(r.courseId));const[y,m,d]=r.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(r.date).getDay()];const confirmedShift=state.shifts.find(s=>s.date===r.date&&String(s.courseId)===String(r.courseId));const status=confirmedShift?`<span style="color:#6dbf7e;font-size:11px;">✅ 確定 ${confirmedShift.employees.length}名</span>`:`<span style="color:var(--goldl);font-size:11px;">⏳ 未確定</span>`;return `<div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-weight:700;color:var(--cream);font-size:14px;">${parseInt(m)}月${parseInt(d)}日（${dow}）</div><div style="font-size:12px;color:var(--gray);margin-top:2px;">${course?course.name:'−'}　必要 <strong style="color:var(--goldl);">${r.count}名</strong></div><div style="margin-top:4px;">${status}</div></div><div style="display:flex;flex-direction:column;gap:6px;"><button onclick="showShiftDay('${r.date}')" class="btn btn-primary btn-sm">シフト確定</button><button onclick="deleteRequest('${r.id}')" class="btn btn-outline btn-sm">削除</button></div></div>`;}).join('');
+  list.innerHTML=reqs.map(r=>{
+    const course=state.courses.find(c=>String(c.id)===String(r.courseId));
+    const[y,m,d]=r.date.split('-');
+    const dow=['日','月','火','水','木','金','土'][new Date(r.date).getDay()];
+    const confirmedShift=state.shifts.find(s=>s.date===r.date&&String(s.courseId)===String(r.courseId));
+    const status=confirmedShift?`<span style="color:#6dbf7e;font-size:11px;">✅ 確定 ${confirmedShift.employees.length}名</span>`:`<span style="color:var(--goldl);font-size:11px;">⏳ 未確定</span>`;
+    // 所属キャディーのみ表示
+    const assignedEmps=(course&&course.assignedEmps||[]).map(eid=>state.employees.find(e=>String(e.id)===String(eid))).filter(Boolean);
+    const confirmedEmpIds=confirmedShift?confirmedShift.employees:[];
+    const empChecks=assignedEmps.length?assignedEmps.map(emp=>{
+      const isChecked=confirmedEmpIds.includes(String(emp.id));
+      // シフト希望日チェック
+      const hasRequest=state.shiftRequests.some(sr=>String(sr.empId)===String(emp.id)&&sr.date===r.date&&sr.status!=='rejected');
+      // 別ゴルフ場で確定済みチェック
+      const otherShift=state.shifts.find(s=>s.date===r.date&&String(s.courseId)!==String(r.courseId)&&s.employees.includes(String(emp.id)));
+      const badge=otherShift?`<span style="color:#f9a825;font-size:13px;" title="別ゴルフ場で確定済み">★</span>`:hasRequest?`<span style="color:#6dbf7e;font-size:13px;" title="シフト希望あり">🟢</span>`:'';
+      return `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 6px;border-radius:6px;background:${isChecked?'rgba(74,140,92,0.3)':'rgba(26,58,42,0.4)'};border:1px solid ${isChecked?'rgba(109,191,126,0.4)':'rgba(255,255,255,0.05)'};margin-bottom:3px;">
+        <input type="checkbox" data-req="${r.id}" data-emp="${emp.id}" data-date="${r.date}" data-course="${r.courseId}" ${isChecked?'checked':''} onchange="toggleReqEmp(this)" style="width:13px;height:13px;accent-color:var(--gl);">
+        <span style="font-size:12px;color:var(--cream);">${emp.name}</span>${badge}
+      </label>`;
+    }).join('')+'<div style="display:flex;gap:12px;margin-top:4px;font-size:10px;color:var(--gray);"><span>🟢 希望あり</span><span><span style="color:#f9a825;">★</span> 別ゴルフ場確定済み</span></div>'
+    :'<div style="font-size:11px;color:var(--gray);">所属キャディー未設定</div>';
+    return `<div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px 14px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div>
+          <div style="font-weight:700;color:var(--cream);font-size:14px;">${parseInt(m)}月${parseInt(d)}日（${dow}）</div>
+          <div style="font-size:12px;color:var(--gray);margin-top:2px;">${course?course.name:'−'}　必要 <strong style="color:var(--goldl);">${r.count}名</strong></div>
+          <div style="margin-top:4px;">${status}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button onclick="showShiftDay('${r.date}')" class="btn btn-primary btn-sm">シフト確定</button>
+          <button onclick="deleteRequest('${r.id}')" class="btn btn-outline btn-sm">削除</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--goldl);font-family:'DM Mono',monospace;margin-bottom:6px;">👤 派遣予定キャディー</div>
+      <div>${empChecks}</div>
+    </div>`;
+  }).join('');
+}
+async function toggleReqEmp(cb){
+  const date=cb.dataset.date,courseId=cb.dataset.course,empId=cb.dataset.emp;
+  let shift=state.shifts.find(s=>s.date===date&&String(s.courseId)===String(courseId));
+  if(cb.checked){
+    if(shift){if(!shift.employees.includes(String(empId)))shift.employees.push(String(empId));}
+    else{state.shifts.push({id:String(Date.now()),date,courseId,employees:[String(empId)]});}
+  } else {
+    if(shift){shift.employees=shift.employees.filter(e=>e!==String(empId));if(!shift.employees.length)state.shifts=state.shifts.filter(s=>!(s.date===date&&String(s.courseId)===String(courseId)));}
+  }
+  await saveState();renderShiftCalendar();renderRequestList();
 }
 async function addRequest(){
   const date=document.getElementById('reqDate').value;const courseId=document.getElementById('reqCourse').value;const count=parseInt(document.getElementById('reqCount').value);
