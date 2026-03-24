@@ -2471,17 +2471,16 @@ function selectCourseForApproval(req){
       <div style="font-size:11px;color:var(--gray);margin-bottom:10px;">派遣するゴルフ場を選択（任意）</div>
       ${courseItems||'<div style="color:var(--gray);text-align:center;padding:12px;">ゴルフ場が登録されていません</div>'}
       <div style="display:flex;gap:8px;margin-top:14px;">
-        <button onclick="this.closest('[style*=fixed]').remove();resolve(false);" style="flex:1;padding:11px;background:none;border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:var(--gray);cursor:pointer;font-family:'Noto Sans JP',sans-serif;" id="approveCancel">キャンセル</button>
-        <button onclick="this.closest('[style*=fixed]').remove();resolve('');" style="flex:1;padding:11px;background:rgba(74,140,92,0.4);border:1px solid rgba(109,191,126,0.4);border-radius:8px;color:#6dbf7e;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">割り振りなしで承認</button>
-        <button onclick="const v=this.closest('.approveModal').dataset.val;this.closest('[style*=fixed]').remove();resolve(v||'');" style="flex:1;padding:11px;background:var(--gold);border:none;border-radius:8px;color:var(--gd);font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">✅ 承認</button>
+        <button id="approveCancel" style="flex:1;padding:11px;background:none;border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:var(--gray);cursor:pointer;font-family:'Noto Sans JP',sans-serif;">キャンセル</button>
+        <button id="approveNoAssign" style="flex:1;padding:11px;background:rgba(74,140,92,0.4);border:1px solid rgba(109,191,126,0.4);border-radius:8px;color:#6dbf7e;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">割り振りなしで承認</button>
+        <button id="approveOk" style="flex:1;padding:11px;background:var(--gold);border:none;border-radius:8px;color:var(--gd);font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">✅ 承認</button>
       </div>
     </div>`;
-    // キャンセルボタンにresolveをバインド
     overlay.querySelector('#approveCancel').onclick=()=>{overlay.remove();resolve(false);};
+    overlay.querySelector('#approveNoAssign').onclick=()=>{overlay.remove();resolve('');};
+    overlay.querySelector('#approveOk').onclick=()=>{const v=overlay.querySelector('.approveModal').dataset.val;overlay.remove();resolve(v||'');};
     overlay.addEventListener('click',e=>{if(e.target===overlay){overlay.remove();resolve(false);}});
     document.body.appendChild(overlay);
-    // resolveをグローバルに一時的に公開
-    overlay._resolve=resolve;
   });
 }
 function rejectShiftRequest(id){showConfirm('この申請を却下しますか？',async()=>{const req=state.shiftRequests.find(r=>r.id===id);if(req)req.status='rejected';await saveState();renderEmpShiftRequestList();showToast('❌ 却下しました');});}
