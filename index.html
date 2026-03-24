@@ -2210,6 +2210,13 @@ async function addRequest(){
 }
 function deleteRequest(id){showConfirm('この要請を削除しますか？',async()=>{state.requests=state.requests.filter(r=>r.id!==id);await saveState();renderShiftCalendar();renderRequestList();});}
 function showCalendarDateModal(dateStr){
+  // ゴルフ場フィルター選択中は直接人数選択へ
+  const filterSel=document.getElementById('shiftCalCourseFilter');
+  const filterCourseId=filterSel?filterSel.value:'';
+  if(filterCourseId){
+    calModalAddReq(dateStr,filterCourseId);
+    return;
+  }
   // 日付クリック→ゴルフ場選択モーダルを表示
   const[y,m,d]=dateStr.split('-');
   const dow=['日','月','火','水','木','金','土'][new Date(dateStr).getDay()];
