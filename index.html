@@ -1457,12 +1457,22 @@ function getRate(empId,courseId,dateStr){
   if(!course)return 0;
   if(course.rateType==='fixed'||!course.rateType)return course.fixedRate||0;
   if(course.rateType==='weekday_weekend')return dateStr&&isWeekendOrHoliday(dateStr)?(course.weekendRate||0):(course.weekdayRate||0);
+  // per_person系：course.perPersonFees を優先、なければ state.rates を参照
+  const pf=course.perPersonFees||{};
+  const sr=state.rates[String(empId)]||{};
   if(course.rateType==='per_person_weekday'){
     const isWe=dateStr?isWeekendOrHoliday(dateStr):false;
-    const key=isWe?String(courseId)+'_we':String(courseId)+'_wd';
-    return(state.rates[String(empId)]||{})[key]||0;
+    if(isWe){
+      const pfVal=typeof pf[String(empId)]==='object'?pf[String(empId)].we:0;
+      return pfVal||sr[String(courseId)+'_we']||0;
+    } else {
+      const pfVal=typeof pf[String(empId)]==='object'?pf[String(empId)].wd:0;
+      return pfVal||sr[String(courseId)+'_wd']||0;
+    }
   }
-  return(state.rates[String(empId)]||{})[String(courseId)]||0;
+  // per_person
+  const pfVal=typeof pf[String(empId)]==='number'?pf[String(empId)]:(typeof pf[String(empId)]==='object'?0:0);
+  return pfVal||sr[String(courseId)]||0;
 }
 function isWeekendOrHoliday(d){const dow=new Date(d).getDay();return dow===0||dow===6||isHoliday(d);}
 function isHoliday(d){
@@ -1873,8 +1883,18 @@ function renderRateMatrix(){
   let headerCells='';perPersonCourses.forEach(c=>{if(c.rateType==='per_person_weekday'){headerCells+=`<th style="text-align:center;min-width:100px;font-size:11px;">${c.name}<br><span style="color:#aaa;font-weight:400;">平日</span></th><th style="text-align:center;min-width:100px;font-size:11px;">${c.name}<br><span style="color:#88c;font-weight:400;">土日祝</span></th>`;}else{headerCells+=`<th style="text-align:center;min-width:110px;font-size:11px;">${c.name}</th>`;}});
   const rows=state.employees.map(emp=>{
     let cells='';perPersonCourses.forEach(course=>{
-      if(course.rateType==='per_person_weekday'){const valWd=(state.rates[String(emp.id)]||{})[String(course.id)+'_wd']||'';const valWe=(state.rates[String(emp.id)]||{})[String(course.id)+'_we']||'';cells+=`<td style="padding:8px;"><input type="number" placeholder="−" value="${valWd}" data-emp="${emp.id}" data-course="${course.id}" data-dow="wd" style="width:100%;padding:6px;font-size:13px;text-align:right;"></td><td style="padding:8px;"><input type="number" placeholder="−" value="${valWe}" data-emp="${emp.id}" data-course="${course.id}" data-dow="we" style="width:100%;padding:6px;font-size:13px;text-align:right;"></td>`;}
-      else{const val=(state.rates[String(emp.id)]||{})[String(course.id)]||'';cells+=`<td style="padding:8px;"><input type="number" placeholder="−" value="${val}" data-emp="${emp.id}" data-course="${course.id}" data-dow="" style="width:100%;padding:6px;font-size:13px;text-align:right;"></td>`;}
+      const pf=course.perPersonFees||{};const sr=state.rates[String(emp.id)]||{};
+      if(course.rateType==='per_person_weekday'){
+        const pfWd=typeof pf[String(emp.id)]==='object'?pf[String(emp.id)].wd||'':'';
+        const pfWe=typeof pf[String(emp.id)]==='object'?pf[String(emp.id)].we||'':'';
+        const valWd=pfWd||sr[String(course.id)+'_wd']||'';
+        const valWe=pfWe||sr[String(course.id)+'_we']||'';
+        cells+=`<td style="padding:8px;"><input type="number" placeholder="−" value="${valWd}" data-emp="${emp.id}" data-course="${course.id}" data-dow="wd" style="width:100%;padding:6px;font-size:13px;text-align:right;"></td><td style="padding:8px;"><input type="number" placeholder="−" value="${valWe}" data-emp="${emp.id}" data-course="${course.id}" data-dow="we" style="width:100%;padding:6px;font-size:13px;text-align:right;"></td>`;
+      } else {
+        const pfVal=typeof pf[String(emp.id)]==='number'?pf[String(emp.id)]:'';
+        const val=pfVal||sr[String(course.id)]||'';
+        cells+=`<td style="padding:8px;"><input type="number" placeholder="−" value="${val}" data-emp="${emp.id}" data-course="${course.id}" data-dow="" style="width:100%;padding:6px;font-size:13px;text-align:right;"></td>`;
+      }
     });
     return `<tr><td style="padding:8px 12px;"><div style="font-weight:700;">${emp.name}</div><div style="font-size:11px;color:var(--gray);">${emp.role}</div></td>${cells}</tr>`;
   }).join('');
@@ -1882,7 +1902,22 @@ function renderRateMatrix(){
 }
 async function saveRateMatrix(){
   const inputs=document.getElementById('rateMatrix').getElementsByTagName('input');
-  for(let i=0;i<inputs.length;i++){const input=inputs[i];const eid=input.dataset.emp,cid=input.dataset.course,dow=input.dataset.dow;if(!state.rates[eid])state.rates[eid]={};const key=dow==='wd'?cid+'_wd':dow==='we'?cid+'_we':cid;state.rates[eid][key]=Number(input.value)||0;}
+  for(let i=0;i<inputs.length;i++){
+    const input=inputs[i];const eid=input.dataset.emp,cid=input.dataset.course,dow=input.dataset.dow;
+    const val=Number(input.value)||0;
+    // state.rates に保存
+    if(!state.rates[eid])state.rates[eid]={};
+    const key=dow==='wd'?cid+'_wd':dow==='we'?cid+'_we':cid;
+    state.rates[eid][key]=val;
+    // course.perPersonFees にも同期
+    const course=state.courses.find(c=>String(c.id)===String(cid));
+    if(course){
+      if(!course.perPersonFees)course.perPersonFees={};
+      if(dow==='wd'){if(typeof course.perPersonFees[eid]!=='object')course.perPersonFees[eid]={};course.perPersonFees[eid].wd=val;}
+      else if(dow==='we'){if(typeof course.perPersonFees[eid]!=='object')course.perPersonFees[eid]={};course.perPersonFees[eid].we=val;}
+      else{course.perPersonFees[eid]=val;}
+    }
+  }
   await saveState();showToast('💾 単価を保存しました');
 }
 
