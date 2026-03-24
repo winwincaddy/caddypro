@@ -497,7 +497,12 @@ tr:hover td{background:rgba(201,168,76,0.05);}
       </div>
       <div class="grid-2 mb-20">
         <div class="card">
-          <div class="card-title">要請カレンダー <span style="font-size:11px;color:var(--gray);font-weight:400;">日付をタップでシフト確定</span></div>
+          <div class="card-title">要請カレンダー <span style="font-size:11px;color:var(--gray);font-weight:400;">日付をタップで登録</span></div>
+          <div style="margin-bottom:10px;">
+            <select id="shiftCalCourseFilter" onchange="renderShiftCalendar()" style="width:100%;padding:8px 12px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:13px;">
+              <option value="">⛳ 全ゴルフ場</option>
+            </select>
+          </div>
           <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px;text-align:center;">
             <div style="font-size:11px;color:#e88;padding:4px;">日</div>
             <div style="font-size:11px;color:var(--gray);padding:4px;">月</div>
@@ -513,14 +518,13 @@ tr:hover td{background:rgba(201,168,76,0.05);}
           </div>
         </div>
         <div>
-          <div class="card mb-20">
-            <div class="card-title">＋ ゴルフ場からの要請を登録</div>
-            <div class="form-group"><label>要請日</label><input type="date" id="reqDate"></div>
-            <div class="form-group"><label>ゴルフ場</label>
-              <select id="reqCourse" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px;"><option value="">-- 選択 --</option></select>
+          <div class="card mb-20" style="border:1px solid rgba(201,168,76,0.3);">
+            <div class="card-title">📅 カレンダーから要請登録</div>
+            <div style="font-size:13px;color:var(--gray);line-height:1.8;">
+              <div>① 左のカレンダーの日付をタップ</div>
+              <div>② ゴルフ場を選んで「＋ 要請」</div>
+              <div>③ 必要人数（1〜6名）を選択</div>
             </div>
-            <div class="form-group"><label>必要人数</label><input type="number" id="reqCount" min="1" max="20" placeholder="例: 3"></div>
-            <button class="btn btn-primary" onclick="addRequest()" style="width:100%;justify-content:center;">登録する</button>
           </div>
           <div class="card mb-20">
             <div class="card-title">要請一覧</div>
@@ -2159,17 +2163,36 @@ function shiftPrevMonth(){shiftMonth--;if(shiftMonth<0){shiftMonth=11;shiftYear-
 function shiftNextMonth(){shiftMonth++;if(shiftMonth>11){shiftMonth=0;shiftYear++;}renderShiftCalendar();renderRequestList();}
 function renderShiftCalendar(){
   const reiwa=shiftYear-2018;document.getElementById('shiftCalTitle').textContent=`令和${reiwa}年 ${shiftMonth+1}月`;
+  // ゴルフ場フィルターを更新
+  const filterSel=document.getElementById('shiftCalCourseFilter');
+  if(filterSel){
+    const curVal=filterSel.value;
+    filterSel.innerHTML='<option value="">⛳ 全ゴルフ場</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    filterSel.value=curVal;
+  }
+  const filterCourseId=filterSel?filterSel.value:'';
   const cal=document.getElementById('shiftCalendar');const firstDay=new Date(shiftYear,shiftMonth,1).getDay();const daysInMonth=new Date(shiftYear,shiftMonth+1,0).getDate();const todayS=new Date().toISOString().split('T')[0];const ym=`${shiftYear}-${String(shiftMonth+1).padStart(2,'0')}`;
   let cells='';for(let i=0;i<firstDay;i++)cells+='<div></div>';
   for(let d=1;d<=daysInMonth;d++){
-    const dateStr=`${ym}-${String(d).padStart(2,'0')}`;const reqs=state.requests.filter(r=>r.date===dateStr);const shifts=state.shifts.filter(s=>s.date===dateStr);const pendingReqs=state.shiftRequests.filter(r=>r.date===dateStr&&r.status==='pending');const isToday=dateStr===todayS;const dow=new Date(shiftYear,shiftMonth,d).getDay();
+    const dateStr=`${ym}-${String(d).padStart(2,'0')}`;
+    // フィルター適用
+    const allReqs=state.requests.filter(r=>r.date===dateStr);
+    const reqs=filterCourseId?allReqs.filter(r=>String(r.courseId)===String(filterCourseId)):allReqs;
+    const allShifts=state.shifts.filter(s=>s.date===dateStr);
+    const shifts=filterCourseId?allShifts.filter(s=>String(s.courseId)===String(filterCourseId)):allShifts;
+    const pendingReqs=state.shiftRequests.filter(r=>r.date===dateStr&&r.status==='pending');
+    const isToday=dateStr===todayS;const dow=new Date(shiftYear,shiftMonth,d).getDay();
     let bg='rgba(26,58,42,0.4)';let border='1px solid rgba(201,168,76,0.1)';let dotHtml='';
-    if(shifts.length>0){bg='rgba(74,140,92,0.5)';border='1px solid rgba(109,191,126,0.5)';dotHtml='<div style="font-size:8px;text-align:center;color:#6dbf7e;">✓確定</div>';}
-    else if(reqs.length>0){bg='rgba(201,168,76,0.2)';border='1px solid rgba(201,168,76,0.4)';dotHtml=`<div style="font-size:8px;text-align:center;color:var(--goldl);">要${reqs.reduce((s,r)=>s+r.count,0)}人</div>`;}
+    if(shifts.length>0){bg='rgba(74,140,92,0.5)';border='1px solid rgba(109,191,126,0.5)';
+      const courseName=filterCourseId?'':(shifts.length===1?(state.courses.find(c=>String(c.id)===String(shifts[0].courseId))||{name:''}).name.slice(0,4):'');
+      dotHtml=`<div style="font-size:8px;text-align:center;color:#6dbf7e;">✓${courseName||'確定'}</div>`;}
+    else if(reqs.length>0){bg='rgba(201,168,76,0.2)';border='1px solid rgba(201,168,76,0.4)';
+      const courseName=filterCourseId?'':(reqs.length===1?(state.courses.find(c=>String(c.id)===String(reqs[0].courseId))||{name:''}).name.slice(0,4):'');
+      dotHtml=`<div style="font-size:8px;text-align:center;color:var(--goldl);">要${reqs.reduce((s,r)=>s+r.count,0)}人</div>`;}
     if(pendingReqs.length>0)dotHtml+=`<div style="font-size:8px;text-align:center;color:#e88;">申${pendingReqs.length}</div>`;
     if(isToday)border='2px solid var(--goldl)';
     const dayColor=dow===0?'#e88':dow===6?'#99c':'var(--cream)';
-    cells+=`<div onclick="showShiftDay('${dateStr}')" style="background:${bg};border:${border};border-radius:6px;padding:4px 2px;cursor:pointer;min-height:44px;transition:all 0.15s;"><div style="text-align:center;font-size:12px;font-weight:700;color:${dayColor};font-family:'DM Mono',monospace;">${d}</div>${dotHtml}</div>`;
+    cells+=`<div onclick="showCalendarDateModal('${dateStr}')" style="background:${bg};border:${border};border-radius:6px;padding:4px 2px;cursor:pointer;min-height:44px;transition:all 0.15s;"><div style="text-align:center;font-size:12px;font-weight:700;color:${dayColor};font-family:'DM Mono',monospace;">${d}</div>${dotHtml}</div>`;
   }
   cal.innerHTML=cells;
 }
@@ -2186,6 +2209,93 @@ async function addRequest(){
   await saveState();renderShiftCalendar();renderRequestList();renderEmpShiftRequestList();initNoticeForm();showToast('✅ 要請を登録しました');
 }
 function deleteRequest(id){showConfirm('この要請を削除しますか？',async()=>{state.requests=state.requests.filter(r=>r.id!==id);await saveState();renderShiftCalendar();renderRequestList();});}
+function showCalendarDateModal(dateStr){
+  // 日付クリック→ゴルフ場選択モーダルを表示
+  const[y,m,d]=dateStr.split('-');
+  const dow=['日','月','火','水','木','金','土'][new Date(dateStr).getDay()];
+  const dowColor=dow==='日'?'#e88':dow==='土'?'#99c':'var(--cream)';
+  // 既存の要請を取得
+  const existingReqs=state.requests.filter(r=>r.date===dateStr);
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  const courseItems=state.courses.slice(0,6).map((c,i)=>{
+    const existing=existingReqs.find(r=>String(r.courseId)===String(c.id));
+    const confirmed=state.shifts.find(s=>s.date===dateStr&&String(s.courseId)===String(c.id));
+    const badge=confirmed?'<span style="font-size:10px;background:rgba(74,140,92,0.5);color:#6dbf7e;padding:2px 6px;border-radius:10px;margin-left:6px;">✅確定</span>':existing?`<span style="font-size:10px;background:rgba(201,168,76,0.3);color:var(--goldl);padding:2px 6px;border-radius:10px;margin-left:6px;">要${existing.count}名</span>`:'';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(26,58,42,0.6);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px 14px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:13px;color:var(--goldl);font-family:'DM Mono',monospace;font-weight:700;">${i+1}</span>
+        <span style="font-size:14px;color:var(--cream);font-weight:700;">${c.name}</span>${badge}
+      </div>
+      <div style="display:flex;gap:6px;">
+        ${existing?`<button onclick="calModalDeleteReq('${existing.id}')" style="padding:6px 10px;background:rgba(192,57,43,0.3);border:1px solid rgba(192,57,43,0.4);border-radius:6px;color:#e88;font-size:12px;cursor:pointer;">削除</button>`:''}
+        <button onclick="calModalAddReq('${dateStr}','${c.id}')" style="padding:6px 12px;background:${existing?'rgba(74,140,92,0.3)':'var(--gl)'};border:none;border-radius:6px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">${existing?'変更':'＋ 要請'}</button>
+        ${!confirmed?`<button onclick="calModalConfirmShift('${dateStr}','${c.id}')" style="padding:6px 12px;background:var(--gold);border:none;border-radius:6px;color:var(--gd);font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">確定</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  overlay.innerHTML=`<div style="background:var(--gd);border:1px solid rgba(201,168,76,0.4);border-radius:16px;padding:24px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:18px;font-weight:700;color:var(--cream);">${parseInt(m)}月${parseInt(d)}日 <span style="color:${dowColor};">（${dow}）</span></div>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;color:var(--gray);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size:11px;color:var(--goldl);font-family:'DM Mono',monospace;margin-bottom:10px;">⛳ 契約ゴルフ場（タップで要請登録）</div>
+    ${state.courses.length?courseItems:'<div style="color:var(--gray);text-align:center;padding:20px;">ゴルフ場が登録されていません</div>'}
+    <div style="border-top:1px solid rgba(201,168,76,0.2);margin-top:14px;padding-top:14px;">
+      <button onclick="this.closest('[style*=fixed]').remove();showShiftDay('${dateStr}')" style="width:100%;padding:12px;background:rgba(74,140,92,0.3);border:1px solid rgba(74,140,92,0.4);border-radius:10px;color:#6dbf7e;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">👥 キャディーをシフト確定する</button>
+    </div>
+  </div>`;
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+  overlay.id='calDateModal';
+  document.body.appendChild(overlay);
+}
+async function calModalAddReq(dateStr,courseId){
+  const count=await selectCountModal();
+  if(count===null)return;
+  // 既存を削除して追加
+  state.requests=state.requests.filter(r=>!(r.date===dateStr&&String(r.courseId)===String(courseId)));
+  state.requests.push({id:String(Date.now()),date:dateStr,courseId,count});
+  await saveState();renderShiftCalendar();renderRequestList();
+  const modal=document.getElementById('calDateModal');if(modal)modal.remove();
+  setTimeout(()=>showCalendarDateModal(dateStr),100);
+  showToast('✅ 要請を登録しました');
+}
+async function calModalDeleteReq(reqId){
+  state.requests=state.requests.filter(r=>r.id!==reqId);
+  const modal=document.getElementById('calDateModal');
+  const dateStr=state.requests.length?null:null;
+  await saveState();renderShiftCalendar();renderRequestList();
+  if(modal)modal.remove();
+  showToast('🗑️ 要請を削除しました');
+}
+async function calModalConfirmShift(dateStr,courseId){
+  // シフト確定画面へ遷移
+  const modal=document.getElementById('calDateModal');if(modal)modal.remove();
+  showShiftDay(dateStr);
+  // ゴルフ場を自動選択
+  setTimeout(()=>{const sel=document.getElementById('shiftCourseSelect');if(sel)sel.value=courseId;},200);
+}
+function selectCountModal(){
+  return new Promise(resolve=>{
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML=`<div style="background:var(--gd);border:1px solid rgba(201,168,76,0.4);border-radius:16px;padding:24px;width:280px;text-align:center;">
+      <div style="font-size:15px;font-weight:700;color:var(--cream);margin-bottom:16px;">必要人数を選択</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
+        ${[1,2,3,4,5,6].map(n=>`<button onclick="this.closest('[style*=fixed]').dataset.val='${n}';this.parentNode.querySelectorAll('button').forEach(b=>b.style.background='rgba(26,58,42,0.5)');this.style.background='rgba(74,140,92,0.7)';" style="padding:14px;background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:var(--cream);font-size:18px;font-weight:700;cursor:pointer;font-family:'DM Mono',monospace;">${n}</button>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button id="countCancel" style="flex:1;padding:11px;background:none;border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:var(--gray);cursor:pointer;font-family:'Noto Sans JP',sans-serif;">キャンセル</button>
+        <button id="countOk" style="flex:1;padding:11px;background:var(--gold);border:none;border-radius:8px;color:var(--gd);font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">決定</button>
+      </div>
+    </div>`;
+    overlay.dataset.val='1';
+    overlay.querySelector('#countCancel').onclick=()=>{overlay.remove();resolve(null);};
+    overlay.querySelector('#countOk').onclick=()=>{const v=Number(overlay.dataset.val)||1;overlay.remove();resolve(v);};
+    document.body.appendChild(overlay);
+  });
+}
+
 function showShiftDay(dateStr){
   const area=document.getElementById('shiftDetailArea');const reqs=state.requests.filter(r=>r.date===dateStr);const existingShift=state.shifts.find(s=>s.date===dateStr);
   const[y,m,d]=dateStr.split('-');const dow=['日','月','火','水','木','金','土'][new Date(dateStr).getDay()];
@@ -2261,9 +2371,59 @@ function renderEmpShiftRequestList(){
   if(badge)badge.innerHTML=pendingCount>0?`<span style="background:#e88;color:#fff;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:6px;">${pendingCount}件</span>`:'';
   if(!reqs.length){list.innerHTML='<div class="empty-state">申請はありません</div>';return;}
   const statusMap={pending:{label:'⏳ 審査中',color:'var(--goldl)'},approved:{label:'✅ 承認済み',color:'#6dbf7e'},rejected:{label:'❌ 却下',color:'#e88'}};
-  list.innerHTML=reqs.map(r=>{const[y,m,d]=r.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(r.date).getDay()];const st=statusMap[r.status]||statusMap.pending;const isPending=r.status==='pending';return `<div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px 14px;margin-bottom:8px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div><div style="font-weight:700;color:var(--cream);font-size:14px;">${r.empName}</div><div style="font-size:13px;color:var(--goldl);margin-top:2px;">${parseInt(m)}月${parseInt(d)}日（${dow}）</div>${r.note?`<div style="font-size:11px;color:var(--gray);margin-top:2px;">備考：${r.note}</div>`:''}<div style="margin-top:6px;"><span style="font-size:12px;font-weight:700;color:${st.color};">${st.label}</span></div></div>${isPending?`<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;"><button onclick="approveShiftRequest('${r.id}')" style="padding:7px 14px;background:rgba(74,140,92,0.5);border:1px solid rgba(109,191,126,0.5);border-radius:8px;color:#6dbf7e;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">✅ 承認</button><button onclick="rejectShiftRequest('${r.id}')" style="padding:7px 14px;background:rgba(192,57,43,0.2);border:1px solid rgba(192,57,43,0.4);border-radius:8px;color:#e88;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">❌ 却下</button></div>`:''}</div></div>`;}).join('');
+  list.innerHTML=reqs.map(r=>{const[y,m,d]=r.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(r.date).getDay()];const st=statusMap[r.status]||statusMap.pending;const isPending=r.status==='pending';return `<div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px 14px;margin-bottom:8px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div><div style="font-weight:700;color:var(--cream);font-size:14px;">${r.empName}</div><div style="font-size:13px;color:var(--goldl);margin-top:2px;">${parseInt(m)}月${parseInt(d)}日（${dow}）</div>${r.note?`<div style="font-size:11px;color:var(--gray);margin-top:2px;">備考：${r.note}</div>`:''}<div style="margin-top:6px;"><span style="font-size:12px;font-weight:700;color:${st.color};">${st.label}</span>${r.assignedCourseName?`<span style="font-size:11px;color:#6dbf7e;margin-left:6px;">📍${r.assignedCourseName}</span>`:''}</div></div>${isPending?`<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;"><button onclick="approveShiftRequest('${r.id}')" style="padding:7px 14px;background:rgba(74,140,92,0.5);border:1px solid rgba(109,191,126,0.5);border-radius:8px;color:#6dbf7e;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">✅ 承認</button><button onclick="rejectShiftRequest('${r.id}')" style="padding:7px 14px;background:rgba(192,57,43,0.2);border:1px solid rgba(192,57,43,0.4);border-radius:8px;color:#e88;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">❌ 却下</button></div>`:''}</div></div>`;}).join('');
 }
-async function approveShiftRequest(id){const req=state.shiftRequests.find(r=>r.id===id);if(!req)return;req.status='approved';await saveState();renderEmpShiftRequestList();renderShiftCalendar();showToast('✅ 承認しました');}
+async function approveShiftRequest(id){
+  const req=state.shiftRequests.find(r=>r.id===id);if(!req)return;
+  // ゴルフ場選択モーダルを表示
+  const courseId=await selectCourseForApproval(req);
+  if(courseId===false)return; // キャンセル
+  req.status='approved';
+  if(courseId){
+    req.assignedCourseId=courseId;
+    const course=state.courses.find(c=>String(c.id)===String(courseId));
+    req.assignedCourseName=course?course.name:'';
+    // シフトにも自動追加（その日のシフトに従業員を追加）
+    let shift=state.shifts.find(s=>s.date===req.date&&String(s.courseId)===String(courseId));
+    if(shift){
+      if(!shift.employees.includes(String(req.empId)))shift.employees.push(String(req.empId));
+    } else {
+      state.shifts.push({id:String(Date.now()),date:req.date,courseId,employees:[String(req.empId)]});
+    }
+  }
+  await saveState();renderEmpShiftRequestList();renderShiftCalendar();renderRequestList();
+  showToast('✅ 承認しました'+(courseId?'・シフト確定済み':''));
+}
+function selectCourseForApproval(req){
+  return new Promise(resolve=>{
+    const[y,m,d]=req.date.split('-');
+    const dow=['日','月','火','水','木','金','土'][new Date(req.date).getDay()];
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+    const courseItems=state.courses.map(c=>{
+      const hasShift=state.shifts.find(s=>s.date===req.date&&String(s.courseId)===String(c.id));
+      const badge=hasShift?`<span style="font-size:10px;background:rgba(74,140,92,0.3);color:#6dbf7e;padding:2px 6px;border-radius:10px;margin-left:4px;">✅確定済</span>`:'';
+      return `<button onclick="this.closest('.approveModal').dataset.val='${c.id}';this.closest('.approveModal').querySelectorAll('.courseBtn').forEach(b=>b.style.border='1px solid rgba(201,168,76,0.2)');this.style.border='2px solid var(--gold)';" class="courseBtn" style="width:100%;text-align:left;padding:12px 14px;background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:10px;color:var(--cream);font-size:14px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">${c.name}${badge}</button>`;
+    }).join('');
+    overlay.innerHTML=`<div class="approveModal" data-val="" style="background:var(--gd);border:1px solid rgba(201,168,76,0.4);border-radius:16px;padding:24px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;">
+      <div style="font-size:16px;font-weight:700;color:var(--cream);margin-bottom:4px;">✅ 承認 + ゴルフ場を割り振る</div>
+      <div style="font-size:13px;color:var(--goldl);margin-bottom:16px;">${req.empName} ／ ${parseInt(m)}月${parseInt(d)}日（${dow}）</div>
+      <div style="font-size:11px;color:var(--gray);margin-bottom:10px;">派遣するゴルフ場を選択（任意）</div>
+      ${courseItems||'<div style="color:var(--gray);text-align:center;padding:12px;">ゴルフ場が登録されていません</div>'}
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button onclick="this.closest('[style*=fixed]').remove();resolve(false);" style="flex:1;padding:11px;background:none;border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:var(--gray);cursor:pointer;font-family:'Noto Sans JP',sans-serif;" id="approveCancel">キャンセル</button>
+        <button onclick="this.closest('[style*=fixed]').remove();resolve('');" style="flex:1;padding:11px;background:rgba(74,140,92,0.4);border:1px solid rgba(109,191,126,0.4);border-radius:8px;color:#6dbf7e;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">割り振りなしで承認</button>
+        <button onclick="const v=this.closest('.approveModal').dataset.val;this.closest('[style*=fixed]').remove();resolve(v||'');" style="flex:1;padding:11px;background:var(--gold);border:none;border-radius:8px;color:var(--gd);font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">✅ 承認</button>
+      </div>
+    </div>`;
+    // キャンセルボタンにresolveをバインド
+    overlay.querySelector('#approveCancel').onclick=()=>{overlay.remove();resolve(false);};
+    overlay.addEventListener('click',e=>{if(e.target===overlay){overlay.remove();resolve(false);}});
+    document.body.appendChild(overlay);
+    // resolveをグローバルに一時的に公開
+    overlay._resolve=resolve;
+  });
+}
 function rejectShiftRequest(id){showConfirm('この申請を却下しますか？',async()=>{const req=state.shiftRequests.find(r=>r.id===id);if(req)req.status='rejected';await saveState();renderEmpShiftRequestList();showToast('❌ 却下しました');});}
 
 // ── 確定シフト（従業員） ──
