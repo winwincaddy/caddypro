@@ -2185,14 +2185,16 @@ function renderShiftCalendar(){
     let bg='rgba(26,58,42,0.4)';let border='1px solid rgba(201,168,76,0.1)';let dotHtml='';
     if(shifts.length>0){bg='rgba(74,140,92,0.5)';border='1px solid rgba(109,191,126,0.5)';
       const courseName=filterCourseId?'':(shifts.length===1?(state.courses.find(c=>String(c.id)===String(shifts[0].courseId))||{name:''}).name.slice(0,4):'');
-      dotHtml=`<div style="font-size:8px;text-align:center;color:#6dbf7e;">✓${courseName||'確定'}</div>`;}
+      dotHtml='';}  // 確定は別途countBadgeで表示
     else if(reqs.length>0){bg='rgba(201,168,76,0.2)';border='1px solid rgba(201,168,76,0.4)';
       const courseName=filterCourseId?'':(reqs.length===1?(state.courses.find(c=>String(c.id)===String(reqs[0].courseId))||{name:''}).name.slice(0,4):'');
-      dotHtml=`<div style="font-size:8px;text-align:center;color:var(--goldl);">要${reqs.reduce((s,r)=>s+r.count,0)}人</div>`;}
-    if(pendingReqs.length>0)dotHtml+=`<div style="font-size:8px;text-align:center;color:#e88;">申${pendingReqs.length}</div>`;
+      dotHtml='';}  // 人数はcountBadgeで表示
+    // pendingReqs badge handled in countBadge
     if(isToday)border='2px solid var(--goldl)';
     const dayColor=dow===0?'#e88':dow===6?'#99c':'var(--cream)';
-    cells+=`<div onclick="showCalendarDateModal('${dateStr}')" style="background:${bg};border:${border};border-radius:6px;padding:4px 2px;cursor:pointer;min-height:44px;transition:all 0.15s;"><div style="text-align:center;font-size:12px;font-weight:700;color:${dayColor};font-family:'DM Mono',monospace;">${d}</div>${dotHtml}</div>`;
+    const totalCount=reqs.reduce((s,r)=>s+r.count,0);
+    const countBadge=totalCount>0&&!filterCourseId?`<div style="text-align:center;font-size:14px;font-weight:900;color:var(--goldl);font-family:'DM Mono',monospace;line-height:1;">${totalCount}</div>`:filterCourseId&&reqs.length>0?`<div style="text-align:center;font-size:14px;font-weight:900;color:var(--goldl);font-family:'DM Mono',monospace;line-height:1;">${reqs[0].count}</div>`:'';
+    cells+=`<div onclick="showCalendarDateModal('${dateStr}')" style="background:${bg};border:${border};border-radius:6px;padding:4px 2px;cursor:pointer;min-height:48px;transition:all 0.15s;"><div style="text-align:center;font-size:12px;font-weight:700;color:${dayColor};font-family:'DM Mono',monospace;">${d}</div>${countBadge}${shifts.length>0&&!countBadge?`<div style="font-size:8px;text-align:center;color:#6dbf7e;">✓</div>`:''}</div>`;
   }
   cal.innerHTML=cells;
 }
@@ -2263,8 +2265,10 @@ async function calModalAddReq(dateStr,courseId){
   state.requests=state.requests.filter(r=>!(r.date===dateStr&&String(r.courseId)===String(courseId)));
   state.requests.push({id:String(Date.now()),date:dateStr,courseId,count});
   await saveState();renderShiftCalendar();renderRequestList();
+  // ゴルフ場フィルター選択中はカレンダーに戻る、そうでなければモーダルを再表示
+  const filterCourseId=document.getElementById('shiftCalCourseFilter')?document.getElementById('shiftCalCourseFilter').value:'';
   const modal=document.getElementById('calDateModal');if(modal)modal.remove();
-  setTimeout(()=>showCalendarDateModal(dateStr),100);
+  if(!filterCourseId)setTimeout(()=>showCalendarDateModal(dateStr),100);
   showToast('✅ 要請を登録しました');
 }
 async function calModalDeleteReq(reqId){
