@@ -465,6 +465,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
     <button class="tab-btn" onclick="showPage('invoice',this)">📄 請求書（ゴルフ場）</button>
     <button class="tab-btn" onclick="showPage('empinvoice',this)">👤 請求書（従業員）</button>
     <button class="tab-btn" onclick="showPage('assign',this)">🗓️ 割り振り</button>
+    <button class="tab-btn" onclick="showPage('notice',this)">🔔 出勤連絡</button>
     <button class="tab-btn" onclick="showPage('list',this)">👥 一覧</button>
     <button class="tab-btn" onclick="showPage('settings',this)">⚙️ 設定</button>
   </nav>
@@ -526,24 +527,29 @@ tr:hover td{background:rgba(201,168,76,0.05);}
         </div>
         <div id="assignList"></div>
       </div>
-      <div class="card" style="margin-top:20px;border:1px solid rgba(201,168,76,0.3);">
-        <div class="card-title">🔔 翌日の出勤連絡を送る</div>
-        <p style="font-size:12px;color:var(--gray);margin-bottom:14px;">従業員がログイン後に確認・返事できます</p>
-        <div class="grid-2">
-          <div>
-            <div class="form-group"><label>対象日</label><input type="date" id="noticeDate"></div>
-            <div class="form-group"><label>ゴルフ場</label>
-              <select id="noticeCourse" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px;"><option value="">-- 選択 --</option></select>
-            </div>
-            <div class="form-group"><label>集合時間</label><input type="time" id="noticeTime"></div>
-            <div class="form-group"><label>メモ（任意）</label><input type="text" id="noticeMemo" placeholder="駐車場はB棟など"></div>
-            <div class="form-group"><label>対象従業員</label><div id="noticeEmpChecks" style="display:flex;flex-direction:column;gap:6px;"></div></div>
-            <button class="btn btn-primary" onclick="sendNotice()" style="width:100%;justify-content:center;">📨 連絡を送る</button>
+    </div>
+
+    <!-- 出勤連絡 -->
+    <div class="page" id="page-notice">
+      <div class="section-header mb-20">
+        <div class="section-title">🔔 出勤連絡</div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">🔔 翌日の出勤連絡を送る</div>
+          <p style="font-size:12px;color:var(--gray);margin-bottom:14px;">従業員がログイン後に確認・返事できます</p>
+          <div class="form-group"><label>対象日</label><input type="date" id="noticeDate" onchange="updateNoticeEmps()"></div>
+          <div class="form-group"><label>ゴルフ場</label>
+            <select id="noticeCourse" onchange="updateNoticeEmps()" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px;"><option value="">-- 選択 --</option></select>
           </div>
-          <div>
-            <div style="font-size:12px;color:var(--goldl);font-family:'DM Mono',monospace;margin-bottom:10px;">送信済み連絡</div>
-            <div id="noticeList"></div>
-          </div>
+          <div class="form-group"><label>集合時間</label><input type="time" id="noticeTime"></div>
+          <div class="form-group"><label>メモ（任意）</label><input type="text" id="noticeMemo" placeholder="駐車場はB棟など"></div>
+          <div class="form-group"><label>対象従業員</label><div id="noticeEmpChecks" style="display:flex;flex-direction:column;gap:6px;"></div></div>
+          <button class="btn btn-primary" onclick="sendNotice()" style="width:100%;justify-content:center;margin-top:8px;">📨 連絡を送る</button>
+        </div>
+        <div class="card">
+          <div class="card-title">送信済み連絡</div>
+          <div id="noticeList"></div>
         </div>
       </div>
     </div>
@@ -592,8 +598,10 @@ tr:hover td{background:rgba(201,168,76,0.05);}
               <div id="manualAttCal" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"></div>
               <div id="manualAttSelectedDates" style="margin-top:10px;min-height:20px;font-size:11px;color:var(--goldl);"></div>
             </div>
-            <div class="form-group"><label>従業員</label><select id="manualAttEmp" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px;"><option value="">-- 選択 --</option></select></div>
-            <div class="form-group"><label>ゴルフ場</label><select id="manualAttCourse" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px;"><option value="">-- 選択 --</option></select></div>
+            <div class="form-group"><label>ゴルフ場</label><select id="manualAttCourse" onchange="renderManualCal()" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px;"><option value="">-- 選択 --</option></select></div>
+            <div style="font-size:12px;color:var(--gray);">📅 日付をタップ → 従業員を選択</div>
+            <!-- 選択済み表示 -->
+            <div id="manualAttSelList" style="margin-top:10px;"></div>
           </div>
           <div>
             <div class="form-group"><label>ラウンド数</label>
@@ -707,8 +715,9 @@ tr:hover td{background:rgba(201,168,76,0.05);}
         </div>
       </div>
       <!-- 切替タブ -->
-      <div style="display:flex;gap:4px;margin-bottom:20px;background:rgba(26,58,42,0.5);padding:4px;border-radius:10px;width:fit-content;">
-        <button id="assignTabDate" onclick="setAssignTab('date')" style="padding:8px 20px;background:var(--gold);border:none;border-radius:8px;color:var(--gd);font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">📅 日付別</button>
+      <div style="display:flex;gap:4px;margin-bottom:20px;background:rgba(26,58,42,0.5);padding:4px;border-radius:10px;width:fit-content;flex-wrap:wrap;">
+        <button id="assignTabCal" onclick="setAssignTab('cal')" style="padding:8px 20px;background:var(--gold);border:none;border-radius:8px;color:var(--gd);font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">🗓️ カレンダー</button>
+        <button id="assignTabDate" onclick="setAssignTab('date')" style="padding:8px 20px;background:none;border:none;border-radius:8px;color:var(--goldl);font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">📅 日付別</button>
         <button id="assignTabEmp" onclick="setAssignTab('emp')" style="padding:8px 20px;background:none;border:none;border-radius:8px;color:var(--goldl);font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">👤 従業員別</button>
         <button id="assignTabCourse" onclick="setAssignTab('course')" style="padding:8px 20px;background:none;border:none;border-radius:8px;color:var(--goldl);font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">⛳ ゴルフ場別</button>
       </div>
@@ -1453,6 +1462,7 @@ function showPage(id,btn){
   if(id==='shift')initShiftPage();
   if(id==='list')initListPage();
   if(id==='assign')initAssignPage();
+  if(id==='notice'){initNoticeForm();}
   if(id==='attendance'){renderAttendanceTable();initManualAttForm();}
   if(id==='sales'){renderSalesTable();updateSalesStats();}
   if(id==='invoice'){populateCourseSelects();updateInvoicePreview();}
@@ -2685,9 +2695,28 @@ function renderEmpConfirmedShifts(){
 }
 
 // ── 翌日出勤連絡 ──
+function updateNoticeEmps(){
+  const courseId=document.getElementById('noticeCourse')?document.getElementById('noticeCourse').value:'';
+  const checks=document.getElementById('noticeEmpChecks');if(!checks)return;
+  if(!courseId){checks.innerHTML='<div style="font-size:12px;color:var(--gray);">ゴルフ場を選択してください</div>';return;}
+  const course=state.courses.find(c=>String(c.id)===String(courseId));
+  const assignedEmps=(course&&course.assignedEmps||[]).map(eid=>state.employees.find(e=>String(e.id)===String(eid))).filter(Boolean);
+  if(!assignedEmps.length){checks.innerHTML='<div style="font-size:12px;color:var(--gray);">所属キャディーが設定されていません<br><span style="font-size:11px;">設定タブのゴルフ場管理で所属キャディーを追加してください</span></div>';return;}
+  // 翌日のシフト確定を確認
+  const dateVal=document.getElementById('noticeDate')?document.getElementById('noticeDate').value:'';
+  const confirmedShift=dateVal?state.shifts.find(s=>s.date===dateVal&&String(s.courseId)===String(courseId)):null;
+  checks.innerHTML=assignedEmps.map(e=>{
+    const isConfirmed=confirmedShift&&confirmedShift.employees.includes(String(e.id));
+    return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;background:${isConfirmed?'rgba(74,140,92,0.3)':'rgba(26,58,42,0.4)'};border:1px solid ${isConfirmed?'rgba(109,191,126,0.4)':'rgba(255,255,255,0.05)'};border-radius:8px;">
+      <input type="checkbox" value="${e.id}" ${isConfirmed?'checked':''} style="width:16px;height:16px;accent-color:var(--gl);">
+      <span style="font-size:13px;color:var(--cream);">${e.name}</span>
+      ${isConfirmed?'<span style="font-size:11px;color:#6dbf7e;margin-left:auto;">🟢 シフト確定</span>':''}
+    </label>`;
+  }).join('');
+}
 function initNoticeForm(){
   const sel=document.getElementById('noticeCourse');if(sel)sel.innerHTML='<option value="">– 選択 –</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-  const checks=document.getElementById('noticeEmpChecks');if(checks)checks.innerHTML=state.employees.map(e=>`<label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" value="${e.id}" style="width:15px;height:15px;accent-color:var(--gl);"><span style="font-size:13px;color:var(--cream);">${e.name}</span></label>`).join('');
+  const checks=document.getElementById('noticeEmpChecks');if(checks)checks.innerHTML='<div style="font-size:12px;color:var(--gray);">ゴルフ場を選択してください</div>';
   const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);if(document.getElementById('noticeDate'))document.getElementById('noticeDate').value=tomorrow.toISOString().split('T')[0];
   renderNoticeList();
 }
@@ -2723,18 +2752,34 @@ function updateEmpNoticeBadge(){const btn=document.getElementById('empNoticeBtn'
 // 手動出勤追加
 // =====================================================
 function initManualAttForm(){
-  const empSel=document.getElementById('manualAttEmp');
   const courseSel=document.getElementById('manualAttCourse');
-  if(empSel)empSel.innerHTML='<option value="">-- 選択 --</option>'+state.employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
   if(courseSel)courseSel.innerHTML='<option value="">-- 選択 --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  const empSel=document.getElementById('manualAttEmp');
+  if(empSel)empSel.innerHTML='<option value="">-- ゴルフ場を先に選択 --</option>';
   manualCalYear=new Date().getFullYear();manualCalMonth=new Date().getMonth();
-  manualSelectedDates=[];renderManualCal();
+  manualSelectedDates=[];manualAttSelections={};renderManualCal();
+}
+function updateManualAttEmps(){
+  const courseId=document.getElementById('manualAttCourse')?document.getElementById('manualAttCourse').value:'';
+  const empSel=document.getElementById('manualAttEmp');
+  if(!empSel)return;
+  if(!courseId){empSel.innerHTML='<option value="">-- ゴルフ場を先に選択 --</option>';return;}
+  const course=state.courses.find(c=>String(c.id)===String(courseId));
+  const assignedEmps=(course&&course.assignedEmps||[]).map(eid=>state.employees.find(e=>String(e.id)===String(eid))).filter(Boolean);
+  if(!assignedEmps.length){
+    empSel.innerHTML='<option value="">-- 所属キャディーなし --</option>';
+    return;
+  }
+  empSel.innerHTML='<option value="">-- 選択 --</option>'+assignedEmps.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
 }
 // カレンダー複数選択
 let manualCalYear=new Date().getFullYear(),manualCalMonth=new Date().getMonth();
 let manualSelectedDates=[];
 function manualCalPrev(){manualCalMonth--;if(manualCalMonth<0){manualCalMonth=11;manualCalYear--;}renderManualCal();}
 function manualCalNext(){manualCalMonth++;if(manualCalMonth>11){manualCalMonth=0;manualCalYear++;}renderManualCal();}
+// 手動追加：{dateStr: [empId, ...]} 形式で管理
+let manualAttSelections={};
+
 function renderManualCal(){
   const reiwa=manualCalYear-2018;
   document.getElementById('manualCalTitle').textContent=`令和${reiwa}年 ${manualCalMonth+1}月`;
@@ -2742,48 +2787,112 @@ function renderManualCal(){
   const firstDay=new Date(manualCalYear,manualCalMonth,1).getDay();
   const daysInMonth=new Date(manualCalYear,manualCalMonth+1,0).getDate();
   const ym=`${manualCalYear}-${String(manualCalMonth+1).padStart(2,'0')}`;
+  const courseId=document.getElementById('manualAttCourse')?document.getElementById('manualAttCourse').value:'';
   let cells='';
   for(let i=0;i<firstDay;i++)cells+='<div></div>';
   for(let d=1;d<=daysInMonth;d++){
     const dateStr=`${ym}-${String(d).padStart(2,'0')}`;
     const dow=new Date(manualCalYear,manualCalMonth,d).getDay();
-    const isSelected=manualSelectedDates.includes(dateStr);
+    const selected=manualAttSelections[dateStr]||[];
+    const isSelected=selected.length>0;
     const dayColor=dow===0?'#e88':dow===6?'#99c':'var(--cream)';
-    const bg=isSelected?'rgba(74,140,92,0.7)':'rgba(26,58,42,0.5)';
+    const bg=isSelected?'rgba(74,140,92,0.6)':'rgba(26,58,42,0.5)';
     const border=isSelected?'2px solid #6dbf7e':'1px solid rgba(201,168,76,0.15)';
-    cells+=`<div onclick="toggleManualDate('${dateStr}')" style="background:${bg};border:${border};border-radius:6px;padding:5px 2px;text-align:center;cursor:pointer;min-height:32px;"><div style="font-size:12px;font-weight:700;color:${dayColor};">${d}</div></div>`;
+    const names=selected.map(eid=>{const e=state.employees.find(x=>String(x.id)===String(eid));return e?e.name:null;}).filter(Boolean);
+    const badge=isSelected?`<div style="font-size:7px;color:#6dbf7e;line-height:1.3;">${names.map(n=>n).join('/')}</div>`:'';
+    cells+=`<div onclick="openManualEmpSelect('${dateStr}')" style="background:${bg};border:${border};border-radius:6px;padding:4px 2px;text-align:center;cursor:pointer;min-height:${isSelected?Math.max(36,names.length*11+18):32}px;overflow:hidden;">
+      <div style="font-size:12px;font-weight:700;color:${dayColor};">${d}</div>${badge}
+    </div>`;
   }
   cal.innerHTML=cells;
-  // 選択日表示
+  // 選択済み一覧を更新
+  renderManualAttSelList();
   const sel=document.getElementById('manualAttSelectedDates');
-  if(sel)sel.textContent=manualSelectedDates.length?`選択中: ${manualSelectedDates.length}日`:'日付をタップして選択';
+  if(sel)sel.textContent='';
 }
+
+function openManualEmpSelect(dateStr){
+  const courseId=document.getElementById('manualAttCourse')?document.getElementById('manualAttCourse').value:'';
+  if(!courseId){showToast('⚠ ゴルフ場を先に選択してください');return;}
+  const course=state.courses.find(c=>String(c.id)===String(courseId));
+  const assignedEmps=(course&&course.assignedEmps||[]).map(eid=>state.employees.find(e=>String(e.id)===String(eid))).filter(Boolean);
+  if(!assignedEmps.length){showToast('⚠ このゴルフ場に所属キャディーが設定されていません');return;}
+  const[y,m,d]=dateStr.split('-');
+  const dow=['日','月','火','水','木','金','土'][new Date(dateStr).getDay()];
+  const dowColor=dow==='日'?'#e88':dow==='土'?'#99c':'var(--cream)';
+  const currentSel=manualAttSelections[dateStr]||[];
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  const empItems=assignedEmps.map(emp=>{
+    const isChecked=currentSel.includes(String(emp.id));
+    return `<label style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:${isChecked?'rgba(74,140,92,0.3)':'rgba(26,58,42,0.5)'};border:1px solid ${isChecked?'rgba(109,191,126,0.4)':'rgba(255,255,255,0.05)'};border-radius:10px;cursor:pointer;margin-bottom:6px;">
+      <input type="checkbox" class="manualEmpCb" value="${emp.id}" ${isChecked?'checked':''} style="width:17px;height:17px;accent-color:var(--gl);">
+      <span style="font-size:14px;color:var(--cream);font-weight:700;">${emp.name}</span>
+    </label>`;
+  }).join('');
+  overlay.innerHTML=`<div style="background:var(--gd);border:1px solid rgba(201,168,76,0.4);border-radius:16px;padding:24px;width:100%;max-width:380px;">
+    <div style="font-size:16px;font-weight:700;color:var(--cream);margin-bottom:4px;">${parseInt(m)}月${parseInt(d)}日 <span style="color:${dowColor};">（${dow}）</span></div>
+    <div style="font-size:12px;color:var(--goldl);margin-bottom:14px;">⛳ ${course?course.name:''}</div>
+    ${empItems}
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button id="manualEmpCancel" style="flex:1;padding:11px;background:none;border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:var(--gray);cursor:pointer;font-family:'Noto Sans JP',sans-serif;">キャンセル</button>
+      <button id="manualEmpOk" style="flex:1;padding:11px;background:var(--gold);border:none;border-radius:8px;color:var(--gd);font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">✅ 決定</button>
+    </div>
+  </div>`;
+  overlay.querySelector('#manualEmpCancel').onclick=()=>overlay.remove();
+  overlay.querySelector('#manualEmpOk').onclick=()=>{
+    const cbs=overlay.querySelectorAll('.manualEmpCb');
+    const empIds=Array.from(cbs).filter(cb=>cb.checked).map(cb=>cb.value);
+    if(empIds.length>0)manualAttSelections[dateStr]=empIds;
+    else delete manualAttSelections[dateStr];
+    overlay.remove();
+    renderManualCal();
+  };
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
+
+function renderManualAttSelList(){
+  const list=document.getElementById('manualAttSelList');if(!list)return;
+  const entries=Object.entries(manualAttSelections).sort(([a],[b])=>a.localeCompare(b));
+  if(!entries.length){list.innerHTML='';return;}
+  list.innerHTML=`<div style="font-size:11px;color:var(--goldl);margin-bottom:6px;">選択中 ${entries.length}日</div>`
+    +entries.map(([dateStr,empIds])=>{
+      const[y,m,d]=dateStr.split('-');
+      const names=empIds.map(eid=>{const e=state.employees.find(x=>String(x.id)===String(eid));return e?e.name:null;}).filter(Boolean);
+      return `<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(74,140,92,0.2);border:1px solid rgba(109,191,126,0.3);border-radius:8px;padding:6px 10px;margin-bottom:4px;">
+        <span style="font-size:12px;color:var(--cream);">${parseInt(m)}/${parseInt(d)}　${names.join('・')}</span>
+        <button onclick="delete manualAttSelections['${dateStr}'];renderManualCal();" style="background:none;border:none;color:var(--gray);font-size:14px;cursor:pointer;">✕</button>
+      </div>`;
+    }).join('');
+}
+
 function toggleManualDate(dateStr){
-  const idx=manualSelectedDates.indexOf(dateStr);
-  if(idx>=0)manualSelectedDates.splice(idx,1);
-  else manualSelectedDates.push(dateStr);
-  manualSelectedDates.sort();
-  renderManualCal();
+  // 後方互換（使わないが残す）
+  openManualEmpSelect(dateStr);
 }
 async function addManualAttendance(){
-  if(!manualSelectedDates.length){alert('日付を選択してください');return;}
-  const empId=document.getElementById('manualAttEmp').value;
+  const entries=Object.entries(manualAttSelections);
+  if(!entries.length){alert('日付と従業員を選択してください');return;}
   const courseId=document.getElementById('manualAttCourse').value;
   const rounds=Number(document.getElementById('manualAttRounds').value)||1;
-  if(!empId){alert('従業員を選択してください');return;}
-  const emp=state.employees.find(e=>String(e.id)===String(empId));
+  if(!courseId){alert('ゴルフ場を選択してください');return;}
   const course=state.courses.find(c=>String(c.id)===String(courseId));
   let added=0;
-  for(const date of manualSelectedDates){
-    const dup=state.attendance.find(a=>String(a.empId)===String(empId)&&a.date===date);
-    if(dup)state.attendance=state.attendance.filter(a=>!(String(a.empId)===String(empId)&&a.date===date));
-    state.attendance.push({id:Date.now()+added,empId:emp.id,empName:emp.name,date,punchIn:'',punchOut:null,hours:null,wage:emp.wage,courseId:courseId||'',courseName:course?course.name:'',rounds});
-    if(courseId)autoAddSales(empId,emp.name,courseId,course?course.name:'',date,rounds);
-    added++;
+  for(const[date,empIds] of entries){
+    for(const empId of empIds){
+      const emp=state.employees.find(e=>String(e.id)===String(empId));
+      if(!emp)continue;
+      const dup=state.attendance.find(a=>String(a.empId)===String(empId)&&a.date===date);
+      if(dup)state.attendance=state.attendance.filter(a=>!(String(a.empId)===String(empId)&&a.date===date));
+      state.attendance.push({id:Date.now()+added,empId:emp.id,empName:emp.name,date,punchIn:'',punchOut:null,hours:null,wage:emp.wage,courseId:courseId||'',courseName:course?course.name:'',rounds});
+      if(courseId)autoAddSales(empId,emp.name,courseId,course?course.name:'',date,rounds);
+      added++;
+    }
   }
   await saveState();renderAttendanceTable();
-  showToast(`✅ ${emp.name} さんの出勤を${added}日分追加しました`);
-  manualSelectedDates=[];renderManualCal();
+  showToast(`✅ ${added}件の出勤を追加しました`);
+  manualAttSelections={};renderManualCal();
 }
 
 // 出勤連絡を削除
@@ -2944,7 +3053,7 @@ function printListPage(){
 // =====================================================
 // 割り振りページ
 // =====================================================
-let assignYear=new Date().getFullYear(),assignMonth=new Date().getMonth(),assignTab='date';
+let assignYear=new Date().getFullYear(),assignMonth=new Date().getMonth(),assignTab='cal';
 
 function initAssignPage(){
   assignYear=new Date().getFullYear();assignMonth=new Date().getMonth();
@@ -2954,7 +3063,7 @@ function assignCalPrev(){assignMonth--;if(assignMonth<0){assignMonth=11;assignYe
 function assignCalNext(){assignMonth++;if(assignMonth>11){assignMonth=0;assignYear++;}renderAssignPage();}
 function setAssignTab(tab){
   assignTab=tab;
-  ['date','emp','course'].forEach(t=>{
+  ['cal','date','emp','course'].forEach(t=>{
     const btn=document.getElementById('assignTab'+t.charAt(0).toUpperCase()+t.slice(1));
     if(btn)btn.style.cssText=t===tab?'padding:8px 20px;background:var(--gold);border:none;border-radius:8px;color:var(--gd);font-size:13px;font-weight:700;cursor:pointer;font-family:Noto Sans JP,sans-serif;':'padding:8px 20px;background:none;border:none;border-radius:8px;color:var(--goldl);font-size:13px;font-weight:700;cursor:pointer;font-family:Noto Sans JP,sans-serif;';
   });
@@ -2964,10 +3073,135 @@ function renderAssignPage(){
   const reiwa=assignYear-2018;
   const title=document.getElementById('assignCalTitle');
   if(title)title.textContent=`令和${reiwa}年 ${assignMonth+1}月`;
-  if(assignTab==='date')renderAssignByDate();
+  if(assignTab==='cal')renderAssignCal();
+  else if(assignTab==='date')renderAssignByDate();
   else if(assignTab==='emp')renderAssignByEmp();
   else renderAssignByCourse();
 }
+function renderAssignCal(){
+  const container=document.getElementById('assignContent');if(!container)return;
+  if(!state.courses.length){container.innerHTML='<div class="empty-state">ゴルフ場が登録されていません</div>';return;}
+  container.innerHTML=`<div style="display:flex;flex-direction:column;gap:16px;">${state.courses.map(course=>buildAssignCourseCal(course)).join('')}</div>`;
+}
+
+function buildAssignCourseCal(course){
+  const ym=`${assignYear}-${String(assignMonth+1).padStart(2,'0')}`;
+  const firstDay=new Date(assignYear,assignMonth,1).getDay();
+  const daysInMonth=new Date(assignYear,assignMonth+1,0).getDate();
+  const todayS=new Date().toISOString().split('T')[0];
+  const dowHeaders=['日','月','火','水','木','金','土'].map((d,i)=>
+    `<div style="text-align:center;font-size:10px;font-weight:700;color:${i===0?'#e88':i===6?'#99c':'var(--gray)'};padding:3px;">${d}</div>`
+  ).join('');
+  let cells='';
+  for(let i=0;i<firstDay;i++)cells+='<div></div>';
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${ym}-${String(d).padStart(2,'0')}`;
+    const isToday=dateStr===todayS;
+    const dow=new Date(assignYear,assignMonth,d).getDay();
+    const dayColor=dow===0?'#e88':dow===6?'#99c':'var(--cream)';
+    const req=state.requests.find(r=>r.date===dateStr&&String(r.courseId)===String(course.id));
+    const shift=state.shifts.find(s=>s.date===dateStr&&String(s.courseId)===String(course.id));
+    let bg='rgba(26,58,42,0.4)';
+    let border=isToday?'2px solid var(--goldl)':'1px solid rgba(201,168,76,0.08)';
+    let badge='';
+    if(shift&&shift.employees.length>0){
+      bg='rgba(74,140,92,0.45)';
+      if(!isToday)border='1px solid rgba(109,191,126,0.5)';
+      const empNames=shift.employees.map(eid=>{
+        const e=state.employees.find(x=>String(x.id)===String(eid));
+        return e?`<div style="font-size:8px;color:#6dbf7e;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.name}</div>`:'';
+      }).join('');
+      const needed=req?`<div style="font-size:8px;color:rgba(109,191,126,0.6);text-align:center;">${shift.employees.length}/${req.count}</div>`:'';
+      badge=`<div>${empNames}${needed}</div>`;
+    } else if(req){
+      bg='rgba(201,168,76,0.2)';
+      if(!isToday)border='1px solid rgba(201,168,76,0.4)';
+      badge=`<div style="text-align:center;font-size:13px;font-weight:900;color:var(--goldl);line-height:1;">${req.count}</div>`;
+    }
+    const cellH=shift&&shift.employees.length>0?Math.max(42,shift.employees.length*14+22):38;
+    cells+=`<div onclick="showAssignCalModal('${dateStr}','${course.id}')" style="background:${bg};border:${border};border-radius:5px;padding:3px 2px;cursor:pointer;min-height:${cellH}px;transition:all 0.15s;overflow:hidden;">
+      <div style="text-align:center;font-size:11px;font-weight:700;color:${dayColor};">${d}</div>
+      ${badge}
+    </div>`;
+  }
+  return `<div style="background:rgba(26,58,42,0.4);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:12px;">
+    <div style="font-size:13px;font-weight:700;color:var(--goldl);margin-bottom:8px;">⛳ ${course.name}</div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:3px;">${dowHeaders}</div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">${cells}</div>
+    <div style="margin-top:6px;display:flex;gap:10px;font-size:10px;color:var(--gray);">
+      <span>🟡 要請(人数)</span><span>🟢 割り振り済み(名前)</span>
+    </div>
+  </div>`;
+}
+
+function showAssignCalModal(dateStr, targetCourseId){
+  const[y,m,d]=dateStr.split('-');
+  const dow=['日','月','火','水','木','金','土'][new Date(dateStr).getDay()];
+  const dowColor=dow==='日'?'#e88':dow==='土'?'#99c':'var(--cream)';
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto;';
+  // ゴルフ場ごとのセクション（targetCourseIdが指定されたそのゴルフ場のみ）
+  const targetCourses=targetCourseId?state.courses.filter(c=>String(c.id)===String(targetCourseId)):state.courses;
+  const sections=targetCourses.map(course=>{
+    const req=state.requests.find(r=>r.date===dateStr&&String(r.courseId)===String(course.id));
+    const shift=state.shifts.find(s=>s.date===dateStr&&String(s.courseId)===String(course.id));
+    const confirmedIds=shift?shift.employees:[];
+    // 所属従業員のみ
+    const assignedEmps=(course.assignedEmps||[]).map(eid=>state.employees.find(e=>String(e.id)===String(eid))).filter(Boolean);
+    if(!assignedEmps.length)return '';
+    const empItems=assignedEmps.map(emp=>{
+      const isChecked=confirmedIds.includes(String(emp.id));
+      const hasReq=state.shiftRequests.some(r=>String(r.empId)===String(emp.id)&&r.date===dateStr&&r.status!=='rejected');
+      const otherShift=state.shifts.find(s=>s.date===dateStr&&String(s.courseId)!==String(course.id)&&s.employees.includes(String(emp.id)));
+      const badge=otherShift?'<span style="color:#f9a825;font-size:12px;margin-left:4px;">★別場確定</span>':hasReq?'<span style="color:#6dbf7e;font-size:12px;margin-left:4px;">🟢希望</span>':'';
+      return `<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:${isChecked?'rgba(74,140,92,0.3)':'rgba(26,58,42,0.4)'};border:1px solid ${isChecked?'rgba(109,191,126,0.4)':'rgba(255,255,255,0.05)'};border-radius:8px;cursor:pointer;margin-bottom:4px;">
+        <input type="checkbox" class="assignEmpCb" data-date="${dateStr}" data-course="${course.id}" data-emp="${emp.id}" ${isChecked?'checked':''} style="width:16px;height:16px;accent-color:var(--gl);">
+        <span style="font-size:14px;color:var(--cream);">${emp.name}</span>${badge}
+      </label>`;
+    }).join('');
+    return `<div style="margin-bottom:14px;">
+      <div style="font-size:13px;font-weight:700;color:var(--goldl);margin-bottom:6px;">⛳ ${course.name}${req?` <span style="font-size:11px;color:var(--gray);">必要${req.count}名</span>`:''}</div>
+      ${empItems}
+    </div>`;
+  }).filter(Boolean).join('');
+  overlay.innerHTML=`<div style="background:var(--gd);border:1px solid rgba(201,168,76,0.4);border-radius:16px;padding:24px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:18px;font-weight:700;color:var(--cream);">${parseInt(m)}月${parseInt(d)}日 <span style="color:${dowColor};">（${dow}）</span></div>
+      <button id="assignModalClose" style="background:none;border:none;color:var(--gray);font-size:22px;cursor:pointer;">✕</button>
+    </div>
+    ${sections||'<div style="color:var(--gray);text-align:center;padding:20px;">所属キャディーが設定されていません</div>'}
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button id="assignModalCancel" style="flex:1;padding:12px;background:none;border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:var(--gray);cursor:pointer;font-family:'Noto Sans JP',sans-serif;">キャンセル</button>
+      <button id="assignModalSave" style="flex:1;padding:12px;background:var(--gold);border:none;border-radius:8px;color:var(--gd);font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">✅ 保存</button>
+    </div>
+  </div>`;
+  overlay.querySelector('#assignModalClose').onclick=()=>overlay.remove();
+  overlay.querySelector('#assignModalCancel').onclick=()=>overlay.remove();
+  overlay.querySelector('#assignModalSave').onclick=async()=>{
+    // チェックボックスを読み取ってシフトに反映
+    const cbs=overlay.querySelectorAll('.assignEmpCb');
+    const byCourse={};
+    cbs.forEach(cb=>{
+      const cid=cb.dataset.course;
+      if(!byCourse[cid])byCourse[cid]=[];
+      if(cb.checked)byCourse[cid].push(cb.dataset.emp);
+    });
+    // 既存シフトを更新
+    Object.entries(byCourse).forEach(([cid,empIds])=>{
+      state.shifts=state.shifts.filter(s=>!(s.date===dateStr&&String(s.courseId)===String(cid)));
+      if(empIds.length>0)state.shifts.push({id:String(Date.now()+Math.random()),date:dateStr,courseId:cid,employees:empIds});
+    });
+    await saveState();
+    overlay.remove();
+    renderAssignCal();
+    renderShiftCalendar();
+    renderRequestList();
+    showToast('✅ 割り振りを保存しました');
+  };
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
+
 function renderAssignByDate(){
   const container=document.getElementById('assignContent');if(!container)return;
   const ym=`${assignYear}-${String(assignMonth+1).padStart(2,'0')}`;
@@ -3136,7 +3370,7 @@ function renderAssignByCourse(){
 function printAssignPage(){
   const reiwa=assignYear-2018;
   const mon=assignMonth+1;
-  const title=assignTab==='date'?'日付別割り振り一覧':assignTab==='emp'?'従業員別割り振り一覧':'ゴルフ場別割り振り一覧';
+  const title=assignTab==='cal'?'カレンダー割り振り':assignTab==='date'?'日付別割り振り一覧':assignTab==='emp'?'従業員別割り振り一覧':'ゴルフ場別割り振り一覧';
   renderAssignPage();
   const assignContent=document.getElementById('assignContent');
   const html=`<div style="font-family:'Noto Sans JP',sans-serif;padding:28px;"><div style="font-size:20px;font-weight:900;margin-bottom:4px;">${title}</div><div style="font-size:14px;color:#555;margin-bottom:20px;">令和${reiwa}年 ${mon}月分</div>${assignContent?assignContent.innerHTML:''}</div>`;
