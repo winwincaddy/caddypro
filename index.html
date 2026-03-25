@@ -464,6 +464,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
     <button class="tab-btn" onclick="showPage('sales',this)">💴 売上管理</button>
     <button class="tab-btn" onclick="showPage('invoice',this)">📄 請求書（ゴルフ場）</button>
     <button class="tab-btn" onclick="showPage('empinvoice',this)">👤 請求書（従業員）</button>
+    <button class="tab-btn" onclick="showPage('assign',this)">🗓️ 割り振り</button>
     <button class="tab-btn" onclick="showPage('list',this)">👥 一覧</button>
     <button class="tab-btn" onclick="showPage('settings',this)">⚙️ 設定</button>
   </nav>
@@ -495,48 +496,36 @@ tr:hover td{background:rgba(201,168,76,0.05);}
         <div id="shiftCalTitle" style="font-size:17px;font-weight:700;color:var(--cream);font-family:'DM Mono',monospace;min-width:180px;text-align:center;"></div>
         <button onclick="shiftNextMonth()" style="background:none;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:8px 20px;color:var(--goldl);cursor:pointer;font-size:20px;">›</button>
       </div>
-      <div class="grid-2 mb-20">
-        <div class="card">
-          <div class="card-title">要請カレンダー <span style="font-size:11px;color:var(--gray);font-weight:400;">日付をタップで登録</span></div>
-          <div style="margin-bottom:10px;">
-            <select id="shiftCalCourseFilter" onchange="renderShiftCalendar()" style="width:100%;padding:8px 12px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:13px;">
-              <option value="">⛳ 全ゴルフ場</option>
-            </select>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px;text-align:center;">
-            <div style="font-size:11px;color:#e88;padding:4px;">日</div>
-            <div style="font-size:11px;color:var(--gray);padding:4px;">月</div>
-            <div style="font-size:11px;color:var(--gray);padding:4px;">火</div>
-            <div style="font-size:11px;color:var(--gray);padding:4px;">水</div>
-            <div style="font-size:11px;color:var(--gray);padding:4px;">木</div>
-            <div style="font-size:11px;color:var(--gray);padding:4px;">金</div>
-            <div style="font-size:11px;color:#88c;padding:4px;">土</div>
-          </div>
-          <div id="shiftCalendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;"></div>
-          <div style="margin-top:10px;display:flex;gap:16px;font-size:11px;color:var(--gray);">
-            <span>🟡 要請あり</span><span>🟢 シフト確定</span>
-          </div>
-        </div>
-        <div>
-          <div class="card mb-20" style="border:1px solid rgba(201,168,76,0.3);">
-            <div class="card-title">📅 カレンダーから要請登録</div>
-            <div style="font-size:13px;color:var(--gray);line-height:1.8;">
-              <div>① 左のカレンダーの日付をタップ</div>
-              <div>② ゴルフ場を選んで「＋ 要請」</div>
-              <div>③ 必要人数（1〜6名）を選択</div>
-            </div>
-          </div>
-          <div class="card mb-20">
-            <div class="card-title">要請一覧</div>
-            <div id="requestList"></div>
-          </div>
+      <!-- メインレイアウト：左＝カレンダー縦並び、右＝申請 -->
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;margin-bottom:20px;align-items:start;">
+        <!-- 左：ゴルフ場ごとのカレンダー縦並び -->
+        <div id="courseCalendars" style="display:flex;flex-direction:column;gap:14px;"></div>
+        <!-- 右：従業員からの申請 -->
+        <div style="position:sticky;top:80px;">
           <div class="card">
             <div class="card-title">👤 従業員からの申請 <span id="pendingBadge"></span></div>
             <div id="empShiftRequestList"></div>
           </div>
         </div>
       </div>
+      <!-- 要請一覧 -->
+      <div class="card mb-20">
+        <div class="card-title">要請一覧</div>
+        <div id="requestList"></div>
+      </div>
+      <!-- hidden -->
+      <select id="shiftCalCourseFilter" style="display:none;"></select>
+      <div id="shiftCalendar" style="display:none;"></div>
       <div id="shiftDetailArea"></div>
+
+      <!-- 割り振り一覧 -->
+      <div class="card mb-20" style="margin-top:20px;border:1px solid rgba(109,191,126,0.3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div class="card-title" style="margin:0;color:#6dbf7e;">📋 割り振り一覧（月間）</div>
+          <button class="btn btn-outline btn-sm" onclick="printAssignList()">🖨️ 印刷</button>
+        </div>
+        <div id="assignList"></div>
+      </div>
       <div class="card" style="margin-top:20px;border:1px solid rgba(201,168,76,0.3);">
         <div class="card-title">🔔 翌日の出勤連絡を送る</div>
         <p style="font-size:12px;color:var(--gray);margin-bottom:14px;">従業員がログイン後に確認・返事できます</p>
@@ -702,6 +691,28 @@ tr:hover td{background:rgba(201,168,76,0.05);}
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 割り振り -->
+    <div class="page" id="page-assign">
+      <div class="section-header mb-20">
+        <div class="section-title">🗓️ 割り振り管理</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button onclick="assignCalPrev()" style="background:none;border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:7px 16px;color:var(--goldl);cursor:pointer;font-size:18px;">‹</button>
+            <div id="assignCalTitle" style="font-size:16px;font-weight:700;color:var(--cream);font-family:'DM Mono',monospace;min-width:160px;text-align:center;"></div>
+            <button onclick="assignCalNext()" style="background:none;border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:7px 16px;color:var(--goldl);cursor:pointer;font-size:18px;">›</button>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="printAssignPage()">🖨️ 印刷</button>
+        </div>
+      </div>
+      <!-- 切替タブ -->
+      <div style="display:flex;gap:4px;margin-bottom:20px;background:rgba(26,58,42,0.5);padding:4px;border-radius:10px;width:fit-content;">
+        <button id="assignTabDate" onclick="setAssignTab('date')" style="padding:8px 20px;background:var(--gold);border:none;border-radius:8px;color:var(--gd);font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">📅 日付別</button>
+        <button id="assignTabEmp" onclick="setAssignTab('emp')" style="padding:8px 20px;background:none;border:none;border-radius:8px;color:var(--goldl);font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">👤 従業員別</button>
+        <button id="assignTabCourse" onclick="setAssignTab('course')" style="padding:8px 20px;background:none;border:none;border-radius:8px;color:var(--goldl);font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">⛳ ゴルフ場別</button>
+      </div>
+      <div id="assignContent"></div>
     </div>
 
     <!-- 一覧 -->
@@ -1441,6 +1452,7 @@ function showPage(id,btn){
   document.getElementById('page-'+id).classList.add('active');btn.classList.add('active');
   if(id==='shift')initShiftPage();
   if(id==='list')initListPage();
+  if(id==='assign')initAssignPage();
   if(id==='attendance'){renderAttendanceTable();initManualAttForm();}
   if(id==='sales'){renderSalesTable();updateSalesStats();}
   if(id==='invoice'){populateCourseSelects();updateInvoicePreview();}
@@ -2157,46 +2169,78 @@ function empPrintMyInvoice(){const emp=state.employees.find(e=>String(e.id)===St
 
 // ── シフト管理 ──
 let shiftYear=new Date().getFullYear(),shiftMonth=new Date().getMonth();
-function initShiftPage(){populateReqCourse();renderShiftCalendar();renderRequestList();renderEmpShiftRequestList();initNoticeForm();const today=new Date();if(document.getElementById('reqDate'))document.getElementById('reqDate').value=today.toISOString().split('T')[0];}
+function toggleEmpRequests(){
+  const list=document.getElementById('empShiftRequestList');
+  const btn=document.getElementById('empRequestToggleBtn');
+  if(!list||!btn)return;
+  const isHidden=list.style.display==='none';
+  list.style.display=isHidden?'block':'none';
+  btn.textContent=isHidden?'▲ 閉じる':'▼ 開く';
+  if(isHidden)renderEmpShiftRequestList();
+}
+function initShiftPage(){
+  populateReqCourse();
+  renderShiftCalendar();renderRequestList();renderEmpShiftRequestList();initNoticeForm();renderAssignList();
+  const today=new Date();if(document.getElementById('reqDate'))document.getElementById('reqDate').value=today.toISOString().split('T')[0];
+}
 function populateReqCourse(){const sel=document.getElementById('reqCourse');if(!sel)return;sel.innerHTML='<option value="">– 選択 –</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');}
-function shiftPrevMonth(){shiftMonth--;if(shiftMonth<0){shiftMonth=11;shiftYear--;}renderShiftCalendar();renderRequestList();}
-function shiftNextMonth(){shiftMonth++;if(shiftMonth>11){shiftMonth=0;shiftYear++;}renderShiftCalendar();renderRequestList();}
+function shiftPrevMonth(){shiftMonth--;if(shiftMonth<0){shiftMonth=11;shiftYear--;}renderShiftCalendar();renderRequestList();renderAssignList();}
+function shiftNextMonth(){shiftMonth++;if(shiftMonth>11){shiftMonth=0;shiftYear++;}renderShiftCalendar();renderRequestList();renderAssignList();}
 function renderShiftCalendar(){
-  const reiwa=shiftYear-2018;document.getElementById('shiftCalTitle').textContent=`令和${reiwa}年 ${shiftMonth+1}月`;
-  // ゴルフ場フィルターを更新
-  const filterSel=document.getElementById('shiftCalCourseFilter');
-  if(filterSel){
-    const curVal=filterSel.value;
-    filterSel.innerHTML='<option value="">⛳ 全ゴルフ場</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-    filterSel.value=curVal;
-  }
-  const filterCourseId=filterSel?filterSel.value:'';
-  const cal=document.getElementById('shiftCalendar');const firstDay=new Date(shiftYear,shiftMonth,1).getDay();const daysInMonth=new Date(shiftYear,shiftMonth+1,0).getDate();const todayS=new Date().toISOString().split('T')[0];const ym=`${shiftYear}-${String(shiftMonth+1).padStart(2,'0')}`;
-  let cells='';for(let i=0;i<firstDay;i++)cells+='<div></div>';
+  const reiwa=shiftYear-2018;
+  document.getElementById('shiftCalTitle').textContent=`令和${reiwa}年 ${shiftMonth+1}月`;
+  const container=document.getElementById('courseCalendars');
+  if(!container)return;
+  if(!state.courses.length){container.innerHTML='<div class="empty-state">ゴルフ場が登録されていません</div>';return;}
+  container.innerHTML=state.courses.map(course=>buildCourseCal(course)).join('');
+}
+function buildCourseCal(course){
+  const ym=`${shiftYear}-${String(shiftMonth+1).padStart(2,'0')}`;
+  const firstDay=new Date(shiftYear,shiftMonth,1).getDay();
+  const daysInMonth=new Date(shiftYear,shiftMonth+1,0).getDate();
+  const todayS=new Date().toISOString().split('T')[0];
+  const dowHeaders=['日','月','火','水','木','金','土'].map((d,i)=>`<div style="font-size:10px;color:${i===0?'#e88':i===6?'#99c':'var(--gray)'};padding:2px;text-align:center;">${d}</div>`).join('');
+  let cells='';
+  for(let i=0;i<firstDay;i++)cells+='<div></div>';
   for(let d=1;d<=daysInMonth;d++){
     const dateStr=`${ym}-${String(d).padStart(2,'0')}`;
-    // フィルター適用
-    const allReqs=state.requests.filter(r=>r.date===dateStr);
-    const reqs=filterCourseId?allReqs.filter(r=>String(r.courseId)===String(filterCourseId)):allReqs;
-    const allShifts=state.shifts.filter(s=>s.date===dateStr);
-    const shifts=filterCourseId?allShifts.filter(s=>String(s.courseId)===String(filterCourseId)):allShifts;
-    const pendingReqs=state.shiftRequests.filter(r=>r.date===dateStr&&r.status==='pending');
-    const isToday=dateStr===todayS;const dow=new Date(shiftYear,shiftMonth,d).getDay();
-    let bg='rgba(26,58,42,0.4)';let border='1px solid rgba(201,168,76,0.1)';let dotHtml='';
-    if(shifts.length>0){bg='rgba(74,140,92,0.5)';border='1px solid rgba(109,191,126,0.5)';
-      const courseName=filterCourseId?'':(shifts.length===1?(state.courses.find(c=>String(c.id)===String(shifts[0].courseId))||{name:''}).name.slice(0,4):'');
-      dotHtml='';}  // 確定は別途countBadgeで表示
-    else if(reqs.length>0){bg='rgba(201,168,76,0.2)';border='1px solid rgba(201,168,76,0.4)';
-      const courseName=filterCourseId?'':(reqs.length===1?(state.courses.find(c=>String(c.id)===String(reqs[0].courseId))||{name:''}).name.slice(0,4):'');
-      dotHtml='';}  // 人数はcountBadgeで表示
-    // pendingReqs badge handled in countBadge
-    if(isToday)border='2px solid var(--goldl)';
+    const req=state.requests.find(r=>r.date===dateStr&&String(r.courseId)===String(course.id));
+    const shift=state.shifts.find(s=>s.date===dateStr&&String(s.courseId)===String(course.id));
+    const isToday=dateStr===todayS;
+    const dow=new Date(shiftYear,shiftMonth,d).getDay();
     const dayColor=dow===0?'#e88':dow===6?'#99c':'var(--cream)';
-    const totalCount=reqs.reduce((s,r)=>s+r.count,0);
-    const countBadge=totalCount>0&&!filterCourseId?`<div style="text-align:center;font-size:14px;font-weight:900;color:var(--goldl);font-family:'DM Mono',monospace;line-height:1;">${totalCount}</div>`:filterCourseId&&reqs.length>0?`<div style="text-align:center;font-size:14px;font-weight:900;color:var(--goldl);font-family:'DM Mono',monospace;line-height:1;">${reqs[0].count}</div>`:'';
-    cells+=`<div onclick="showCalendarDateModal('${dateStr}')" style="background:${bg};border:${border};border-radius:6px;padding:4px 2px;cursor:pointer;min-height:48px;transition:all 0.15s;"><div style="text-align:center;font-size:12px;font-weight:700;color:${dayColor};font-family:'DM Mono',monospace;">${d}</div>${countBadge}${shifts.length>0&&!countBadge?`<div style="font-size:8px;text-align:center;color:#6dbf7e;">✓</div>`:''}</div>`;
+    let bg='rgba(26,58,42,0.4)';
+    let border=isToday?'2px solid var(--goldl)':'1px solid rgba(201,168,76,0.1)';
+    let badge='';
+    if(shift&&shift.employees.length>0){
+      bg='rgba(74,140,92,0.5)';
+      if(!isToday)border='1px solid rgba(109,191,126,0.5)';
+      const empNames=shift.employees.map(eid=>{
+        const e=state.employees.find(x=>String(x.id)===String(eid));
+        return e?`<div style="font-size:9px;color:#6dbf7e;text-align:center;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;">${e.name}</div>`:'';
+      }).join('');
+      const needed=req?`<div style="text-align:center;font-size:8px;color:rgba(109,191,126,0.7);line-height:1;">${shift.employees.length}/${req?req.count:'?'}</div>`:'';
+      badge=`<div style="margin-top:1px;">${empNames}${needed}</div>`;
+    } else if(shift){
+      bg='rgba(74,140,92,0.3)';
+      if(!isToday)border='1px solid rgba(109,191,126,0.3)';
+      badge=`<div style="text-align:center;font-size:9px;color:#6dbf7e;">✓</div>`;
+    } else if(req){
+      bg='rgba(201,168,76,0.2)';
+      if(!isToday)border='1px solid rgba(201,168,76,0.4)';
+      badge=`<div style="text-align:center;font-size:13px;font-weight:900;color:var(--goldl);line-height:1;">${req.count}</div>`;
+    }
+    const cellHeight=shift&&shift.employees.length>0?Math.max(44,shift.employees.length*16+20):38;
+    cells+=`<div onclick="calModalAddReq('${dateStr}','${course.id}')" style="background:${bg};border:${border};border-radius:5px;padding:3px 2px;cursor:pointer;min-height:${cellHeight}px;transition:all 0.15s;overflow:hidden;"><div style="text-align:center;font-size:11px;font-weight:700;color:${dayColor};">${d}</div>${badge}</div>`;
   }
-  cal.innerHTML=cells;
+  return `<div style="background:rgba(26,58,42,0.4);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:12px;">
+    <div style="font-size:13px;font-weight:700;color:var(--goldl);margin-bottom:8px;">⛳ ${course.name}</div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:3px;">${dowHeaders}</div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">${cells}</div>
+    <div style="margin-top:6px;display:flex;gap:10px;font-size:10px;color:var(--gray);">
+      <span>🟡 要請(人数)</span><span>🟢 確定(✓人数)</span>
+    </div>
+  </div>`;
 }
 function renderRequestList(){
   const ym=`${shiftYear}-${String(shiftMonth+1).padStart(2,'0')}`;const list=document.getElementById('requestList');
@@ -2233,7 +2277,7 @@ function renderRequestList(){
           <div style="margin-top:4px;">${status}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <button onclick="showShiftDay('${r.date}')" class="btn btn-primary btn-sm">シフト確定</button>
+          <button onclick="confirmShiftFromReq('${r.date}','${r.courseId}')" class="btn btn-primary btn-sm">✅ 確定</button>
           <button onclick="deleteRequest('${r.id}')" class="btn btn-outline btn-sm">削除</button>
         </div>
       </div>
@@ -2241,6 +2285,17 @@ function renderRequestList(){
       <div>${empChecks}</div>
     </div>`;
   }).join('');
+}
+async function confirmShiftFromReq(dateStr, courseId){
+  // 要請一覧でチェックされている従業員を取得
+  const checkboxes=document.querySelectorAll(`input[data-date="${dateStr}"][data-course="${courseId}"]`);
+  const empIds=Array.from(checkboxes).filter(cb=>cb.checked).map(cb=>cb.dataset.emp);
+  if(!empIds.length){showToast('⚠ キャディーを選択してください');return;}
+  // シフトを確定
+  state.shifts=state.shifts.filter(s=>!(s.date===dateStr&&String(s.courseId)===String(courseId)));
+  state.shifts.push({id:String(Date.now()),date:dateStr,courseId,employees:empIds});
+  await saveState();renderShiftCalendar();renderRequestList();renderEmpShiftRequestList();renderAssignList();
+  showToast(`✅ シフトを確定しました（${empIds.length}名）`);
 }
 async function toggleReqEmp(cb){
   const date=cb.dataset.date,courseId=cb.dataset.course,empId=cb.dataset.emp;
@@ -2261,7 +2316,7 @@ async function addRequest(){
 }
 function deleteRequest(id){showConfirm('この要請を削除しますか？',async()=>{state.requests=state.requests.filter(r=>r.id!==id);await saveState();renderShiftCalendar();renderRequestList();});}
 function showCalendarDateModal(dateStr){
-  // ゴルフ場フィルター選択中は直接人数選択へ
+  // ゴルフ場フィルター（後方互換用）
   const filterSel=document.getElementById('shiftCalCourseFilter');
   const filterCourseId=filterSel?filterSel.value:'';
   if(filterCourseId){
@@ -2371,16 +2426,147 @@ async function confirmShift(dateStr){
   const courseId=document.getElementById('shiftCourseSelect').value;const checkboxes=document.querySelectorAll('#shiftDetailArea input[type=checkbox]:checked');const employees=Array.from(checkboxes).map(cb=>cb.value);
   if(!courseId){alert('ゴルフ場を選択してください');return;}if(!employees.length){alert('従業員を選択してください');return;}
   state.shifts=state.shifts.filter(s=>s.date!==dateStr);state.shifts.push({id:String(Date.now()),date:dateStr,courseId,employees});
-  await saveState();renderShiftCalendar();renderRequestList();renderEmpShiftRequestList();initNoticeForm();document.getElementById('shiftDetailArea').innerHTML='';showToast('✅ シフトを確定しました');
+  await saveState();renderShiftCalendar();renderRequestList();renderEmpShiftRequestList();renderAssignList();initNoticeForm();document.getElementById('shiftDetailArea').innerHTML='';showToast('✅ シフトを確定しました');
 }
 function clearShift(dateStr){showConfirm('このシフトを削除しますか？',async()=>{state.shifts=state.shifts.filter(s=>s.date!==dateStr);await saveState();renderShiftCalendar();renderRequestList();document.getElementById('shiftDetailArea').innerHTML='';});}
-function printShiftTable(){
-  const ym=`${shiftYear}-${String(shiftMonth+1).padStart(2,'0')}`;const reiwa=shiftYear-2018;const monthLabel=`令和${reiwa}年 ${shiftMonth+1}月`;const company=state.settings;
+function renderAssignList(){
+  const container=document.getElementById('assignList');if(!container)return;
+  const ym=`${shiftYear}-${String(shiftMonth+1).padStart(2,'0')}`;
+  // その月のシフト確定データを日付順に収集
   const monthShifts=state.shifts.filter(s=>s.date&&s.date.startsWith(ym)).sort((a,b)=>a.date.localeCompare(b.date));
-  let rows='';if(!monthShifts.length){rows='<tr><td colspan="4" style="text-align:center;color:#999;padding:20px;">確定済みシフトがありません</td></tr>';}
-  else{monthShifts.forEach(s=>{const[y,m,d]=s.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(s.date).getDay()];const course=state.courses.find(c=>String(c.id)===String(s.courseId));const empNames=s.employees.map(eid=>{const e=state.employees.find(x=>String(x.id)===String(eid));return e?e.name:'−';}).join('　');const dowColor=dow==='日'?'color:#c00':dow==='土'?'color:#006':'';rows+=`<tr><td style="text-align:center;padding:8px 12px;border-bottom:1px solid #eee;font-weight:700;">${parseInt(m)}月${parseInt(d)}日</td><td style="text-align:center;padding:8px 12px;border-bottom:1px solid #eee;${dowColor}">${dow}</td><td style="padding:8px 12px;border-bottom:1px solid #eee;">${course?course.name:'−'}</td><td style="padding:8px 12px;border-bottom:1px solid #eee;">${empNames}</td></tr>`;});}
-  const html=`<div style="font-family:'Noto Sans JP',sans-serif;color:#111;padding:32px 28px;font-size:13px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #111;"><div><div style="font-size:22px;font-weight:900;letter-spacing:0.1em;">シ　フ　ト　表</div><div style="font-size:14px;font-weight:700;margin-top:6px;">${monthLabel}分</div></div><div style="text-align:right;font-size:12px;line-height:2;"><div style="font-size:14px;font-weight:700;">${company.companyName||''}</div><div>${company.companyPhone||''}</div></div></div><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#111;color:#fff;"><th style="padding:8px 12px;text-align:center;width:90px;">日付</th><th style="padding:8px 12px;text-align:center;width:40px;">曜日</th><th style="padding:8px 12px;text-align:left;">ゴルフ場</th><th style="padding:8px 12px;text-align:left;">派遣キャディー</th></tr></thead><tbody>${rows}</tbody></table><div style="margin-top:20px;font-size:12px;color:#555;border-top:1px solid #ddd;padding-top:12px;">合計 ${monthShifts.length} 日　／　延べ ${monthShifts.reduce((s,x)=>s+x.employees.length,0)} 名</div></div>`;
-  const win=window.open('','_blank');win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet"><style>@media print{body{margin:0;}}body{background:#fff;}</style></head><body>${html}</body></html>`);win.document.close();setTimeout(()=>win.print(),600);
+  // 日付ごとにグループ化
+  const byDate={};
+  monthShifts.forEach(s=>{
+    if(!byDate[s.date])byDate[s.date]=[];
+    byDate[s.date].push(s);
+  });
+  if(!Object.keys(byDate).length){
+    container.innerHTML='<div class="empty-state">この月の確定シフトはありません</div>';return;
+  }
+  let html='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">';
+  html+='<thead><tr style="background:var(--gm);"><th style="padding:10px 12px;text-align:left;border-bottom:2px solid rgba(109,191,126,0.4);color:#6dbf7e;white-space:nowrap;">日付</th><th style="padding:10px 12px;text-align:left;border-bottom:2px solid rgba(109,191,126,0.4);color:#6dbf7e;">ゴルフ場</th><th style="padding:10px 12px;text-align:left;border-bottom:2px solid rgba(109,191,126,0.4);color:#6dbf7e;">派遣キャディー</th><th style="padding:10px 12px;text-align:center;border-bottom:2px solid rgba(109,191,126,0.4);color:#6dbf7e;">人数</th></tr></thead><tbody>';
+  Object.entries(byDate).forEach(([date,shifts],idx)=>{
+    const[y,m,d]=date.split('-');
+    const dow=['日','月','火','水','木','金','土'][new Date(date).getDay()];
+    const dowColor=dow==='日'?'#e88':dow==='土'?'#99c':'var(--cream)';
+    const bg=idx%2===0?'rgba(26,58,42,0.3)':'rgba(26,58,42,0.1)';
+    shifts.forEach((s,si)=>{
+      const course=state.courses.find(c=>String(c.id)===String(s.courseId));
+      const empNames=s.employees.map(eid=>{const e=state.employees.find(x=>String(x.id)===String(eid));return e?e.name:null;}).filter(Boolean);
+      const empBadges=empNames.map(n=>`<span style="background:rgba(74,140,92,0.3);border:1px solid rgba(109,191,126,0.3);border-radius:20px;padding:3px 8px;font-size:12px;color:var(--cream);margin-right:4px;">${n}</span>`).join('');
+      html+=`<tr style="background:${bg};border-bottom:1px solid rgba(255,255,255,0.05);">
+        ${si===0?`<td style="padding:10px 12px;font-weight:700;color:${dowColor};font-family:'DM Mono',monospace;white-space:nowrap;" rowspan="${shifts.length}">${parseInt(m)}/${parseInt(d)}<br><span style="font-size:10px;">${dow}</span></td>`:''}
+        <td style="padding:8px 12px;color:var(--goldl);font-weight:700;">${course?course.name:'−'}</td>
+        <td style="padding:8px 12px;">${empBadges||'<span style="color:var(--gray);">未割り振り</span>'}</td>
+        <td style="padding:8px 12px;text-align:center;font-weight:700;font-family:'DM Mono',monospace;color:var(--goldl);">${empNames.length}名</td>
+      </tr>`;
+    });
+  });
+  html+='</tbody></table></div>';
+  // 従業員ごとの割り振りサマリー
+  const empSummary={};
+  monthShifts.forEach(s=>{
+    s.employees.forEach(eid=>{
+      const e=state.employees.find(x=>String(x.id)===String(eid));if(!e)return;
+      if(!empSummary[eid])empSummary[eid]={name:e.name,count:0,courses:new Set()};
+      empSummary[eid].count++;
+      const course=state.courses.find(c=>String(c.id)===String(s.courseId));
+      if(course)empSummary[eid].courses.add(course.name);
+    });
+  });
+  if(Object.keys(empSummary).length){
+    html+=`<div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(201,168,76,0.2);">
+      <div style="font-size:11px;color:var(--goldl);font-family:'DM Mono',monospace;margin-bottom:10px;">👤 従業員別サマリー</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;">
+        ${Object.values(empSummary).sort((a,b)=>b.count-a.count).map(e=>`
+          <div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:10px 12px;">
+            <div style="font-weight:700;color:var(--cream);font-size:13px;">${e.name}</div>
+            <div style="font-size:12px;color:var(--goldl);font-family:'DM Mono',monospace;margin-top:3px;">${e.count}日出勤</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px;">${[...e.courses].join('・')}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }
+  container.innerHTML=html;
+}
+function printAssignList(){
+  const ym=`${shiftYear}-${String(shiftMonth+1).padStart(2,'0')}`;
+  const reiwa=shiftYear-2018;
+  const tmpDiv=document.createElement('div');
+  renderAssignList();
+  const assignList=document.getElementById('assignList');
+  const html=`<div style="font-family:'Noto Sans JP',sans-serif;padding:28px;"><div style="font-size:20px;font-weight:900;margin-bottom:4px;">割り振り一覧</div><div style="font-size:14px;color:#555;margin-bottom:20px;">令和${reiwa}年 ${parseInt(ym.split('-')[1])}月分</div>${assignList?assignList.innerHTML:''}</div>`;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet"><style>@media print{body{margin:0;}}body{background:#fff;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:7px;font-size:12px;}th{background:#2d5a3d;color:#fff;}span{display:inline-block;margin:2px;padding:2px 6px;background:#e8f5e9;border-radius:10px;font-size:11px;}</style></head><body>${html}</body></html>`);
+  win.document.close();setTimeout(()=>win.print(),600);
+}
+
+function printShiftTable(){
+  const ym=`${shiftYear}-${String(shiftMonth+1).padStart(2,'0')}`;
+  const reiwa=shiftYear-2018;const monthLabel=`令和${reiwa}年 ${shiftMonth+1}月`;const company=state.settings;
+  const filterCourseId=document.getElementById('shiftCalCourseFilter')?document.getElementById('shiftCalCourseFilter').value:'';
+  const allShifts=state.shifts.filter(s=>s.date&&s.date.startsWith(ym)).sort((a,b)=>a.date.localeCompare(b.date));
+  const monthShifts=filterCourseId?allShifts.filter(s=>String(s.courseId)===String(filterCourseId)):allShifts;
+  const filterCourseName=filterCourseId?(state.courses.find(c=>String(c.id)===String(filterCourseId))||{name:''}).name:'';
+  // ゴルフ場ごとにグループ化
+  const byCourse={};
+  monthShifts.forEach(s=>{
+    const cid=String(s.courseId);
+    if(!byCourse[cid])byCourse[cid]=[];
+    byCourse[cid].push(s);
+  });
+  let sections='';
+  if(!monthShifts.length){
+    sections='<p style="text-align:center;color:#999;padding:20px;">確定済みシフトがありません</p>';
+  } else {
+    Object.entries(byCourse).forEach(([cid,shifts])=>{
+      const course=state.courses.find(c=>String(c.id)===cid);
+      const totalDays=shifts.length;
+      const totalEmps=shifts.reduce((s,x)=>s+x.employees.length,0);
+      let rows='';
+      shifts.forEach(s=>{
+        const[y,m,d]=s.date.split('-');
+        const dow=['日','月','火','水','木','金','土'][new Date(s.date).getDay()];
+        const dowColor=dow==='日'?'color:#c00':dow==='土'?'color:#006':'';
+        const empNames=s.employees.map(eid=>{const e=state.employees.find(x=>String(x.id)===String(eid));return e?e.name:'−';}).join('　');
+        rows+=`<tr>
+          <td style="text-align:center;padding:7px 10px;border-bottom:1px solid #eee;font-weight:700;">${parseInt(m)}月${parseInt(d)}日</td>
+          <td style="text-align:center;padding:7px 10px;border-bottom:1px solid #eee;${dowColor}">${dow}</td>
+          <td style="padding:7px 10px;border-bottom:1px solid #eee;">${empNames}</td>
+          <td style="text-align:center;padding:7px 10px;border-bottom:1px solid #eee;">${s.employees.length}名</td>
+        </tr>`;
+      });
+      sections+=`
+        <div style="margin-bottom:28px;page-break-inside:avoid;">
+          <div style="background:#2d5a3d;color:#fff;padding:10px 14px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:16px;font-weight:900;">⛳ ${course?course.name:'不明'}</div>
+            <div style="font-size:12px;">${totalDays}日　延べ${totalEmps}名</div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;border:1px solid #ddd;">
+            <thead><tr style="background:#f5f5f5;">
+              <th style="padding:7px 10px;text-align:center;width:90px;border-bottom:2px solid #2d5a3d;">日付</th>
+              <th style="padding:7px 10px;text-align:center;width:40px;border-bottom:2px solid #2d5a3d;">曜日</th>
+              <th style="padding:7px 10px;text-align:left;border-bottom:2px solid #2d5a3d;">派遣キャディー</th>
+              <th style="padding:7px 10px;text-align:center;width:50px;border-bottom:2px solid #2d5a3d;">人数</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    });
+  }
+  const html=`<div style="font-family:'Noto Sans JP',sans-serif;color:#111;padding:32px 28px;font-size:13px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:14px;border-bottom:2px solid #111;">
+      <div><div style="font-size:22px;font-weight:900;letter-spacing:0.1em;">シ　フ　ト　表</div><div style="font-size:14px;font-weight:700;margin-top:6px;">${monthLabel}分　${filterCourseName?filterCourseName+'':'（ゴルフ場別）'}</div></div>
+      <div style="text-align:right;font-size:12px;line-height:2;"><div style="font-size:14px;font-weight:700;">${company.companyName||''}</div><div>${company.companyPhone||''}</div></div>
+    </div>
+    ${sections}
+    <div style="margin-top:20px;font-size:12px;color:#555;border-top:1px solid #ddd;padding-top:12px;">
+      合計 ${monthShifts.length} 日　／　延べ ${monthShifts.reduce((s,x)=>s+x.employees.length,0)} 名　／　ゴルフ場 ${Object.keys(byCourse).length} 件
+    </div>
+  </div>`;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet"><style>@media print{body{margin:0;}.page-break{page-break-before:always;}}body{background:#fff;}</style></head><body>${html}</body></html>`);
+  win.document.close();setTimeout(()=>win.print(),600);
 }
 
 // ── 従業員シフト申請 ──
@@ -2427,7 +2613,7 @@ function renderEmpShiftApplyList(){
 }
 function renderEmpShiftRequestList(){
   const list=document.getElementById('empShiftRequestList');const badge=document.getElementById('pendingBadge');if(!list)return;
-  const reqs=state.shiftRequests.sort((a,b)=>b.date.localeCompare(a.date));const pendingCount=reqs.filter(r=>r.status==='pending').length;
+  const reqs=[...state.shiftRequests].sort((a,b)=>a.date.localeCompare(b.date));const pendingCount=reqs.filter(r=>r.status==='pending').length;
   if(badge)badge.innerHTML=pendingCount>0?`<span style="background:#e88;color:#fff;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:6px;">${pendingCount}件</span>`:'';
   if(!reqs.length){list.innerHTML='<div class="empty-state">申請はありません</div>';return;}
   const statusMap={pending:{label:'⏳ 審査中',color:'var(--goldl)'},approved:{label:'✅ 承認済み',color:'#6dbf7e'},rejected:{label:'❌ 却下',color:'#e88'}};
@@ -2752,6 +2938,210 @@ function printListPage(){
   const html=`<div style="font-family:'Noto Sans JP',sans-serif;padding:28px;"><div style="font-size:20px;font-weight:900;margin-bottom:4px;">${title}</div><div style="font-size:14px;color:#555;margin-bottom:20px;">令和${reiwa}年 ${mon}月分</div>${tmpDiv.innerHTML}</div>`;
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet"><style>@media print{body{margin:0;}}body{background:#fff;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:6px;font-size:11px;}th{background:#333;color:#fff;}</style></head><body>${html}</body></html>`);
+  win.document.close();setTimeout(()=>win.print(),600);
+}
+
+// =====================================================
+// 割り振りページ
+// =====================================================
+let assignYear=new Date().getFullYear(),assignMonth=new Date().getMonth(),assignTab='date';
+
+function initAssignPage(){
+  assignYear=new Date().getFullYear();assignMonth=new Date().getMonth();
+  renderAssignPage();
+}
+function assignCalPrev(){assignMonth--;if(assignMonth<0){assignMonth=11;assignYear--;}renderAssignPage();}
+function assignCalNext(){assignMonth++;if(assignMonth>11){assignMonth=0;assignYear++;}renderAssignPage();}
+function setAssignTab(tab){
+  assignTab=tab;
+  ['date','emp','course'].forEach(t=>{
+    const btn=document.getElementById('assignTab'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(btn)btn.style.cssText=t===tab?'padding:8px 20px;background:var(--gold);border:none;border-radius:8px;color:var(--gd);font-size:13px;font-weight:700;cursor:pointer;font-family:Noto Sans JP,sans-serif;':'padding:8px 20px;background:none;border:none;border-radius:8px;color:var(--goldl);font-size:13px;font-weight:700;cursor:pointer;font-family:Noto Sans JP,sans-serif;';
+  });
+  renderAssignPage();
+}
+function renderAssignPage(){
+  const reiwa=assignYear-2018;
+  const title=document.getElementById('assignCalTitle');
+  if(title)title.textContent=`令和${reiwa}年 ${assignMonth+1}月`;
+  if(assignTab==='date')renderAssignByDate();
+  else if(assignTab==='emp')renderAssignByEmp();
+  else renderAssignByCourse();
+}
+function renderAssignByDate(){
+  const container=document.getElementById('assignContent');if(!container)return;
+  const ym=`${assignYear}-${String(assignMonth+1).padStart(2,'0')}`;
+  const daysInMonth=new Date(assignYear,assignMonth+1,0).getDate();
+  const monthShifts=state.shifts.filter(s=>s.date&&s.date.startsWith(ym));
+  const monthReqs=state.requests.filter(r=>r.date&&r.date.startsWith(ym));
+
+  let html='<div style="overflow-x:auto;">';
+  html+=`<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:700px;">`;
+  // ヘッダー
+  html+=`<thead><tr style="background:var(--gm);">`;
+  html+=`<th style="padding:8px 12px;text-align:left;border-bottom:2px solid rgba(201,168,76,0.4);color:var(--goldl);white-space:nowrap;min-width:80px;">日付</th>`;
+  html+=`<th style="padding:8px 12px;text-align:left;border-bottom:2px solid rgba(201,168,76,0.4);color:var(--goldl);">ゴルフ場</th>`;
+  html+=`<th style="padding:8px 12px;text-align:center;border-bottom:2px solid rgba(201,168,76,0.4);color:var(--goldl);">必要</th>`;
+  html+=`<th style="padding:8px 12px;text-align:left;border-bottom:2px solid rgba(201,168,76,0.4);color:var(--goldl);">派遣キャディー</th>`;
+  html+=`<th style="padding:8px 12px;text-align:center;border-bottom:2px solid rgba(201,168,76,0.4);color:var(--goldl);">確定</th>`;
+  html+=`</tr></thead><tbody>`;
+
+  let hasData=false;
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${ym}-${String(d).padStart(2,'0')}`;
+    const dow=['日','月','火','水','木','金','土'][new Date(dateStr).getDay()];
+    const dowColor=dow==='日'?'#e88':dow==='土'?'#99c':'var(--cream)';
+    const dayReqs=monthReqs.filter(r=>r.date===dateStr);
+    const dayShifts=monthShifts.filter(s=>s.date===dateStr);
+    if(!dayReqs.length&&!dayShifts.length)continue;
+    hasData=true;
+    // ゴルフ場ごとに行を作成
+    const courses=new Set([...dayReqs.map(r=>r.courseId),...dayShifts.map(s=>s.courseId)]);
+    const coursesArr=[...courses];
+    coursesArr.forEach((courseId,ci)=>{
+      const course=state.courses.find(c=>String(c.id)===String(courseId));
+      const req=dayReqs.find(r=>String(r.courseId)===String(courseId));
+      const shift=dayShifts.find(s=>String(s.courseId)===String(courseId));
+      const empNames=(shift?shift.employees:[]).map(eid=>{const e=state.employees.find(x=>String(x.id)===String(eid));return e?e.name:null;}).filter(Boolean);
+      const needed=req?req.count:0;
+      const confirmed=empNames.length;
+      const isOk=needed>0&&confirmed>=needed;
+      const isShort=needed>0&&confirmed<needed&&confirmed>0;
+      const rowBg=ci%2===0?'rgba(26,58,42,0.3)':'rgba(26,58,42,0.15)';
+      const statusColor=shift&&isOk?'#6dbf7e':isShort?'#f9a825':'var(--gray)';
+      html+=`<tr style="background:${rowBg};border-bottom:1px solid rgba(255,255,255,0.04);">`;
+      if(ci===0){
+        html+=`<td style="padding:8px 12px;font-weight:700;color:${dowColor};white-space:nowrap;" rowspan="${coursesArr.length}">${parseInt(dateStr.split('-')[1])}/${parseInt(dateStr.split('-')[2])}<br><span style="font-size:10px;">${dow}</span></td>`;
+      }
+      html+=`<td style="padding:8px 12px;color:var(--goldl);font-weight:700;">${course?course.name:'−'}</td>`;
+      html+=`<td style="padding:8px 12px;text-align:center;font-weight:700;font-family:'DM Mono',monospace;">${needed||'−'}</td>`;
+      html+=`<td style="padding:8px 12px;">${empNames.length?empNames.map(n=>`<span style="background:rgba(74,140,92,0.3);border:1px solid rgba(109,191,126,0.3);border-radius:20px;padding:2px 8px;font-size:11px;color:var(--cream);margin-right:3px;">${n}</span>`).join(''):'<span style="color:var(--gray);font-size:12px;">未割り振り</span>'}</td>`;
+      html+=`<td style="padding:8px 12px;text-align:center;font-weight:700;font-family:'DM Mono',monospace;color:${statusColor};">${shift?confirmed+'名':'−'}</td>`;
+      html+=`</tr>`;
+    });
+  }
+  if(!hasData)html+=`<tr><td colspan="5" style="text-align:center;color:var(--gray);padding:28px;">この月のデータがありません</td></tr>`;
+  html+=`</tbody></table></div>`;
+  container.innerHTML=html;
+}
+
+function renderAssignByEmp(){
+  const container=document.getElementById('assignContent');if(!container)return;
+  const ym=`${assignYear}-${String(assignMonth+1).padStart(2,'0')}`;
+  const daysInMonth=new Date(assignYear,assignMonth+1,0).getDate();
+  const monthShifts=state.shifts.filter(s=>s.date&&s.date.startsWith(ym));
+  if(!state.employees.length){container.innerHTML='<div class="empty-state">従業員が登録されていません</div>';return;}
+
+  let html='<div style="overflow-x:auto;">';
+  html+=`<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px;">`;
+  // ヘッダー（日付）
+  html+=`<thead><tr style="background:var(--gm);"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid rgba(201,168,76,0.4);color:var(--goldl);white-space:nowrap;">従業員</th>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${ym}-${String(d).padStart(2,'0')}`;
+    const dow=['日','月','火','水','木','金','土'][new Date(dateStr).getDay()];
+    const dowColor=dow==='日'?'#e88':dow==='土'?'#99c':'var(--cream)';
+    html+=`<th style="padding:4px 2px;text-align:center;border-bottom:2px solid rgba(201,168,76,0.4);min-width:30px;"><div style="color:${dowColor};font-size:11px;font-weight:700;">${d}</div><div style="color:${dowColor};font-size:9px;">${dow}</div></th>`;
+  }
+  html+=`<th style="padding:8px 12px;text-align:center;border-bottom:2px solid rgba(201,168,76,0.4);color:var(--goldl);white-space:nowrap;">出勤数</th></tr></thead><tbody>`;
+
+  state.employees.forEach((emp,idx)=>{
+    const bg=idx%2===0?'rgba(26,58,42,0.3)':'rgba(26,58,42,0.1)';
+    html+=`<tr style="background:${bg};">`;
+    html+=`<td style="padding:8px 12px;font-weight:700;color:var(--cream);white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.04);">${emp.name}</td>`;
+    let count=0;
+    for(let d=1;d<=daysInMonth;d++){
+      const dateStr=`${ym}-${String(d).padStart(2,'0')}`;
+      const shift=monthShifts.find(s=>s.date===dateStr&&s.employees.includes(String(emp.id)));
+      let cell=`<td style="text-align:center;padding:3px 2px;border-bottom:1px solid rgba(255,255,255,0.04);">`;
+      if(shift){
+        count++;
+        const course=state.courses.find(c=>String(c.id)===String(shift.courseId));
+        const shortName=course?course.name.slice(0,2):'⛳';
+        cell+=`<span title="${course?course.name:''}" style="display:inline-block;background:rgba(74,140,92,0.5);border:1px solid rgba(109,191,126,0.4);border-radius:4px;padding:2px 3px;font-size:9px;color:#6dbf7e;cursor:help;">${shortName}</span>`;
+      } else {
+        cell+=`<span style="color:rgba(255,255,255,0.08);">－</span>`;
+      }
+      cell+=`</td>`;
+      html+=cell;
+    }
+    html+=`<td style="text-align:center;padding:8px;font-weight:700;font-family:'DM Mono',monospace;color:var(--goldl);border-bottom:1px solid rgba(255,255,255,0.04);">${count}日</td>`;
+    html+=`</tr>`;
+  });
+  html+=`</tbody></table></div>`;
+  // 凡例
+  html+=`<div style="margin-top:12px;font-size:11px;color:var(--gray);">※ セルはゴルフ場名の頭2文字。マウスオーバーで全名表示</div>`;
+  container.innerHTML=html;
+}
+
+function renderAssignByCourse(){
+  const container=document.getElementById('assignContent');if(!container)return;
+  const ym=`${assignYear}-${String(assignMonth+1).padStart(2,'0')}`;
+  const daysInMonth=new Date(assignYear,assignMonth+1,0).getDate();
+  const monthShifts=state.shifts.filter(s=>s.date&&s.date.startsWith(ym));
+  const monthReqs=state.requests.filter(r=>r.date&&r.date.startsWith(ym));
+  if(!state.courses.length){container.innerHTML='<div class="empty-state">ゴルフ場が登録されていません</div>';return;}
+
+  let html='';
+  state.courses.forEach((course,ci)=>{
+    const courseShifts=monthShifts.filter(s=>String(s.courseId)===String(course.id)).sort((a,b)=>a.date.localeCompare(b.date));
+    const courseReqs=monthReqs.filter(r=>String(r.courseId)===String(course.id));
+    const totalDays=courseShifts.length;
+    const totalEmps=courseShifts.reduce((s,x)=>s+x.employees.length,0);
+
+    html+=`<div style="margin-bottom:20px;">`;
+    html+=`<div style="display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,rgba(74,140,92,0.4),rgba(26,58,42,0.9));border:1px solid rgba(109,191,126,0.4);border-radius:10px 10px 0 0;padding:12px 16px;">
+      <div style="font-weight:700;color:#6dbf7e;font-size:15px;">⛳ ${course.name}</div>
+      <div style="font-size:12px;color:var(--gray);">${totalDays}日　延べ${totalEmps}名</div>
+    </div>`;
+
+    if(!courseShifts.length){
+      html+=`<div style="background:rgba(26,58,42,0.3);border:1px solid rgba(255,255,255,0.05);border-top:none;border-radius:0 0 10px 10px;padding:14px 16px;font-size:13px;color:var(--gray);">この月の確定シフトはありません</div>`;
+    } else {
+      html+=`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;border:1px solid rgba(255,255,255,0.05);border-top:none;border-radius:0 0 10px 10px;">`;
+      html+=`<thead><tr style="background:rgba(26,58,42,0.5);">
+        <th style="padding:8px 12px;text-align:center;border-bottom:1px solid rgba(201,168,76,0.3);color:var(--goldl);width:80px;">日付</th>
+        <th style="padding:8px 12px;text-align:center;border-bottom:1px solid rgba(201,168,76,0.3);color:var(--goldl);width:36px;">曜</th>
+        <th style="padding:8px 12px;text-align:left;border-bottom:1px solid rgba(201,168,76,0.3);color:var(--goldl);">派遣キャディー</th>
+        <th style="padding:8px 12px;text-align:center;border-bottom:1px solid rgba(201,168,76,0.3);color:var(--goldl);width:50px;">必要</th>
+        <th style="padding:8px 12px;text-align:center;border-bottom:1px solid rgba(201,168,76,0.3);color:var(--goldl);width:50px;">確定</th>
+      </tr></thead><tbody>`;
+      courseShifts.forEach((s,si)=>{
+        const[y,m,d]=s.date.split('-');
+        const dow=['日','月','火','水','木','金','土'][new Date(s.date).getDay()];
+        const dowColor=dow==='日'?'#e88':dow==='土'?'#99c':'var(--cream)';
+        const req=courseReqs.find(r=>r.date===s.date);
+        const needed=req?req.count:0;
+        const empBadges=s.employees.map(eid=>{
+          const e=state.employees.find(x=>String(x.id)===String(eid));
+          return e?`<span style="background:rgba(74,140,92,0.3);border:1px solid rgba(109,191,126,0.3);border-radius:20px;padding:2px 8px;font-size:11px;color:var(--cream);margin-right:3px;">${e.name}</span>`:'';
+        }).join('');
+        const isOk=needed>0&&s.employees.length>=needed;
+        const countColor=isOk?'#6dbf7e':s.employees.length>0?'#f9a825':'var(--gray)';
+        const bg=si%2===0?'rgba(26,58,42,0.3)':'rgba(26,58,42,0.1)';
+        html+=`<tr style="background:${bg};border-bottom:1px solid rgba(255,255,255,0.04);">
+          <td style="padding:7px 12px;font-weight:700;color:${dowColor};text-align:center;">${parseInt(m)}/${parseInt(d)}</td>
+          <td style="padding:7px 6px;color:${dowColor};text-align:center;font-size:11px;">${dow}</td>
+          <td style="padding:7px 12px;">${empBadges||'<span style="color:var(--gray);font-size:12px;">未割り振り</span>'}</td>
+          <td style="padding:7px 12px;text-align:center;font-family:'DM Mono',monospace;">${needed||'−'}</td>
+          <td style="padding:7px 12px;text-align:center;font-weight:700;font-family:'DM Mono',monospace;color:${countColor};">${s.employees.length}名</td>
+        </tr>`;
+      });
+      html+=`</tbody></table></div>`;
+    }
+    html+=`</div>`;
+  });
+  container.innerHTML=html;
+}
+
+function printAssignPage(){
+  const reiwa=assignYear-2018;
+  const mon=assignMonth+1;
+  const title=assignTab==='date'?'日付別割り振り一覧':assignTab==='emp'?'従業員別割り振り一覧':'ゴルフ場別割り振り一覧';
+  renderAssignPage();
+  const assignContent=document.getElementById('assignContent');
+  const html=`<div style="font-family:'Noto Sans JP',sans-serif;padding:28px;"><div style="font-size:20px;font-weight:900;margin-bottom:4px;">${title}</div><div style="font-size:14px;color:#555;margin-bottom:20px;">令和${reiwa}年 ${mon}月分</div>${assignContent?assignContent.innerHTML:''}</div>`;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet"><style>@media print{body{margin:0;}}body{background:#fff;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:5px;font-size:11px;}th{background:#2d5a3d;color:#fff;}span{display:inline-block;}</style></head><body>${html}</body></html>`);
   win.document.close();setTimeout(()=>win.print(),600);
 }
 
