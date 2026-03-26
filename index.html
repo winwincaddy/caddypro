@@ -466,6 +466,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
     <button class="tab-btn" onclick="showPage('empinvoice',this)">👤 請求書（従業員）</button>
     <button class="tab-btn" onclick="showPage('assign',this)">🗓️ 割り振り</button>
     <button class="tab-btn" onclick="showPage('notice',this)">🔔 出勤連絡</button>
+    <button class="tab-btn" onclick="showPage('adminnotice',this)">📣 お知らせ <span id="adminNoticeBadge"></span></button>
     <button class="tab-btn" onclick="showPage('list',this)">👥 一覧</button>
     <button class="tab-btn" onclick="showPage('settings',this)">⚙️ 設定</button>
   </nav>
@@ -479,6 +480,13 @@ tr:hover td{background:rgba(201,168,76,0.05);}
         <div class="stat-card"><div class="stat-label">本日出勤</div><div class="stat-value" id="todayPunchCount">0<span>名</span></div></div>
         <div class="stat-card"><div class="stat-label">本日退勤</div><div class="stat-value" id="todayDoneCount">0<span>名</span></div></div>
         <div class="stat-card"><div class="stat-label">勤務中</div><div class="stat-value" id="workingCount">0<span>名</span></div></div>
+      </div>
+      <!-- 承認待ち -->
+      <div class="card mb-20" style="border:1px solid rgba(255,165,0,0.4);background:rgba(255,165,0,0.05);" id="pendingPunchCard">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div class="card-title" style="margin:0;color:#f9a825;">⏳ 承認待ちの打刻 <span id="pendingPunchBadge"></span></div>
+        </div>
+        <div id="pendingPunchList"></div>
       </div>
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -562,6 +570,15 @@ tr:hover td{background:rgba(201,168,76,0.05);}
           <div id="noticeList"></div>
         </div>
       </div>
+    </div>
+
+    <!-- お知らせ -->
+    <div class="page" id="page-adminnotice">
+      <div class="section-header mb-20">
+        <div class="section-title">📣 お知らせ</div>
+        <button class="btn btn-outline btn-sm" onclick="markAllAdminNoticesRead()">すべて既読</button>
+      </div>
+      <div id="adminNoticeContent"></div>
     </div>
 
     <!-- 勤怠管理 -->
@@ -1109,14 +1126,29 @@ function subscribeFirebase(){
 }
 
 function onStateUpdated(){
+  // 過去のpending打刻を自動承認
+  const today=todayStr();
+  const pastPending=state.attendance.filter(a=>a.pending&&a.date<today);
+  if(pastPending.length){
+    pastPending.forEach(rec=>{
+      delete rec.pending;
+      if(rec.courseId){
+        const dup=state.sales.find(s=>String(s.empId)===String(rec.empId)&&s.date===rec.date&&String(s.courseId)===String(rec.courseId));
+        if(!dup)autoAddSales(rec.empId,rec.empName,rec.courseId,rec.courseName,rec.date,rec.rounds||1);
+      }
+    });
+    saveState();
+  }
   // 表示中の画面を更新
   if(document.getElementById('adminUI').classList.contains('active')){
     renderAdminAll();
     loadSettings();
   }
+  renderPendingPunches();
   if(document.getElementById('empScreen').classList.contains('active')){
     const emp=state.employees.find(e=>String(e.id)===String(currentEmpId));
     if(emp){updateEmpPunchState(emp);updateEmpNoticeBadge();}
+    updateAdminNoticeBadge();
   }
 }
 
@@ -1346,7 +1378,7 @@ function updateEmpPunchState(emp){
   const btn=document.getElementById('empPunchBtn');
   const info=document.getElementById('empPunchInfo');
   const isTraining=['training','training_baito','training_invoice'].includes(emp.contract);
-  if(rec&&rec.punchIn){btn.className='big-btn done';btn.textContent=isTraining?'✓ 本日の研修を記録しました':'✓ 本日の出勤を記録しました';info.textContent=`${isTraining?'研修':'出勤'}時刻: ${rec.punchIn}`;}
+  if(rec&&rec.punchIn){btn.className='big-btn done';btn.textContent=isTraining?'✓ 本日の研修を記録しました':rec.pending?'⏳ 承認待ち':'✓ 本日の出勤を記録しました';info.textContent=`${isTraining?'研修':'出勤'}時刻: ${rec.punchIn}${rec.pending?' （管理者承認待ち）':''}`; }
   else{btn.className='big-btn in';btn.textContent=isTraining?'📚 研修出勤する':'🕓 出勤する';info.textContent='';}
 }
 
@@ -1385,7 +1417,7 @@ async function empPunch(){
   const burdens=course?course.cafeteriaBurdens||{}:{};
   const burden=burdens[String(emp.id)]||'company';
   const cafFee=usedCafeteria&&burden==='self'?cafBaseFee:0;
-  state.attendance.push({id:Date.now(),empId:emp.id,empName:emp.name,date:today,punchIn:time,punchOut:null,hours:null,wage:emp.wage,courseId,courseName:course?course.name:'',rounds,usedCafeteria,cafeteriaFee:cafFee,cafBurden:burden,cafBaseFee});
+  state.attendance.push({id:Date.now(),empId:emp.id,empName:emp.name,date:today,punchIn:time,punchOut:null,hours:null,wage:emp.wage,courseId,courseName:course?course.name:'',rounds,usedCafeteria,cafeteriaFee:cafFee,cafBurden:burden,cafBaseFee,pending:true});
   autoAddSales(emp.id,emp.name,courseId,course?course.name:'',today,rounds);
   const burdenLabel=usedCafeteria?(burden==='self'?'🍽️ 食堂利用（自己負担）':'🍽️ 食堂利用（会社負担）'):'';showToast(`🕓 ${emp.name} さん、出勤しました！${burdenLabel}`);
   await saveState();
@@ -1513,6 +1545,7 @@ function showPage(id,btn){
   if(id==='list')initListPage();
   if(id==='assign')initAssignPage();
   if(id==='notice'){initNoticeForm();}
+  if(id==='adminnotice'){renderAdminNotices();}
   if(id==='attendance'){renderAttendanceTable();initManualAttForm();}
   if(id==='sales'){renderSalesTable();updateSalesStats();}
   if(id==='invoice'){populateCourseSelects();updateInvoicePreview();}
@@ -1559,6 +1592,69 @@ function isHoliday(d){
 // =====================================================
 // ADMIN PUNCH VIEW
 // =====================================================
+function renderPendingPunches(){
+  const today=todayStr();
+  const pending=state.attendance.filter(a=>a.date===today&&a.pending);
+  const card=document.getElementById('pendingPunchCard');
+  const list=document.getElementById('pendingPunchList');
+  const badge=document.getElementById('pendingPunchBadge');
+  if(!list)return;
+  if(badge)badge.innerHTML=pending.length>0?`<span style="background:#f9a825;color:#111;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:6px;">${pending.length}件</span>`:'';
+  if(card)card.style.display=pending.length?'block':'none';
+  if(!pending.length){list.innerHTML='';return;}
+  list.innerHTML=pending.map(rec=>{
+    const emp=state.employees.find(e=>String(e.id)===String(rec.empId));
+    const course=state.courses.find(c=>String(c.id)===String(rec.courseId));
+    return `<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(26,58,42,0.5);border:1px solid rgba(255,165,0,0.2);border-radius:10px;padding:12px 14px;margin-bottom:8px;">
+      <div>
+        <div style="font-weight:700;color:var(--cream);font-size:14px;">${rec.empName}</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:2px;">${course?'⛳ '+course.name:''}　${rec.punchIn}　${rec.rounds}R</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="approvePunch('${rec.id}')" style="padding:8px 16px;background:rgba(74,140,92,0.5);border:1px solid rgba(109,191,126,0.5);border-radius:8px;color:#6dbf7e;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">✅ 承認</button>
+        <button onclick="rejectPunch('${rec.id}')" style="padding:8px 14px;background:rgba(192,57,43,0.2);border:1px solid rgba(192,57,43,0.4);border-radius:8px;color:#e88;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">❌ 却下</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function approvePunch(recId){
+  const rec=state.attendance.find(a=>String(a.id)===String(recId));
+  if(!rec)return;
+  delete rec.pending;
+  // 売上に追加（重複チェック）
+  if(rec.courseId){
+    const dupSales=state.sales.find(s=>s.empId===rec.empId&&s.date===rec.date&&String(s.courseId)===String(rec.courseId));
+    if(!dupSales)autoAddSales(rec.empId,rec.empName,rec.courseId,rec.courseName,rec.date,rec.rounds||1);
+  }
+  await saveState();renderPendingPunches();renderEmployeeGrid();renderAttendanceTable();
+  if(document.getElementById('adminNoticeContent'))renderAdminNotices();
+  showToast(`✅ ${rec.empName} さんの打刻を承認しました`);
+}
+
+// 過去のpending打刻を一括承認（ページ読み込み時に実行）
+async function approveAllPastPendingPunches(){
+  const today=todayStr();
+  const pastPending=state.attendance.filter(a=>a.pending&&a.date<today);
+  if(!pastPending.length)return;
+  pastPending.forEach(rec=>{
+    delete rec.pending;
+    if(rec.courseId){
+      const dupSales=state.sales.find(s=>s.empId===rec.empId&&s.date===rec.date&&String(s.courseId)===String(rec.courseId));
+      if(!dupSales)autoAddSales(rec.empId,rec.empName,rec.courseId,rec.courseName,rec.date,rec.rounds||1);
+    }
+  });
+  await saveState();
+  console.log(`過去の打刻 ${pastPending.length}件を自動承認しました`);
+}
+async function rejectPunch(recId){
+  showConfirm('この打刻を却下（削除）しますか？',async()=>{
+    const rec=state.attendance.find(a=>String(a.id)===String(recId));
+    const empName=rec?rec.empName:'';
+    state.attendance=state.attendance.filter(a=>String(a.id)!==String(recId));
+    await saveState();renderPendingPunches();renderEmployeeGrid();
+    showToast(`🗑️ ${empName} さんの打刻を却下しました`);
+  });
+}
 function renderEmployeeGrid(){
   const grid=document.getElementById('employeeGrid');if(!grid)return;
   if(!state.employees.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;">設定タブから従業員を追加してください</div>';return;}
@@ -1593,6 +1689,7 @@ function renderEmployeeGrid(){
     </div>`;
   }).join('');
   updatePunchStats();
+  renderPendingPunches();
 }
 async function cancelPunchIn(recId){
   showConfirm('この出勤記録を取り消しますか？',async()=>{
@@ -2286,7 +2383,7 @@ function showEmpHistory(){
 function renderEmpHistory(){
   const emp=state.employees.find(e=>String(e.id)===String(currentEmpId));if(!emp)return;
   const month=document.getElementById('empHistoryMonth').value;
-  const records=state.attendance.filter(a=>String(a.empId)===String(emp.id)&&a.date&&a.date.startsWith(month)&&a.punchOut).sort((a,b)=>a.date.localeCompare(b.date));
+  const records=state.attendance.filter(a=>String(a.empId)===String(emp.id)&&a.date&&a.date.startsWith(month)).sort((a,b)=>a.date.localeCompare(b.date));
   document.getElementById('empHistoryDays').innerHTML=`${records.length}<span style="font-size:13px;color:var(--goldl);margin-left:2px;">日</span>`;
   document.getElementById('empHistoryWage').textContent='¥'+(records.length*Number(emp.wage)).toLocaleString();
   const list=document.getElementById('empHistoryList');
@@ -2917,7 +3014,7 @@ function renderEmpNoticeList(){
   if(!myNotices.length){list.innerHTML='<div style="text-align:center;color:var(--gray);padding:40px;font-size:14px;">出勤連絡はありません</div>';return;}
   list.innerHTML=myNotices.map(n=>{const[y,m,d]=n.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(n.date).getDay()];const dowColor=dow==='日'?'#e88':dow==='土'?'#99c':'var(--goldl)';return `<div style="background:linear-gradient(135deg,rgba(45,90,61,0.5),rgba(26,58,42,0.95));border:${n.confirmed?'1px solid rgba(109,191,126,0.4)':'2px solid rgba(201,168,76,0.5)'};border-radius:16px;padding:20px;margin-bottom:14px;"><div style="font-size:18px;font-weight:700;color:var(--cream);margin-bottom:8px;">${parseInt(m)}月${parseInt(d)}日 <span style="color:${dowColor};">（${dow}）</span></div><div style="font-size:15px;color:#6dbf7e;margin-bottom:6px;">📍 ${n.courseName}</div><div style="font-size:16px;font-weight:700;color:var(--goldl);margin-bottom:6px;">🕐 ${n.time} 集合</div>${n.memo?`<div style="font-size:13px;color:var(--gray);margin-bottom:12px;">📝 ${n.memo}</div>`:''} ${n.confirmed?`<div style="text-align:center;padding:12px;background:rgba(74,140,92,0.2);border-radius:10px;color:#6dbf7e;font-weight:700;">✅ 確認済み</div>`:`<button onclick="confirmNotice('${n.id}')" style="width:100%;padding:16px;background:var(--gl);border:none;border-radius:12px;color:#fff;font-size:16px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">✅ 確認しました！</button>`}</div>`;}).join('');
 }
-async function confirmNotice(id){const n=state.notices.find(x=>x.id===id);if(n){n.confirmed=true;await saveState();renderEmpNoticeList();updateEmpNoticeBadge();showToast('✅ 確認しました！');}}
+async function confirmNotice(id){const n=state.notices.find(x=>x.id===id);if(n){n.confirmed=true;n.confirmedAt=new Date().toISOString();n._adminNotified=false;await saveState();renderEmpNoticeList();updateEmpNoticeBadge();showToast('✅ 確認しました！');}}
 function updateEmpNoticeBadge(){const btn=document.getElementById('empNoticeBtn');if(!btn)return;const unread=state.notices.filter(n=>String(n.empId)===String(currentEmpId)&&!n.confirmed).length;btn.innerHTML=unread>0?`🔔 明日の出勤確認 <span style="background:#e88;color:#fff;font-size:12px;padding:2px 8px;border-radius:10px;margin-left:6px;">${unread}件</span>`:'🔔 明日の出勤確認';}
 
 // =====================================================
@@ -3779,6 +3876,85 @@ function printAssignPage(){
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet"><style>@media print{body{margin:0;}}body{background:#fff;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:5px;font-size:11px;}th{background:#2d5a3d;color:#fff;}span{display:inline-block;}</style></head><body>${html}</body></html>`);
   win.document.close();setTimeout(()=>win.print(),600);
+}
+
+// =====================================================
+// 管理者お知らせ
+// =====================================================
+function renderAdminNotices(){
+  const container=document.getElementById('adminNoticeContent');if(!container)return;
+  // 承認待ち打刻
+  const today=todayStr();
+  const pendingPunches=state.attendance.filter(a=>a.pending);
+  // 出勤連絡確認済み通知（_adminNotifiedがfalseのもの）
+  const confirmedNotices=state.notices.filter(n=>n.confirmed&&n._adminNotified===false);
+  let html='';
+
+  // 承認待ち打刻セクション
+  if(pendingPunches.length){
+    html+=`<div class="card mb-20" style="border:1px solid rgba(255,165,0,0.4);">
+      <div class="card-title" style="color:#f9a825;">⏳ 承認待ちの打刻（${pendingPunches.length}件）</div>`;
+    pendingPunches.forEach(rec=>{
+      const emp=state.employees.find(e=>String(e.id)===String(rec.empId));
+      const course=state.courses.find(c=>String(c.id)===String(rec.courseId));
+      html+=`<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(26,58,42,0.5);border:1px solid rgba(255,165,0,0.2);border-radius:10px;padding:12px 14px;margin-bottom:8px;">
+        <div>
+          <div style="font-weight:700;color:var(--cream);">${rec.empName}</div>
+          <div style="font-size:12px;color:var(--gray);">${rec.date}　${course?'⛳ '+course.name:''}　${rec.punchIn}　${rec.rounds||1}R</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="approvePunch('${rec.id}')" style="padding:7px 14px;background:rgba(74,140,92,0.5);border:1px solid rgba(109,191,126,0.5);border-radius:8px;color:#6dbf7e;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">✅ 承認</button>
+          <button onclick="rejectPunch('${rec.id}')" style="padding:7px 12px;background:rgba(192,57,43,0.2);border:1px solid rgba(192,57,43,0.4);border-radius:8px;color:#e88;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">❌ 却下</button>
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  // 出勤連絡確認済みセクション
+  if(confirmedNotices.length){
+    html+=`<div class="card mb-20" style="border:1px solid rgba(109,191,126,0.3);">
+      <div class="card-title" style="color:#6dbf7e;">✅ 出勤連絡の確認済み（${confirmedNotices.length}件）</div>`;
+    // 日付・ゴルフ場ごとにグループ化
+    const groups={};
+    confirmedNotices.forEach(n=>{
+      const key=n.date+'_'+n.courseId;
+      if(!groups[key])groups[key]={date:n.date,courseName:n.courseName,time:n.time,members:[]};
+      const emp=state.employees.find(e=>String(e.id)===String(n.empId));
+      groups[key].members.push({name:emp?emp.name:n.empId,confirmedAt:n.confirmedAt});
+    });
+    Object.values(groups).sort((a,b)=>a.date.localeCompare(b.date)).forEach(g=>{
+      const[y,m,d]=g.date.split('-');
+      const dow=['日','月','火','水','木','金','土'][new Date(g.date).getDay()];
+      const dowColor=dow==='日'?'#e88':dow==='土'?'#99c':'var(--cream)';
+      html+=`<div style="background:rgba(26,58,42,0.4);border:1px solid rgba(109,191,126,0.2);border-radius:10px;padding:12px 14px;margin-bottom:8px;">
+        <div style="font-weight:700;color:${dowColor};margin-bottom:4px;">${parseInt(m)}月${parseInt(d)}日（${dow}）　⛳ ${g.courseName}　🕐 ${g.time}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">${g.members.map(m=>`<span style="background:rgba(74,140,92,0.3);border:1px solid rgba(109,191,126,0.3);border-radius:20px;padding:3px 10px;font-size:12px;color:#6dbf7e;">✅ ${m.name}</span>`).join('')}</div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  if(!pendingPunches.length&&!confirmedNotices.length){
+    html='<div class="empty-state">新しいお知らせはありません</div>';
+  }
+
+  container.innerHTML=html;
+  updateAdminNoticeBadge();
+}
+
+function updateAdminNoticeBadge(){
+  const badge=document.getElementById('adminNoticeBadge');if(!badge)return;
+  const pendingCount=state.attendance.filter(a=>a.pending).length;
+  const confirmedCount=state.notices.filter(n=>n.confirmed&&n._adminNotified===false).length;
+  const total=pendingCount+confirmedCount;
+  badge.innerHTML=total>0?`<span style="background:#e88;color:#fff;font-size:11px;padding:1px 7px;border-radius:10px;margin-left:4px;">${total}</span>`:'';
+}
+
+async function markAllAdminNoticesRead(){
+  // 確認済み通知を既読に
+  state.notices.forEach(n=>{if(n.confirmed&&n._adminNotified===false)n._adminNotified=true;});
+  await saveState();renderAdminNotices();showToast('✅ すべて既読にしました');
 }
 
 // =====================================================
