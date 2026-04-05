@@ -1315,7 +1315,7 @@ async function registerFCMToken(empId){
     if(!app)return;
     const messaging=getMessaging(app);
     // VAPID公開鍵（Firebase Console > プロジェクト設定 > Cloud Messagingで取得）
-    const VAPID_KEY='YOUR_VAPID_KEY_HERE';
+    const VAPID_KEY='BLMReX02ILadsKZUknP9Ebbm5CA_To92UCE-vGrUGEHxLqnKuCPIJSBfhB--pncgR49D4mxXjccBWoxcMWAL8IQ';
     const token=await getToken(messaging,{vapidKey:VAPID_KEY,serviceWorkerRegistration:window._swReg});
     if(token){
       // トークンをFirebaseに保存
