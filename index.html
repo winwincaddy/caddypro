@@ -327,6 +327,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
     <button onclick="showEmpShiftApply()" style="width:100%;padding:16px;background:rgba(109,191,126,0.15);border:1px solid rgba(109,191,126,0.4);border-radius:14px;color:var(--gb);font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">📅 シフト希望を申請する</button>
     <button onclick="showEmpConfirmedShifts()" style="width:100%;padding:16px;background:rgba(74,140,92,0.2);border:1px solid rgba(74,140,92,0.5);border-radius:14px;color:#6dbf7e;font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">✅ 確定シフトを確認する <span id="shiftNotifBadge"></span></button>
     <button onclick="showEmpNotices()" id="empNoticeBtn" style="width:100%;padding:16px;background:rgba(192,57,43,0.15);border:1px solid rgba(192,57,43,0.4);border-radius:14px;color:#e88;font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">🔔 明日の出勤確認</button>
+    <button onclick="registerFCMToken(currentEmpId)" id="fcmRegBtn" style="width:100%;padding:12px;background:rgba(74,140,92,0.15);border:1px solid rgba(109,191,126,0.3);border-radius:14px;color:#6dbf7e;font-size:13px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:0;">🔔 プッシュ通知をONにする</button>
     <div id="empDocBtn"></div>
   </div>
   <button class="emp-back" onclick="showScreen('topScreen')">← ログアウト</button>
@@ -469,7 +470,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
     <button class="tab-btn" onclick="showPage('shift',this)">📅 シフト</button>
     <button class="tab-btn" onclick="showPage('attendance',this)">📋 勤怠</button>
     <button class="tab-btn" onclick="showPage('sales',this)">💴 売上・請求</button>
-    <button class="tab-btn" onclick="showPage('list',this)">👥 一覧</button>
+    <button class="tab-btn" onclick="(()=>{showPage('sales',this);setTimeout(()=>setSalesSubTab('list'),0);}).call(this)">👥 一覧</button>
     <button class="tab-btn" onclick="showPage('settings',this)">⚙️ 設定</button>
   </nav>
   <main>
@@ -562,8 +563,16 @@ tr:hover td{background:rgba(201,168,76,0.05);}
         <div class="card mb-20">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
             <div class="card-title" style="margin:0;">要請一覧</div>
-            <button onclick="openDirectAssignModal(`${shiftYear}-${String(shiftMonth+1).padStart(2,'0')}`,'')" style="padding:7px 12px;background:rgba(74,140,92,0.3);border:1px solid rgba(109,191,126,0.3);border-radius:8px;color:#6dbf7e;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">＋ 直接割り振る</button>
+            <div style="display:flex;gap:8px;">
+              <label style="padding:7px 12px;background:rgba(201,168,76,0.2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--goldl);font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;">
+                📷 写真で読み込む
+                <input type="file" accept="image/*" capture="environment" onchange="readRequestFromImage(this)" style="display:none;">
+              </label>
+              <button onclick="openDirectAssignModal(`${shiftYear}-${String(shiftMonth+1).padStart(2,'0')}`,'')" style="padding:7px 12px;background:rgba(74,140,92,0.3);border:1px solid rgba(109,191,126,0.3);border-radius:8px;color:#6dbf7e;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;">＋ 直接割り振る</button>
+            </div>
           </div>
+          <!-- AI読み込み結果プレビュー -->
+          <div id="imageRequestPreview" style="display:none;"></div>
           <div id="requestList"></div>
         </div>
         <div id="shiftDetailArea"></div>
@@ -700,7 +709,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
               <div id="manualAttCal" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"></div>
               <div id="manualAttSelectedDates" style="margin-top:10px;min-height:20px;font-size:11px;color:var(--goldl);"></div>
             </div>
-            <div class="form-group"><label>ゴルフ場</label><select id="manualAttCourse" onchange="renderManualCal()" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px;"><option value="">-- 選択 --</option></select></div>
+            <div class="form-group"><label>ゴルフ場</label><select id="manualAttCourse" onchange="manualAttSelections={};renderManualCal();" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px;"><option value="">-- 選択 --</option></select></div>
             <div style="font-size:12px;color:var(--gray);">📅 日付をタップ → 従業員を選択</div>
             <!-- 選択済み表示 -->
             <div id="manualAttSelList" style="margin-top:10px;"></div>
@@ -713,7 +722,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
                 <option value="1.5">1.5 R</option>
               </select>
             </div>
-            <button class="btn btn-primary" onclick="addManualAttendance()" style="width:100%;justify-content:center;margin-top:8px;">＋ 選択日に出勤を追加</button>
+
           </div>
         </div>
       </div>
@@ -1280,8 +1289,65 @@ function copyShareUrl(){
 // =====================================================
 function initPushNotification(){
   if(!('Notification' in window)||!('serviceWorker' in navigator))return;
+  // Service Worker登録
+  navigator.serviceWorker.register('./firebase-messaging-sw.js')
+    .then(reg=>{
+      console.log('[FCM] SW登録成功:', reg.scope);
+      window._swReg=reg;
+    }).catch(e=>console.warn('[FCM] SW登録失敗:', e));
   if(Notification.permission==='default'){
-    Notification.requestPermission();
+    Notification.requestPermission().then(p=>{
+      if(p==='granted')console.log('[FCM] 通知許可済み');
+    });
+  }
+}
+
+// FCMトークンを取得してFirebaseに保存
+async function registerFCMToken(empId){
+  try{
+    if(!window._fb||!fbReady)return;
+    if(Notification.permission!=='granted'){
+      const p=await Notification.requestPermission();
+      if(p!=='granted'){showToast('⚠ 通知を許可してください');return;}
+    }
+    const {getMessaging,getToken}=await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js');
+    const app=window._fb._app;
+    if(!app)return;
+    const messaging=getMessaging(app);
+    // VAPID公開鍵（Firebase Console > プロジェクト設定 > Cloud Messagingで取得）
+    const VAPID_KEY='YOUR_VAPID_KEY_HERE';
+    const token=await getToken(messaging,{vapidKey:VAPID_KEY,serviceWorkerRegistration:window._swReg});
+    if(token){
+      // トークンをFirebaseに保存
+      const {ref,set,db}=FB();
+      await set(ref(db,`caddypro/fcmTokens/${empId}`),{token,updatedAt:new Date().toISOString()});
+      console.log('[FCM] トークン登録完了');
+      showToast('✅ プッシュ通知を有効にしました！');
+    }
+  }catch(e){
+    console.warn('[FCM] トークン取得失敗:', e);
+  }
+}
+
+// GAS経由でFCM通知を送信（サーバーサイド処理）
+async function sendFCMNotice(empIds, title, body){
+  try{
+    const gasUrl=localStorage.getItem('gas_url');
+    if(!gasUrl){return false;}
+    const tokens=[];
+    empIds.forEach(empId=>{
+      const tokenData=(state.fcmTokens||{})[empId];
+      if(tokenData&&tokenData.token)tokens.push(tokenData.token);
+    });
+    if(!tokens.length)return false;
+    await fetch(gasUrl,{
+      method:'POST',
+      body:JSON.stringify({action:'sendFCM',tokens,title,body}),
+    });
+    return true;
+  }catch(e){
+    console.warn('[FCM] 送信失敗:', e);
+    return false;
   }
 }
 function sendPushNotification(title,body){
@@ -1627,6 +1693,14 @@ function updateClock(){
 }
 
 function showPage(id,btn){
+  // listはsalesタブに統合済みのため転送
+  if(id==='list'){
+    const salesBtn=document.querySelector('.tab-btn:nth-child(4)');
+    if(salesBtn){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));salesBtn.classList.add('active');}
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-sales').classList.add('active');
+    setSalesSubTab('list');return;
+  }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');btn.classList.add('active');
@@ -1634,11 +1708,10 @@ function showPage(id,btn){
   if(id==='invoice'){setSalesSubTab('invoice');}
   if(id==='empinvoice'){setSalesSubTab('empinvoice');}
   if(id==='assign'){setSalesSubTab('sales');setShiftSubTab('assign');}
-  if(id==='list')initListPage();
   if(id==='assign')initAssignPage();
   if(id==='notice'){initNoticeForm();}
   if(id==='adminnotice'){renderAdminNotices();}
-  if(id==='sales'){renderSalesTable();setSalesSubTab('sales');}
+  if(id==='sales'&&!arguments[2]){renderSalesTable();setSalesSubTab('sales');}
   if(id==='punch'){setPunchSubTab('dashboard');}
   if(id==='attendance'){renderAttendanceTable();initManualAttForm();}
   if(id==='sales'){renderSalesTable();updateSalesStats();}
@@ -1913,8 +1986,139 @@ async function sendDashNotice(dateStr){
     });
   });
   await saveState();
+  // FCMプッシュ通知
+  const allEmpIds=[...new Set(dayShifts.flatMap(s=>s.employees))];
+  await sendFCMNotice(allEmpIds,'📨 出勤連絡が届きました',`明日 ${time}集合の出勤連絡を確認してください`);
   showToast(`📨 ${dayShifts.reduce((s,x)=>s+x.employees.length,0)}名に出勤連絡を送りました！`);
   renderDashboard();
+}
+
+// ============================================================
+// AI画像読み取り（要請自動入力）
+// ============================================================
+async function readRequestFromImage(input){
+  if(!input.files||!input.files[0])return;
+  const file=input.files[0];
+  const preview=document.getElementById('imageRequestPreview');
+  if(preview){
+    preview.style.display='block';
+    preview.innerHTML=`<div style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;color:var(--goldl);font-weight:700;margin-bottom:8px;">
+        <div style="width:20px;height:20px;border:2px solid var(--goldl);border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+        📷 AIが画像を解析中...
+      </div>
+    </div>`;
+  }
+  try{
+    // 画像をBase64に変換
+    const base64=await new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=()=>res(r.result.split(',')[1]);
+      r.onerror=rej;
+      r.readAsDataURL(file);
+    });
+    // Claude APIで解析
+    const response=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'image',source:{type:'base64',media_type:file.type||'image/jpeg',data:base64}},
+            {type:'text',text:`この画像はゴルフ場からのキャディー派遣要請書です。
+以下の情報をJSONのみで返してください（他の文字は一切不要）：
+{
+  "requests": [
+    {"date": "YYYY-MM-DD", "count": 人数（数字）, "note": "備考があれば"}
+  ]
+}
+- 年が不明な場合は${shiftYear}年を使用
+- 月が不明な場合は${shiftMonth+1}月を使用
+- 日付は必ずYYYY-MM-DD形式
+- 人数は数値のみ
+- 複数日あればすべて抽出`}
+          ]
+        }]
+      })
+    });
+    const data=await response.json();
+    const text=data.content.map(c=>c.text||'').join('');
+    const clean=text.replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(clean);
+    showImageRequestPreview(parsed.requests||[]);
+  }catch(e){
+    console.error('AI解析エラー:',e);
+    if(preview)preview.innerHTML=`<div style="background:rgba(192,57,43,0.15);border:1px solid rgba(192,57,43,0.4);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="color:#e88;font-weight:700;">❌ 読み取りに失敗しました</div>
+      <div style="font-size:12px;color:var(--gray);margin-top:4px;">手動で入力してください</div>
+    </div>`;
+  }
+  input.value='';
+}
+
+function showImageRequestPreview(requests){
+  const preview=document.getElementById('imageRequestPreview');
+  if(!preview)return;
+  if(!requests.length){
+    preview.innerHTML=`<div style="background:rgba(192,57,43,0.15);border:1px solid rgba(192,57,43,0.4);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="color:#e88;font-weight:700;">❌ 要請情報が読み取れませんでした</div>
+    </div>`;
+    return;
+  }
+  // ゴルフ場選択と確認UI
+  const courseOptions=state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  const rows=requests.map((r,i)=>{
+    const[y,m,d]=r.date.split('-');
+    const dow=['日','月','火','水','木','金','土'][new Date(r.date).getDay()];
+    const dowColor=dow==='日'?'#e88':dow==='土'?'#99c':'var(--cream)';
+    return `<div style="display:grid;grid-template-columns:1fr 60px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <div style="font-size:14px;font-weight:700;color:${dowColor};">${parseInt(m)}月${parseInt(d)}日（${dow}）${r.note?`<span style="font-size:11px;color:var(--gray);"> ${r.note}</span>`:''}</div>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <input type="number" id="aiReqCount_${i}" value="${r.count}" min="1" max="10" style="width:50px;padding:6px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:6px;color:var(--cream);font-size:14px;font-weight:700;text-align:center;">
+        <span style="color:var(--gray);font-size:12px;">名</span>
+      </div>
+      <input type="hidden" id="aiReqDate_${i}" value="${r.date}">
+    </div>`;
+  }).join('');
+
+  preview.innerHTML=`<div style="background:rgba(74,140,92,0.1);border:1px solid rgba(109,191,126,0.4);border-radius:12px;padding:16px;margin-bottom:14px;">
+    <div style="font-size:13px;font-weight:700;color:#6dbf7e;margin-bottom:12px;">📷 AI読み取り結果（${requests.length}件）　修正してから登録してください</div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>ゴルフ場</label>
+      <select id="aiReqCourse" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px;">
+        <option value="">-- 選択 --</option>${courseOptions}
+      </select>
+    </div>
+    <div style="margin-bottom:14px;">${rows}</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="document.getElementById('imageRequestPreview').style.display='none'" style="flex:1;padding:11px;background:none;border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:var(--gray);cursor:pointer;font-family:'Noto Sans JP',sans-serif;">キャンセル</button>
+      <button onclick="registerAIRequests(${requests.length})" style="flex:2;padding:11px;background:var(--gold);border:none;border-radius:8px;color:var(--gd);font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">✅ この内容で要請を登録</button>
+    </div>
+  </div>`;
+}
+
+async function registerAIRequests(count){
+  const courseId=document.getElementById('aiReqCourse')?document.getElementById('aiReqCourse').value:'';
+  if(!courseId){showToast('⚠ ゴルフ場を選択してください');return;}
+  let added=0;
+  for(let i=0;i<count;i++){
+    const dateEl=document.getElementById(`aiReqDate_${i}`);
+    const countEl=document.getElementById(`aiReqCount_${i}`);
+    if(!dateEl||!countEl)continue;
+    const date=dateEl.value;
+    const num=Number(countEl.value)||1;
+    // 既存の要請を上書き
+    state.requests=state.requests.filter(r=>!(r.date===date&&String(r.courseId)===String(courseId)));
+    state.requests.push({id:String(Date.now()+i),date,courseId,count:num});
+    added++;
+  }
+  await saveState();
+  document.getElementById('imageRequestPreview').style.display='none';
+  renderRequestList();renderShiftCalendar();
+  showToast(`✅ ${added}件の要請を登録しました！`);
 }
 
 async function notifyShiftAssigned(dateStr, courseId, empIds){
@@ -3300,8 +3504,12 @@ async function sendNotice(){
   if(!date){alert('対象日を入力してください');return;}if(!courseId){alert('ゴルフ場を選択してください');return;}if(!time){alert('集合時間を入力してください');return;}if(!empIds.length){alert('対象従業員を選択してください');return;}
   const course=state.courses.find(c=>String(c.id)===String(courseId));const now=Date.now();
   empIds.forEach((eid,i)=>{state.notices=state.notices.filter(n=>!(n.date===date&&String(n.empId)===String(eid)));state.notices.push({id:String(now+i),date,courseId,courseName:course?course.name:'',time,memo,empId:String(eid),confirmed:false,sentAt:new Date().toISOString()});});
-  await saveState();renderNoticeList();updateEmpNoticeBadge();showToast('📨 '+empIds.length+'名に出勤連絡を送りました！');
-  // 管理者画面でも確認用に送信ログをプッシュ
+  await saveState();
+  // FCMプッシュ通知を従業員に送信
+  const course2=state.courses.find(c=>String(c.id)===String(courseId));
+  const [dy,dm,dd]=date.split('-');
+  await sendFCMNotice(empIds,`📨 出勤連絡 ${parseInt(dm)}月${parseInt(dd)}日`,`${time}集合　⛳ ${course2?course2.name:''}${memo?' / '+memo:''}`);
+  renderNoticeList();updateEmpNoticeBadge();showToast('📨 '+empIds.length+'名に出勤連絡を送りました！');
   sendPushNotification('📨 出勤連絡を送信しました',empIds.length+'名に連絡しました');
 }
 function renderNoticeList(){
@@ -3413,23 +3621,42 @@ function openManualEmpSelect(dateStr){
       <span style="font-size:14px;color:var(--cream);font-weight:700;">${emp.name}</span>
     </label>`;
   }).join('');
+  const rounds=Number(document.getElementById('manualAttRounds')?document.getElementById('manualAttRounds').value:1)||1;
   overlay.innerHTML=`<div style="background:var(--gd);border:1px solid rgba(201,168,76,0.4);border-radius:16px;padding:24px;width:100%;max-width:380px;">
-    <div style="font-size:16px;font-weight:700;color:var(--cream);margin-bottom:4px;">${parseInt(m)}月${parseInt(d)}日 <span style="color:${dowColor};">（${dow}）</span></div>
-    <div style="font-size:12px;color:var(--goldl);margin-bottom:14px;">⛳ ${course?course.name:''}</div>
+    <div style="font-size:16px;font-weight:700;color:var(--cream);margin-bottom:2px;">${parseInt(m)}月${parseInt(d)}日 <span style="color:${dowColor};">（${dow}）</span></div>
+    <div style="font-size:12px;color:var(--goldl);margin-bottom:14px;">⛳ ${course?course.name:''}　${rounds}R</div>
     ${empItems}
     <div style="display:flex;gap:8px;margin-top:14px;">
       <button id="manualEmpCancel" style="flex:1;padding:11px;background:none;border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:var(--gray);cursor:pointer;font-family:'Noto Sans JP',sans-serif;">キャンセル</button>
-      <button id="manualEmpOk" style="flex:1;padding:11px;background:var(--gold);border:none;border-radius:8px;color:var(--gd);font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">✅ 決定</button>
+      <button id="manualEmpOk" style="flex:1;padding:11px;background:var(--gold);border:none;border-radius:8px;color:var(--gd);font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">✅ 確定</button>
     </div>
   </div>`;
   overlay.querySelector('#manualEmpCancel').onclick=()=>overlay.remove();
-  overlay.querySelector('#manualEmpOk').onclick=()=>{
+  // 確定（この日だけ即座に出勤登録）
+  overlay.querySelector('#manualEmpOk').onclick=async()=>{
     const cbs=overlay.querySelectorAll('.manualEmpCb');
     const empIds=Array.from(cbs).filter(cb=>cb.checked).map(cb=>cb.value);
-    if(empIds.length>0)manualAttSelections[dateStr]=empIds;
-    else delete manualAttSelections[dateStr];
+    if(!empIds.length){showToast('⚠ 従業員を選択してください');return;}
+    if(!courseId){showToast('⚠ ゴルフ場を選択してください');return;}
+    // ラウンド数を確定時に再取得
+    const currentRounds=Number(document.getElementById('manualAttRounds')?document.getElementById('manualAttRounds').value:1)||1;
+    let added=0;
+    empIds.forEach(empId=>{
+      const emp=state.employees.find(e=>String(e.id)===String(empId));
+      if(!emp)return;
+      state.attendance=state.attendance.filter(a=>!(String(a.empId)===String(empId)&&a.date===dateStr));
+      state.attendance.push({id:String(Date.now()+added),empId:String(emp.id),empName:emp.name,date:dateStr,punchIn:'09:00',punchOut:null,hours:null,wage:emp.wage,courseId:String(courseId),courseName:course?course.name:'',rounds:currentRounds});
+      if(courseId)autoAddSales(String(emp.id),emp.name,String(courseId),course?course.name:'',dateStr,currentRounds);
+      added++;
+    });
+    delete manualAttSelections[dateStr];
+    await saveState();
     overlay.remove();
     renderManualCal();
+    const attMonth=document.getElementById('attendanceMonth');
+    if(attMonth)attMonth.value=dateStr.slice(0,7);
+    renderAttendanceTable();
+    showToast(`✅ ${parseInt(m)}月${parseInt(d)}日の出勤を確定しました（${added}名）`);
   };
   overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
   document.body.appendChild(overlay);
@@ -3453,6 +3680,27 @@ function renderManualAttSelList(){
 function toggleManualDate(dateStr){
   // 後方互換（使わないが残す）
   openManualEmpSelect(dateStr);
+}
+function confirmManualAttendance(){
+  const entries=Object.entries(manualAttSelections);
+  const courseId=document.getElementById('manualAttCourse')?document.getElementById('manualAttCourse').value:'';
+  const rounds=Number(document.getElementById('manualAttRounds')?document.getElementById('manualAttRounds').value:1)||1;
+  const course=state.courses.find(c=>String(c.id)===String(courseId));
+  const preview=document.getElementById('manualAttConfirmPreview');
+  if(!courseId){showToast('⚠ ゴルフ場を選択してください');return;}
+  if(!entries.length){showToast('⚠ 日付と従業員を選択してください');return;}
+  // プレビュー表示
+  const lines=entries.sort(([a],[b])=>a.localeCompare(b)).map(([dateStr,empIds])=>{
+    const[y,m,d]=dateStr.split('-');
+    const names=empIds.map(eid=>{const e=state.employees.find(x=>String(x.id)===String(eid));return e?e.name:null;}).filter(Boolean);
+    return `<div style="font-size:13px;color:var(--cream);padding:4px 0;">${parseInt(m)}月${parseInt(d)}日　${names.join('・')}</div>`;
+  }).join('');
+  if(preview)preview.innerHTML=`<div style="background:rgba(74,140,92,0.15);border:1px solid rgba(109,191,126,0.3);border-radius:10px;padding:12px 14px;margin-bottom:4px;">
+    <div style="font-size:12px;color:#6dbf7e;font-weight:700;margin-bottom:8px;">⛳ ${course?course.name:''}　${rounds}R　確認内容</div>
+    ${lines}
+    <div style="font-size:12px;color:var(--gray);margin-top:8px;">合計 ${entries.length}日 / ${entries.reduce((s,[,v])=>s+v.length,0)}名分</div>
+  </div>`;
+  showConfirm(`${entries.length}日分の出勤を追加しますか？`,async()=>{await addManualAttendance();});
 }
 async function addManualAttendance(){
   const entries=Object.entries(manualAttSelections);
