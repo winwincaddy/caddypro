@@ -13,8 +13,10 @@
      ===================================================== -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, set, get, onValue, update, remove }
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+ import { getDatabase, ref, set, get, onValue, update, remove }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth, signInAnonymously }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey:            "AIzaSyDFWQLDjXqYaJ7QbtZlcsmNR3TywV6HGlU",
@@ -35,12 +37,14 @@
   window.SHEET_URL = ""; // ← Google Apps Script URL を入力
 
   const app = initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
-
-  // ── Firebase ヘルパーをグローバルに公開 ──
+const db  = getDatabase(app);
+const auth = getAuth(app);
+// 匿名認証
+signInAnonymously(auth).then(() => {
   window._fb = { ref, set, get, onValue, update, remove, db };
   window._firebaseReady = true;
   document.dispatchEvent(new Event("firebase-ready"));
+}).catch(e => console.error("Auth error:", e));
 </script>
 
 <style>
