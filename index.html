@@ -1210,8 +1210,8 @@ function subscribeFirebase(){
   } else {
     showBanner('error','Firebase接続エラー：ローカルデータで動作中');
     updateFirebaseStatusCard(false,err.message);
-  }
-
+ }
+      }); 
 function onStateUpdated(){
   // 過去のpending打刻を自動承認
   const today=todayStr();
