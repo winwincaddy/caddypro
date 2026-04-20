@@ -1203,10 +1203,14 @@ function subscribeFirebase(){
     setTimeout(()=>{ document.getElementById('syncBanner').className='ok'; },3000);
     updateFirebaseStatusCard(true);
   },(err)=>{
+  console.error('Firebase error:', err.code, err.message);
+  if(err.code === 'PERMISSION_DENIED'){
+    showBanner('error','Firebase接続エラー：認証待ち、再試行中...');
+    setTimeout(()=>subscribeFirebase(),2000);
+  } else {
     showBanner('error','Firebase接続エラー：ローカルデータで動作中');
     updateFirebaseStatusCard(false,err.message);
-  });
-}
+  }
 
 function onStateUpdated(){
   // 過去のpending打刻を自動承認
