@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0058)file:///C:/Users/winst/Downloads/caddypro_firebase_16.html -->
+<!-- saved from url=(0057)file:///C:/Users/winst/Downloads/caddypro_firebase_2.html -->
 <html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
   <link rel="manifest" href="file:///C:/Users/winst/Downloads/manifest.json">
@@ -93,10 +93,14 @@ function loadFCMScript(){
   window._signInWithPopup = signInWithPopup;
   window._signOut = signOut;
   window._onAuthStateChanged = onAuthStateChanged;
-  // 匿名認証で自動サインイン（auth != null ルール対応）
-  signInAnonymously(auth).catch(()=>{});
-  window._firebaseReady = true;
-  document.dispatchEvent(new Event("firebase-ready"));
+  // 匿名認証完了後にfirebase-readyを発行（auth != null ルール対応）
+  signInAnonymously(auth).then(()=>{
+    window._firebaseReady = true;
+    document.dispatchEvent(new Event("firebase-ready"));
+  }).catch(()=>{
+    window._firebaseReady = true;
+    document.dispatchEvent(new Event("firebase-ready"));
+  });
 </script>
 
 <style>
@@ -262,9 +266,9 @@ tr:hover td{background:rgba(201,168,76,0.05);}
 <body>
 
 <!-- ── 接続状態バナー ── -->
-<div id="syncBanner" class="syncing">
-  <div class="sync-dot pulse" id="syncDot"></div>
-  <span id="syncMsg">Firebase接続中...</span>
+<div id="syncBanner" class="ok">
+  <div class="sync-dot" id="syncDot"></div>
+  <span id="syncMsg">🔥 Firebase接続中（リアルタイム同期）</span>
 </div>
 
 <!-- ===== トップ画面 ===== -->
@@ -335,7 +339,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
 
 <!-- ===== 従業員モード ===== -->
 <div class="screen" id="empScreen">
-  <div class="emp-clock" id="empClock">19:48:45</div>
+  <div class="emp-clock" id="empClock">20:33:09</div>
   <div class="emp-date" id="empDate">2026年4月21日</div>
   <div class="emp-card">
     <div class="emp-name-display" id="empNameDisplay">---</div>
@@ -517,7 +521,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
-      <div class="current-date" id="headerDate">2026年4月21日<br>19:48:45</div>
+      <div class="current-date" id="headerDate">2026年4月21日<br>20:33:09</div>
       <button class="logout-btn" onclick="logoutAdmin()">← ログアウト</button>
     </div>
   </header>
@@ -561,14 +565,14 @@ tr:hover td{background:rgba(201,168,76,0.05);}
       <!-- 打刻エリア -->
       <div id="punchSubArea">
         <div class="section-header mb-28"><div class="section-title">⛳ 出勤状況</div></div>
-        <div class="card mb-20"><div class="punch-time" id="liveClock">19:48:45</div><div class="punch-date-display" id="liveDate">2026年4月21日火曜日</div></div>
+        <div class="card mb-20"><div class="punch-time" id="liveClock">20:33:09</div><div class="punch-date-display" id="liveDate">2026年4月21日火曜日</div></div>
         <div class="grid-3 mb-20">
           <div class="stat-card"><div class="stat-label">本日出勤</div><div class="stat-value" id="todayPunchCount">0<span>名</span></div></div>
           <div class="stat-card"><div class="stat-label">本日退勤</div><div class="stat-value" id="todayDoneCount">0<span>名</span></div></div>
           <div class="stat-card"><div class="stat-label">勤務中</div><div class="stat-value" id="workingCount">0<span>名</span></div></div>
         </div>
         <!-- 承認待ち -->
-        <div class="card mb-20" style="border:1px solid rgba(255,165,0,0.4);background:rgba(255,165,0,0.05);" id="pendingPunchCard">
+        <div class="card mb-20" style="border: 1px solid rgba(255, 165, 0, 0.4); background: rgba(255, 165, 0, 0.05); display: none;" id="pendingPunchCard">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
             <div class="card-title" style="margin:0;color:#f9a825;">⏳ 承認待ちの打刻 <span id="pendingPunchBadge"></span></div>
           </div>
@@ -909,7 +913,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
             <div class="form-group">
               <label>会社ロゴ（シフト表に表示）</label>
               <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
-                <img id="logoPreview" src="file:///C:/Users/winst/Downloads/caddypro_firebase_16.html" style="display:none;max-height:60px;max-width:180px;border-radius:6px;border:1px solid rgba(201,168,76,0.3);">
+                <img id="logoPreview" src="file:///C:/Users/winst/Downloads/caddypro_firebase_2.html" style="display:none;max-height:60px;max-width:180px;border-radius:6px;border:1px solid rgba(201,168,76,0.3);">
                 <div>
                   <label style="display:inline-block;padding:8px 14px;background:rgba(201,168,76,0.2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--goldl);font-size:13px;cursor:pointer;">
                     📁 ロゴを選択
@@ -943,12 +947,12 @@ tr:hover td{background:rgba(201,168,76,0.05);}
           <div class="card mb-20" style="border:1px solid rgba(255,150,50,0.3);background:linear-gradient(135deg,rgba(60,30,10,0.6),rgba(26,58,42,0.8));">
             <div class="card-title" style="color:#f90;">🔥 Firebase 接続設定</div>
             <p style="font-size:12px;color:var(--gray);margin-bottom:14px;">このファイルの先頭の <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;font-size:11px;">firebaseConfig</code> を書き換えてください。</p>
-            <div id="firebaseStatusCard" style="padding:12px;border-radius:10px;background:rgba(0,0,0,0.3);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">確認中...</div>
+            <div id="firebaseStatusCard" style="padding: 12px; border-radius: 10px; background: rgba(52, 168, 83, 0.15); font-family: &quot;DM Mono&quot;, monospace; font-size: 12px; color: rgb(52, 168, 83);">✅ Firebase接続中（リアルタイム同期）</div>
             <div style="margin-top:14px;">
               <div style="font-size:11px;color:var(--goldl);margin-bottom:6px;">このアプリのURL（従業員に共有）</div>
               <div class="qr-area">
                 <div style="font-size:28px;">📱</div>
-                <div class="qr-url" id="shareUrl">このページのURLをコピーして従業員に送ってください</div>
+                <div class="qr-url" id="shareUrl">file:///C:/Users/winst/Downloads/caddypro_firebase_2.html</div>
                 <button onclick="copyShareUrl()" style="margin-top:10px;padding:8px 16px;background:rgba(201,168,76,0.2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--goldl);font-size:12px;cursor:pointer;font-family:&#39;DM Mono&#39;,monospace;">🔗 URLをコピー</button>
               </div>
             </div>
@@ -1258,6 +1262,9 @@ function subscribeFirebase(){
     updateFirebaseStatusCard(false,err.message);
   });
 }
+
+function todayStr(){const n=new Date();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;}
+function formatDate(d){if(!d)return '−';const[y,m,dd]=d.split('-');const reiwa=parseInt(y)-2018;return `令和${reiwa}年${parseInt(m)}月${parseInt(dd)}日`;}
 
 function onStateUpdated(){
   // 過去のpending打刻を自動承認
@@ -2745,6 +2752,11 @@ function renderSalesTable(){
 
 // ページ読み込み完了後にinit()を実行
 document.addEventListener('DOMContentLoaded', function(){
+  // ボタンのイベント登録を直接設定（firebase-ready待ちなし）
+  const empBtn=document.getElementById('empLoginBtn');
+  if(empBtn)empBtn.onclick=function(){showPinScreen();};
+  const adminBtn=document.getElementById('adminLoginBtn');
+  if(adminBtn)adminBtn.onclick=function(){googleSignIn();};
   init();
 });
 </script>
