@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0058)file:///C:/Users/winst/Downloads/caddypro_firebase_30.html -->
+<!-- saved from url=(0058)file:///C:/Users/winst/Downloads/caddypro_firebase_31.html -->
 <html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
   <meta name="mobile-web-app-capable" content="yes">
@@ -338,7 +338,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
 
 <!-- ===== 従業員モード ===== -->
 <div class="screen" id="empScreen">
-  <div class="emp-clock" id="empClock">22:43:26</div>
+  <div class="emp-clock" id="empClock">22:54:32</div>
   <div class="emp-date" id="empDate">2026年4月21日</div>
   <div class="emp-card">
     <div class="emp-name-display" id="empNameDisplay">---</div>
@@ -520,7 +520,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
-      <div class="current-date" id="headerDate">2026年4月21日<br>22:43:26</div>
+      <div class="current-date" id="headerDate">2026年4月21日<br>22:54:32</div>
       <button class="logout-btn" onclick="logoutAdmin()">← ログアウト</button>
     </div>
   </header>
@@ -564,7 +564,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
       <!-- 打刻エリア -->
       <div id="punchSubArea">
         <div class="section-header mb-28"><div class="section-title">⛳ 出勤状況</div></div>
-        <div class="card mb-20"><div class="punch-time" id="liveClock">22:43:26</div><div class="punch-date-display" id="liveDate">2026年4月21日火曜日</div></div>
+        <div class="card mb-20"><div class="punch-time" id="liveClock">22:54:32</div><div class="punch-date-display" id="liveDate">2026年4月21日火曜日</div></div>
         <div class="grid-3 mb-20">
           <div class="stat-card"><div class="stat-label">本日出勤</div><div class="stat-value" id="todayPunchCount">0<span>名</span></div></div>
           <div class="stat-card"><div class="stat-label">本日退勤</div><div class="stat-value" id="todayDoneCount">0<span>名</span></div></div>
@@ -912,7 +912,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
             <div class="form-group">
               <label>会社ロゴ（シフト表に表示）</label>
               <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
-                <img id="logoPreview" src="file:///C:/Users/winst/Downloads/caddypro_firebase_30.html" style="display:none;max-height:60px;max-width:180px;border-radius:6px;border:1px solid rgba(201,168,76,0.3);">
+                <img id="logoPreview" src="file:///C:/Users/winst/Downloads/caddypro_firebase_31.html" style="display:none;max-height:60px;max-width:180px;border-radius:6px;border:1px solid rgba(201,168,76,0.3);">
                 <div>
                   <label style="display:inline-block;padding:8px 14px;background:rgba(201,168,76,0.2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--goldl);font-size:13px;cursor:pointer;">
                     📁 ロゴを選択
@@ -951,7 +951,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
               <div style="font-size:11px;color:var(--goldl);margin-bottom:6px;">このアプリのURL（従業員に共有）</div>
               <div class="qr-area">
                 <div style="font-size:28px;">📱</div>
-                <div class="qr-url" id="shareUrl">file:///C:/Users/winst/Downloads/caddypro_firebase_30.html</div>
+                <div class="qr-url" id="shareUrl">file:///C:/Users/winst/Downloads/caddypro_firebase_31.html</div>
                 <button onclick="copyShareUrl()" style="margin-top:10px;padding:8px 16px;background:rgba(201,168,76,0.2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--goldl);font-size:12px;cursor:pointer;font-family:&#39;DM Mono&#39;,monospace;">🔗 URLをコピー</button>
               </div>
             </div>
@@ -1779,6 +1779,206 @@ async function empPunch(){
   updateEmpPunchState(emp);
 }
 
+function renderRateMatrix(){
+  const container=document.getElementById('rateMatrix');const saveBtn=document.getElementById('rateMatrixSaveBtn');if(!container)return;
+  const perPersonCourses=state.courses.filter(c=>c.rateType==='per_person'||c.rateType==='per_person_weekday');
+  if(!state.employees.length||!perPersonCourses.length){container.innerHTML='<div class="empty-state">「人ごとに単価が違う」コースを追加すると設定できます</div>';if(saveBtn)saveBtn.style.display='none';return;}
+  if(saveBtn)saveBtn.style.display='block';
+  let headerCells='';perPersonCourses.forEach(c=>{if(c.rateType==='per_person_weekday'){headerCells+=`<th style="text-align:center;min-width:100px;font-size:11px;">${c.name}<br><span style="color:#aaa;font-weight:400;">平日</span></th><th style="text-align:center;min-width:100px;font-size:11px;">${c.name}<br><span style="color:#88c;font-weight:400;">土日祝</span></th>`;}else{headerCells+=`<th style="text-align:center;min-width:110px;font-size:11px;">${c.name}</th>`;}});
+  const rows=state.employees.map(emp=>{
+    const pf=course=>course.perPersonFees||{};const sr=emp=>(state.rates[String(emp.id)]||{});
+    let cells='';perPersonCourses.forEach(course=>{
+      const fees=course.perPersonFees||{};const empRates=state.rates[String(emp.id)]||{};
+      if(course.rateType==='per_person_weekday'){
+        const pfWd=typeof fees[String(emp.id)]==='object'?fees[String(emp.id)].wd||'':'';
+        const pfWe=typeof fees[String(emp.id)]==='object'?fees[String(emp.id)].we||'':'';
+        const valWd=pfWd||empRates[String(course.id)+'_wd']||'';
+        const valWe=pfWe||empRates[String(course.id)+'_we']||'';
+        cells+=`<td style="padding:8px;"><input type="number" placeholder="−" value="${valWd}" data-emp="${emp.id}" data-course="${course.id}" data-dow="wd" style="width:100%;padding:6px;font-size:13px;text-align:right;"></td><td style="padding:8px;"><input type="number" placeholder="−" value="${valWe}" data-emp="${emp.id}" data-course="${course.id}" data-dow="we" style="width:100%;padding:6px;font-size:13px;text-align:right;"></td>`;
+      } else {
+        const pfVal=typeof fees[String(emp.id)]==='number'?fees[String(emp.id)]:'';
+        const val=pfVal||empRates[String(course.id)]||'';
+        cells+=`<td style="padding:8px;"><input type="number" placeholder="−" value="${val}" data-emp="${emp.id}" data-course="${course.id}" data-dow="" style="width:100%;padding:6px;font-size:13px;text-align:right;"></td>`;
+      }
+    });
+    return `<tr><td style="padding:8px 12px;"><div style="font-weight:700;">${emp.name}</div><div style="font-size:11px;color:var(--gray);">${emp.role}</div></td>${cells}</tr>`;
+  }).join('');
+  container.innerHTML=`<table><thead><tr><th>従業員 ＼ ゴルフ場</th>${headerCells}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+async function saveRateMatrix(){
+  const inputs=document.getElementById('rateMatrix').getElementsByTagName('input');
+  for(let i=0;i<inputs.length;i++){
+    const input=inputs[i];const eid=input.dataset.emp,cid=input.dataset.course,dow=input.dataset.dow;
+    const val=Number(input.value)||0;
+    if(!state.rates[eid])state.rates[eid]={};
+    const key=dow==='wd'?cid+'_wd':dow==='we'?cid+'_we':cid;
+    state.rates[eid][key]=val;
+    const course=state.courses.find(c=>String(c.id)===String(cid));
+    if(course){
+      if(!course.perPersonFees)course.perPersonFees={};
+      if(dow==='wd'){if(typeof course.perPersonFees[eid]!=='object')course.perPersonFees[eid]={};course.perPersonFees[eid].wd=val;}
+      else if(dow==='we'){if(typeof course.perPersonFees[eid]!=='object')course.perPersonFees[eid]={};course.perPersonFees[eid].we=val;}
+      else{course.perPersonFees[eid]=val;}
+    }
+  }
+  await saveState();showToast('💾 単価を保存しました');
+}
+function toggleInvoiceField(){
+  const contract=document.getElementById('newEmpContract').value;
+  document.getElementById('invoiceNoField').style.display=contract==='invoice_yes'?'block':'none';
+  const isBaito=['baito','training','training_baito'].includes(contract);
+  const wf=document.getElementById('withholdingField');if(wf)wf.style.display=isBaito?'block':'none';
+}
+function populateCourseSelects(){
+  ['reqCourse','newSalesCourse','invoiceCourse','manualAttCourse'].forEach(id=>{
+    const sel=document.getElementById(id);if(!sel)return;
+    const val=sel.value;
+    sel.innerHTML='<option value="">-- 選択 --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    if(val)sel.value=val;
+  });
+}
+function populateEmpInvSelect(){
+  const sel=document.getElementById('empInvEmp');if(!sel)return;
+  const val=sel.value;
+  sel.innerHTML='<option value="">– 従業員を選択 –</option>'+state.employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  if(val)sel.value=val;
+}
+function openEmpModal(){
+  document.getElementById('empModalTitle').textContent='👤 従業員追加';
+  document.getElementById('empModalSaveBtn').textContent='追加';
+  document.getElementById('empModalSaveBtn').dataset.editId='';
+  ['newEmpName','newEmpAddress','newEmpPhone','newEmpInvoiceNo','newEmpBankBranch','newEmpBankAccount','newEmpBankHolder'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('newEmpPin').value='';document.getElementById('newEmpWage').value='';
+  if(document.getElementById('newEmpBankName'))document.getElementById('newEmpBankName').value='';
+  document.getElementById('newEmpRole').value='キャディー';document.getElementById('newEmpContract').value='baito';
+  document.getElementById('invoiceNoField').style.display='none';
+  const whf=document.getElementById('withholdingField');if(whf)whf.style.display='block';
+  const whi=document.getElementById('newEmpWithholding');if(whi)whi.checked=false;
+  const ef=document.getElementById('newEmpEmail');if(ef)ef.value='';
+  document.getElementById('empModal').classList.add('open');
+}
+function openEditEmpModal(btn){
+  const id=btn.dataset.id;const emp=state.employees.find(e=>String(e.id)===String(id));if(!emp)return;
+  document.getElementById('empModalTitle').textContent='👤 従業員編集';
+  document.getElementById('empModalSaveBtn').textContent='保存';
+  document.getElementById('empModalSaveBtn').dataset.editId=id;
+  document.getElementById('newEmpName').value=emp.name||'';
+  const ef=document.getElementById('newEmpEmail');if(ef)ef.value=emp.email||'';
+  document.getElementById('newEmpPin').value=emp.pin||'';document.getElementById('newEmpWage').value=emp.wage||'';
+  document.getElementById('newEmpRole').value=emp.role||'キャディー';document.getElementById('newEmpContract').value=emp.contract||'baito';
+  if(document.getElementById('newEmpAddress'))document.getElementById('newEmpAddress').value=emp.address||'';
+  if(document.getElementById('newEmpPhone'))document.getElementById('newEmpPhone').value=emp.phone||'';
+  if(document.getElementById('newEmpInvoiceNo'))document.getElementById('newEmpInvoiceNo').value=emp.invoiceNo||'';
+  if(document.getElementById('newEmpBankName'))document.getElementById('newEmpBankName').value=emp.bankName||'';
+  if(document.getElementById('newEmpBankAccount'))document.getElementById('newEmpBankAccount').value=emp.bankAccount||'';
+  if(document.getElementById('newEmpBankHolder'))document.getElementById('newEmpBankHolder').value=emp.bankHolder||'';
+  document.getElementById('invoiceNoField').style.display=emp.contract==='invoice_yes'?'block':'none';
+  const isBaito=['baito','training','training_baito'].includes(emp.contract||'baito');
+  const wf=document.getElementById('withholdingField');if(wf)wf.style.display=isBaito?'block':'none';
+  const wh=document.getElementById('newEmpWithholding');if(wh)wh.checked=!!emp.withholding;
+  document.getElementById('empModal').classList.add('open');
+}
+async function saveEmployee(){
+  const name=document.getElementById('newEmpName').value.trim();
+  const pin=String(document.getElementById('newEmpPin').value).padStart(4,'0');
+  const wage=Number(document.getElementById('newEmpWage').value);
+  const role=document.getElementById('newEmpRole').value;
+  const contract=document.getElementById('newEmpContract').value;
+  const address=document.getElementById('newEmpAddress')?document.getElementById('newEmpAddress').value.trim():'';
+  const phone=document.getElementById('newEmpPhone')?document.getElementById('newEmpPhone').value.trim():'';
+  const invoiceNo=contract==='invoice_yes'?document.getElementById('newEmpInvoiceNo').value.trim():'';
+  const withholding=document.getElementById('newEmpWithholding')?document.getElementById('newEmpWithholding').checked:false;
+  const email=document.getElementById('newEmpEmail')?document.getElementById('newEmpEmail').value.trim():'';
+  const bankName=document.getElementById('newEmpBankName')?document.getElementById('newEmpBankName').value.trim():'';
+  const bankAccount=document.getElementById('newEmpBankAccount')?document.getElementById('newEmpBankAccount').value.trim():'';
+  const bankHolder=document.getElementById('newEmpBankHolder')?document.getElementById('newEmpBankHolder').value.trim():'';
+  if(!name){alert('氏名を入力してください');return;}
+  if(!pin||pin.length!==4){alert('PIN番号を4桁で入力してください');return;}
+  const editId=document.getElementById('empModalSaveBtn').dataset.editId;
+  if(editId){
+    const emp=state.employees.find(e=>String(e.id)===String(editId));
+    if(emp)Object.assign(emp,{name,pin,wage,role,contract,address,phone,invoiceNo,bankName,bankAccount,bankHolder,withholding,email});
+  } else {
+    state.employees.push({id:Date.now(),name,pin,wage,role,contract,address,phone,invoiceNo,bankName,bankAccount,bankHolder,withholding,email,courseWages:{}});
+  }
+  await saveState();closeModal('empModal');renderEmpTable();renderEmployeeGrid();renderRateMatrix();populateEmpInvSelect();
+  showToast('✅ 従業員を保存しました');
+}
+function deleteEmployee(btn){
+  const id=btn.dataset.id;
+  showConfirm('この従業員を削除しますか？',async()=>{
+    state.employees=state.employees.filter(e=>String(e.id)!==String(id));
+    delete state.rates[String(id)];
+    await saveState();renderEmpTable();renderEmployeeGrid();renderRateMatrix();
+    showToast('🗑️ 削除しました');
+  });
+}
+function openCourseModal(){
+  document.getElementById('courseModalTitle')?document.getElementById('courseModalTitle').textContent='⛳ ゴルフ場追加':'';
+  document.getElementById('courseModalSaveBtn').textContent='追加';
+  document.getElementById('courseModalSaveBtn').dataset.editId='';
+  ['newCourseName','newCourseAddress','newCoursePhone','newCourseManager','newCourseRate','newCourseWeekdayRate','newCourseWeekendRate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const rt=document.getElementById('newCourseRateType');if(rt)rt.value='fixed';
+  document.getElementById('courseModal').classList.add('open');
+  renderCafeteriaEmpBurden();
+}
+function openEditCourseModal(btn){
+  const id=btn.dataset.id;const c=state.courses.find(x=>String(x.id)===String(id));if(!c)return;
+  document.getElementById('courseModalSaveBtn').textContent='保存';
+  document.getElementById('courseModalSaveBtn').dataset.editId=id;
+  if(document.getElementById('newCourseName'))document.getElementById('newCourseName').value=c.name||'';
+  if(document.getElementById('newCourseAddress'))document.getElementById('newCourseAddress').value=c.address||'';
+  if(document.getElementById('newCoursePhone'))document.getElementById('newCoursePhone').value=c.phone||'';
+  if(document.getElementById('newCourseManager'))document.getElementById('newCourseManager').value=c.manager||'';
+  if(document.getElementById('newCourseRateType'))document.getElementById('newCourseRateType').value=c.rateType||'fixed';
+  if(document.getElementById('newCourseRate'))document.getElementById('newCourseRate').value=c.fixedRate||'';
+  if(document.getElementById('newCourseWeekdayRate'))document.getElementById('newCourseWeekdayRate').value=c.weekdayRate||'';
+  if(document.getElementById('newCourseWeekendRate'))document.getElementById('newCourseWeekendRate').value=c.weekendRate||'';
+  const isWd=(c.rateType==='weekday_weekend'||c.rateType==='per_person_weekday');
+  const wwf=document.getElementById('weekdayWeekendFields');if(wwf)wwf.style.display=isWd?'block':'none';
+  document.getElementById('courseModal').classList.add('open');
+  renderCafeteriaEmpBurden(c.cafeteriaBurdens);
+}
+async function saveCourse(){
+  const name=document.getElementById('newCourseName')?document.getElementById('newCourseName').value.trim():'';
+  if(!name){alert('ゴルフ場名を入力してください');return;}
+  const address=document.getElementById('newCourseAddress')?document.getElementById('newCourseAddress').value.trim():'';
+  const phone=document.getElementById('newCoursePhone')?document.getElementById('newCoursePhone').value.trim():'';
+  const manager=document.getElementById('newCourseManager')?document.getElementById('newCourseManager').value.trim():'';
+  const rateType=document.getElementById('newCourseRateType')?document.getElementById('newCourseRateType').value:'fixed';
+  const fixedRate=Number(document.getElementById('newCourseRate')?document.getElementById('newCourseRate').value:0)||0;
+  const weekdayRate=(rateType==='weekday_weekend'||rateType==='per_person_weekday')?Number(document.getElementById('newCourseWeekdayRate')?document.getElementById('newCourseWeekdayRate').value:0)||0:0;
+  const weekendRate=(rateType==='weekday_weekend'||rateType==='per_person_weekday')?Number(document.getElementById('newCourseWeekendRate')?document.getElementById('newCourseWeekendRate').value:0)||0:0;
+  const editId=document.getElementById('courseModalSaveBtn').dataset.editId;
+  if(editId){
+    const c=state.courses.find(x=>String(x.id)===String(editId));
+    if(c)Object.assign(c,{name,address,phone,manager,rateType,fixedRate,weekdayRate,weekendRate});
+  } else {
+    state.courses.push({id:Date.now(),name,address,phone,manager,rateType,fixedRate,weekdayRate,weekendRate,assignedEmps:[]});
+  }
+  await saveState();closeModal('courseModal');renderCourseTable();populateCourseSelects();renderRateMatrix();
+  showToast('✅ ゴルフ場を保存しました');
+}
+function deleteCourse(btn){
+  const id=btn.dataset.id;
+  showConfirm('このゴルフ場を削除しますか？',async()=>{
+    state.courses=state.courses.filter(c=>String(c.id)!==String(id));
+    Object.keys(state.rates).forEach(eid=>{if(state.rates[eid])delete state.rates[eid][String(id)];});
+    await saveState();renderCourseTable();populateCourseSelects();renderRateMatrix();
+    showToast('🗑️ 削除しました');
+  });
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function showConfirm(msg,cb){
+  document.getElementById('confirmMsg').textContent=msg;
+  document.getElementById('confirmOkBtn').onclick=()=>{closeModal('confirmModal');cb();};
+  document.getElementById('confirmModal').classList.add('open');
+}
+function showToast(msg,dur=2500){
+  const t=document.getElementById('toast');if(!t)return;
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
 function toggleCafeteriaFee(){
   const checked=document.getElementById('newCourseHasCafeteria').checked;
   document.getElementById('cafeteriaFeeArea').style.display=checked?'block':'none';
