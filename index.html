@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0058)file:///C:/Users/winst/Downloads/caddypro_firebase_18.html -->
+<!-- saved from url=(0058)file:///C:/Users/winst/Downloads/caddypro_firebase_21.html -->
 <html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
   <link rel="manifest" href="file:///C:/Users/winst/Downloads/manifest.json">
@@ -339,7 +339,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
 
 <!-- ===== 従業員モード ===== -->
 <div class="screen" id="empScreen">
-  <div class="emp-clock" id="empClock">20:55:27</div>
+  <div class="emp-clock" id="empClock">21:06:03</div>
   <div class="emp-date" id="empDate">2026年4月21日</div>
   <div class="emp-card">
     <div class="emp-name-display" id="empNameDisplay">---</div>
@@ -521,7 +521,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
-      <div class="current-date" id="headerDate">2026年4月21日<br>20:55:27</div>
+      <div class="current-date" id="headerDate">2026年4月21日<br>21:06:03</div>
       <button class="logout-btn" onclick="logoutAdmin()">← ログアウト</button>
     </div>
   </header>
@@ -565,7 +565,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
       <!-- 打刻エリア -->
       <div id="punchSubArea">
         <div class="section-header mb-28"><div class="section-title">⛳ 出勤状況</div></div>
-        <div class="card mb-20"><div class="punch-time" id="liveClock">20:55:27</div><div class="punch-date-display" id="liveDate">2026年4月21日火曜日</div></div>
+        <div class="card mb-20"><div class="punch-time" id="liveClock">21:06:03</div><div class="punch-date-display" id="liveDate">2026年4月21日火曜日</div></div>
         <div class="grid-3 mb-20">
           <div class="stat-card"><div class="stat-label">本日出勤</div><div class="stat-value" id="todayPunchCount">0<span>名</span></div></div>
           <div class="stat-card"><div class="stat-label">本日退勤</div><div class="stat-value" id="todayDoneCount">0<span>名</span></div></div>
@@ -913,7 +913,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
             <div class="form-group">
               <label>会社ロゴ（シフト表に表示）</label>
               <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
-                <img id="logoPreview" src="file:///C:/Users/winst/Downloads/caddypro_firebase_18.html" style="display:none;max-height:60px;max-width:180px;border-radius:6px;border:1px solid rgba(201,168,76,0.3);">
+                <img id="logoPreview" src="file:///C:/Users/winst/Downloads/caddypro_firebase_21.html" style="display:none;max-height:60px;max-width:180px;border-radius:6px;border:1px solid rgba(201,168,76,0.3);">
                 <div>
                   <label style="display:inline-block;padding:8px 14px;background:rgba(201,168,76,0.2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--goldl);font-size:13px;cursor:pointer;">
                     📁 ロゴを選択
@@ -952,7 +952,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
               <div style="font-size:11px;color:var(--goldl);margin-bottom:6px;">このアプリのURL（従業員に共有）</div>
               <div class="qr-area">
                 <div style="font-size:28px;">📱</div>
-                <div class="qr-url" id="shareUrl">file:///C:/Users/winst/Downloads/caddypro_firebase_18.html</div>
+                <div class="qr-url" id="shareUrl">file:///C:/Users/winst/Downloads/caddypro_firebase_21.html</div>
                 <button onclick="copyShareUrl()" style="margin-top:10px;padding:8px 16px;background:rgba(201,168,76,0.2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--goldl);font-size:12px;cursor:pointer;font-family:&#39;DM Mono&#39;,monospace;">🔗 URLをコピー</button>
               </div>
             </div>
@@ -1640,6 +1640,103 @@ function updateEmpNoticeBadge(){
   const pending=notices.filter(n=>n.empId&&String(n.empId)===String(currentEmpId)&&!n.confirmed);
   if(pending.length>0){btn.textContent=`🔔 明日の出勤確認（${pending.length}件）`;btn.style.background='rgba(192,57,43,0.4)';}
   else{btn.textContent='🔔 明日の出勤確認';btn.style.background='rgba(192,57,43,0.15)';}
+}
+
+// =====================================================
+// EMP SCREENS
+// =====================================================
+function showEmpHistory(){
+  const emp=state.employees.find(e=>String(e.id)===String(currentEmpId));if(!emp)return;
+  const msel=document.getElementById('empHistoryMonth');
+  const now=new Date();let opts='';
+  for(let i=0;i<6;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');opts+=`<option value="${y}-${m}">${y}年${parseInt(m)}月</option>`;}
+  if(msel)msel.innerHTML=opts;
+  renderEmpHistory();showScreen('empHistoryScreen');
+}
+function renderEmpHistory(){
+  const emp=state.employees.find(e=>String(e.id)===String(currentEmpId));if(!emp)return;
+  const month=document.getElementById('empHistoryMonth')?document.getElementById('empHistoryMonth').value:'';
+  const list=document.getElementById('empHistoryList');if(!list)return;
+  const records=state.attendance.filter(a=>String(a.empId)===String(emp.id)&&a.date&&a.date.startsWith(month)).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!records.length){list.innerHTML='<div class="empty-state">この月の出勤記録はありません</div>';return;}
+  list.innerHTML=records.map(r=>{const[y,m,d]=r.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(r.date).getDay()];return `<div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px 14px;margin-bottom:8px;"><div style="font-weight:700;color:var(--cream);">${parseInt(m)}月${parseInt(d)}日（${dow}）</div><div style="font-size:12px;color:var(--gray);margin-top:4px;">${r.courseName||'研修'}　¥${Number(r.wage||0).toLocaleString()}</div></div>`;}).join('');
+}
+function showEmpShiftApply(){
+  const emp=state.employees.find(e=>String(e.id)===String(currentEmpId));if(!emp)return;
+  renderEmpShiftApplyList();showScreen('empShiftApplyScreen');
+}
+function renderEmpShiftApplyList(){
+  const emp=state.employees.find(e=>String(e.id)===String(currentEmpId));if(!emp)return;
+  const cal=document.getElementById('empShiftCal');const list=document.getElementById('empShiftApplyList');
+  const now=new Date();
+  if(cal){
+    let cells='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;">';
+    const firstDay=new Date(now.getFullYear(),now.getMonth(),1).getDay();
+    const daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+    const ym=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    for(let i=0;i<firstDay;i++)cells+='<div></div>';
+    for(let d=1;d<=daysInMonth;d++){
+      const dateStr=`${ym}-${String(d).padStart(2,'0')}`;
+      const req=state.shiftRequests.find(r=>String(r.empId)===String(emp.id)&&r.date===dateStr);
+      const dow=new Date(now.getFullYear(),now.getMonth(),d).getDay();
+      const dayColor=dow===0?'#e88':dow===6?'#99c':'var(--cream)';
+      const bg=req?'rgba(74,140,92,0.5)':'rgba(26,58,42,0.4)';
+      cells+=`<div onclick="toggleEmpShiftRequest('${dateStr}')" style="background:${bg};border:1px solid rgba(201,168,76,0.15);border-radius:6px;padding:4px 2px;cursor:pointer;min-height:36px;text-align:center;"><div style="font-size:12px;font-weight:700;color:${dayColor};">${d}</div></div>`;
+    }
+    cells+='</div>';
+    cal.innerHTML=cells;
+  }
+  if(list){
+    const myReqs=state.shiftRequests.filter(r=>String(r.empId)===String(emp.id)).sort((a,b)=>b.date.localeCompare(a.date));
+    const statusMap={pending:{label:'⏳ 審査中',color:'var(--goldl)'},approved:{label:'✅ 承認済み',color:'#6dbf7e'},rejected:{label:'❌ 却下',color:'#e88'}};
+    if(!myReqs.length){list.innerHTML='<div class="empty-state">申請はありません</div>';return;}
+    list.innerHTML=myReqs.map(r=>{const[y,m,d]=r.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(r.date).getDay()];const st=statusMap[r.status]||statusMap.pending;return `<div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-weight:700;color:var(--cream);">${parseInt(m)}月${parseInt(d)}日（${dow}）</div><div style="font-size:12px;font-weight:700;color:${st.color};margin-top:4px;">${st.label}</div></div><button onclick="cancelEmpShiftRequest('${r.id}')" style="font-size:12px;background:rgba(192,57,43,0.2);border:1px solid rgba(192,57,43,0.4);border-radius:8px;padding:6px 12px;color:#e88;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:700;">🗑️ 削除</button></div>`;}).join('');
+  }
+}
+async function toggleEmpShiftRequest(dateStr){
+  const emp=state.employees.find(e=>String(e.id)===String(currentEmpId));if(!emp)return;
+  const existing=state.shiftRequests.find(r=>String(r.empId)===String(emp.id)&&r.date===dateStr);
+  if(existing){state.shiftRequests=state.shiftRequests.filter(r=>r.id!==existing.id);}
+  else{state.shiftRequests.push({id:String(Date.now()),empId:emp.id,empName:emp.name,date:dateStr,status:'pending',note:''});}
+  await saveState();renderEmpShiftApplyList();
+}
+function cancelEmpShiftRequest(id){
+  showConfirm('この申請を取り消しますか？',async()=>{state.shiftRequests=state.shiftRequests.filter(r=>r.id!==id);await saveState();renderEmpShiftApplyList();showToast('申請を取り消しました');});
+}
+function showEmpConfirmedShifts(){
+  renderEmpConfirmedShifts();showScreen('empConfirmedShiftScreen');
+}
+function renderEmpConfirmedShifts(){
+  const list=document.getElementById('empConfirmedShiftList');if(!list)return;
+  const now=new Date();const ym=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const myShifts=state.shifts.filter(s=>s.employees&&s.employees.includes(String(currentEmpId))&&s.date&&s.date.startsWith(ym)).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!myShifts.length){list.innerHTML='<div class="empty-state">確定シフトはありません</div>';return;}
+  list.innerHTML=myShifts.map(s=>{const course=state.courses.find(c=>String(c.id)===String(s.courseId));const[y,m,d]=s.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(s.date).getDay()];return `<div style="background:rgba(74,140,92,0.2);border:1px solid rgba(109,191,126,0.3);border-radius:10px;padding:12px 14px;margin-bottom:8px;"><div style="font-weight:700;color:var(--cream);">${parseInt(m)}月${parseInt(d)}日（${dow}）</div><div style="font-size:13px;color:#6dbf7e;margin-top:4px;">⛳ ${course?course.name:'−'}</div></div>`;}).join('');
+}
+function showEmpNotices(){
+  renderEmpNotices();showScreen('empNoticeScreen');
+}
+function renderEmpNotices(){
+  const list=document.getElementById('empNoticeList');if(!list)return;
+  const myNotices=(state.notices||[]).filter(n=>String(n.empId)===String(currentEmpId)).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!myNotices.length){list.innerHTML='<div class="empty-state">出勤連絡はありません</div>';return;}
+  list.innerHTML=myNotices.map(n=>{const course=state.courses.find(c=>String(c.id)===String(n.courseId));const[y,m,d]=n.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(n.date).getDay()];return `<div style="background:${n.confirmed?'rgba(26,58,42,0.4)':'rgba(192,57,43,0.15)'};border:1px solid ${n.confirmed?'rgba(255,255,255,0.1)':'rgba(192,57,43,0.4)'};border-radius:10px;padding:12px 14px;margin-bottom:8px;"><div style="font-weight:700;color:var(--cream);">${parseInt(m)}月${parseInt(d)}日（${dow}）</div><div style="font-size:12px;color:var(--gray);margin-top:2px;">⛳ ${course?course.name:'−'}</div>${!n.confirmed?`<button onclick="confirmEmpNotice('${n.id}')" style="margin-top:8px;width:100%;padding:10px;background:rgba(74,140,92,0.4);border:1px solid rgba(109,191,126,0.4);border-radius:8px;color:#6dbf7e;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">✅ 出勤確認する</button>`:'<div style="font-size:12px;color:#6dbf7e;margin-top:6px;">✅ 確認済み</div>'}</div>`;}).join('');
+}
+async function confirmEmpNotice(id){
+  const n=(state.notices||[]).find(x=>x.id===id);if(!n)return;
+  n.confirmed=true;await saveState();renderEmpNotices();updateEmpNoticeBadge();showToast('✅ 出勤を確認しました');
+}
+function showEmpInvoiceScreen(){
+  const emp=state.employees.find(e=>String(e.id)===String(currentEmpId));if(!emp)return;
+  const msel=document.getElementById('empMyInvoiceMonth');const now=new Date();let opts='';
+  for(let i=0;i<6;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');opts+=`<option value="${y}-${m}"${i===0?' selected':''}>${y}年${parseInt(m)}月</option>`;}
+  if(msel)msel.innerHTML=opts;renderEmpMyInvoice();showScreen('empInvoiceScreen');
+}
+function showEmpWithholdingScreen(){
+  const emp=state.employees.find(e=>String(e.id)===String(currentEmpId));if(!emp)return;
+  const ysel=document.getElementById('empWithholdingYear');const now=new Date();let opts='';
+  for(let i=0;i<3;i++){const y=now.getFullYear()-i;opts+=`<option value="${y}"${i===0?' selected':''}>${y}年（令和${y-2018}年）</option>`;}
+  if(ysel)ysel.innerHTML=opts;renderEmpWithholding();showScreen('empWithholdingScreen');
 }
 
 // 打刻時に売上を自動登録する共通関数
