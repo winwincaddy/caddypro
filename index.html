@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0058)file:///C:/Users/winst/Downloads/caddypro_firebase_29.html -->
+<!-- saved from url=(0058)file:///C:/Users/winst/Downloads/caddypro_firebase_30.html -->
 <html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
   <meta name="mobile-web-app-capable" content="yes">
@@ -338,7 +338,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
 
 <!-- ===== 従業員モード ===== -->
 <div class="screen" id="empScreen">
-  <div class="emp-clock" id="empClock">22:32:11</div>
+  <div class="emp-clock" id="empClock">22:43:26</div>
   <div class="emp-date" id="empDate">2026年4月21日</div>
   <div class="emp-card">
     <div class="emp-name-display" id="empNameDisplay">---</div>
@@ -520,7 +520,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
-      <div class="current-date" id="headerDate">2026年4月21日<br>22:32:11</div>
+      <div class="current-date" id="headerDate">2026年4月21日<br>22:43:26</div>
       <button class="logout-btn" onclick="logoutAdmin()">← ログアウト</button>
     </div>
   </header>
@@ -564,7 +564,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
       <!-- 打刻エリア -->
       <div id="punchSubArea">
         <div class="section-header mb-28"><div class="section-title">⛳ 出勤状況</div></div>
-        <div class="card mb-20"><div class="punch-time" id="liveClock">22:32:11</div><div class="punch-date-display" id="liveDate">2026年4月21日火曜日</div></div>
+        <div class="card mb-20"><div class="punch-time" id="liveClock">22:43:26</div><div class="punch-date-display" id="liveDate">2026年4月21日火曜日</div></div>
         <div class="grid-3 mb-20">
           <div class="stat-card"><div class="stat-label">本日出勤</div><div class="stat-value" id="todayPunchCount">0<span>名</span></div></div>
           <div class="stat-card"><div class="stat-label">本日退勤</div><div class="stat-value" id="todayDoneCount">0<span>名</span></div></div>
@@ -912,7 +912,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
             <div class="form-group">
               <label>会社ロゴ（シフト表に表示）</label>
               <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
-                <img id="logoPreview" src="file:///C:/Users/winst/Downloads/caddypro_firebase_29.html" style="display:none;max-height:60px;max-width:180px;border-radius:6px;border:1px solid rgba(201,168,76,0.3);">
+                <img id="logoPreview" src="file:///C:/Users/winst/Downloads/caddypro_firebase_30.html" style="display:none;max-height:60px;max-width:180px;border-radius:6px;border:1px solid rgba(201,168,76,0.3);">
                 <div>
                   <label style="display:inline-block;padding:8px 14px;background:rgba(201,168,76,0.2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--goldl);font-size:13px;cursor:pointer;">
                     📁 ロゴを選択
@@ -951,7 +951,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
               <div style="font-size:11px;color:var(--goldl);margin-bottom:6px;">このアプリのURL（従業員に共有）</div>
               <div class="qr-area">
                 <div style="font-size:28px;">📱</div>
-                <div class="qr-url" id="shareUrl">file:///C:/Users/winst/Downloads/caddypro_firebase_29.html</div>
+                <div class="qr-url" id="shareUrl">file:///C:/Users/winst/Downloads/caddypro_firebase_30.html</div>
                 <button onclick="copyShareUrl()" style="margin-top:10px;padding:8px 16px;background:rgba(201,168,76,0.2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--goldl);font-size:12px;cursor:pointer;font-family:&#39;DM Mono&#39;,monospace;">🔗 URLをコピー</button>
               </div>
             </div>
@@ -1215,6 +1215,7 @@ let state = {
 };
 let entryCounter=0, currentEmpId=null, pinBuffer='', adminPinBuffer='';
 let fbReady=false, fbUnsubscribers=[];
+let shiftYear=new Date().getFullYear(), shiftMonth=new Date().getMonth();
 
 // Firebase helper shortcuts
 const FB = ()=>window._fb;
@@ -1885,6 +1886,40 @@ function renderAdminAll(){
   renderEmployeeGrid();renderAttendanceTable();renderSalesTable();
   renderEmpTable();renderCourseTable();renderRateMatrix();
   updatePunchStats();updateSalesStats();populateCourseSelects();populateEmpInvSelect();
+}
+function renderEmpTable(){
+  const tbody=document.getElementById('empTableBody');if(!tbody)return;
+  if(!state.employees.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px;">従業員が登録されていません</td></tr>';return;}
+  tbody.innerHTML=state.employees.map(e=>{
+    const contractBadge=e.contract==='baito'||!e.contract?'<span class="badge badge-gold">アルバイト</span>':e.contract==='invoice_yes'?'<span class="badge badge-green">業務委託 IN有</span>':e.contract==='training'?'<span class="badge" style="background:rgba(74,140,92,0.3);color:#6dbf7e;">📚 研修</span>':e.contract==='training_baito'?'<span class="badge" style="background:rgba(74,140,92,0.2);color:#6dbf7e;">📚 研修AB</span>':e.contract==='training_invoice'?'<span class="badge" style="background:rgba(74,140,92,0.2);color:#adf;">📚 研修委託</span>':'<span class="badge" style="background:rgba(139,139,139,0.2);color:#aaa;">業務委託 IN無</span>';
+    return `<tr><td>${e.name}</td><td style="font-family:'DM Mono',monospace;">●●●●</td><td style="font-family:'DM Mono',monospace;">¥${Number(e.wage||0).toLocaleString()}</td><td>${e.role||'キャディー'}</td><td>${contractBadge}</td><td><button class="btn btn-outline btn-sm" onclick="openEditEmpModal(this)" data-id="${e.id}">編集</button> <button class="btn btn-outline btn-sm" onclick="deleteEmployee(this)" data-id="${e.id}">削除</button></td></tr>`;
+  }).join('');
+}
+function renderCourseTable(){
+  const tbody=document.getElementById('courseTableBody');if(!tbody)return;
+  if(!state.courses.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--gray);padding:20px;">ゴルフ場が登録されていません</td></tr>';return;}
+  tbody.innerHTML=state.courses.map(c=>`<tr><td>${c.name}</td><td>${c.address||'−'}</td><td>${c.phone||'−'}</td><td>${c.manager||'−'}</td><td><button class="btn btn-outline btn-sm" onclick="openEditCourseModal(this)" data-id="${c.id}">編集</button> <button class="btn btn-outline btn-sm" onclick="deleteCourse(this)" data-id="${c.id}">削除</button></td></tr>`).join('');
+}
+function renderAdminNotices(){
+  const containers=document.querySelectorAll('#adminNoticeContent');
+  containers.forEach(container=>{
+    if(!container)return;
+    const notices=(state.notices||[]).sort((a,b)=>b.date.localeCompare(a.date));
+    if(!notices.length){container.innerHTML='<div class="empty-state">出勤連絡はありません</div>';return;}
+    container.innerHTML=notices.map(n=>{
+      const emp=state.employees.find(e=>String(e.id)===String(n.empId));
+      const course=state.courses.find(c=>String(c.id)===String(n.courseId));
+      const[y,m,d]=n.date.split('-');
+      const dow=['日','月','火','水','木','金','土'][new Date(n.date).getDay()];
+      return `<div style="background:${n.confirmed?'rgba(74,140,92,0.15)':'rgba(201,168,76,0.1)'};border:1px solid ${n.confirmed?'rgba(74,140,92,0.3)':'rgba(201,168,76,0.3)'};border-radius:10px;padding:12px 14px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div><div style="font-weight:700;color:var(--cream);">${emp?emp.name:'不明'}</div>
+          <div style="font-size:12px;color:var(--gray);margin-top:2px;">${parseInt(m)}月${parseInt(d)}日（${dow}）⛳ ${course?course.name:'−'}</div></div>
+          <span style="font-size:12px;font-weight:700;color:${n.confirmed?'#6dbf7e':'var(--goldl)'};">${n.confirmed?'✅ 確認済み':'⏳ 未確認'}</span>
+        </div>
+      </div>`;
+    }).join('');
+  });
 }
 
 // =====================================================
