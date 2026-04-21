@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0058)file:///C:/Users/winst/Downloads/caddypro_firebase_31.html -->
+<!-- saved from url=(0058)file:///C:/Users/winst/Downloads/caddypro_firebase_32.html -->
 <html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
   <meta name="mobile-web-app-capable" content="yes">
@@ -338,7 +338,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
 
 <!-- ===== 従業員モード ===== -->
 <div class="screen" id="empScreen">
-  <div class="emp-clock" id="empClock">22:54:32</div>
+  <div class="emp-clock" id="empClock">23:38:18</div>
   <div class="emp-date" id="empDate">2026年4月21日</div>
   <div class="emp-card">
     <div class="emp-name-display" id="empNameDisplay">---</div>
@@ -520,7 +520,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
-      <div class="current-date" id="headerDate">2026年4月21日<br>22:54:32</div>
+      <div class="current-date" id="headerDate">2026年4月21日<br>23:38:18</div>
       <button class="logout-btn" onclick="logoutAdmin()">← ログアウト</button>
     </div>
   </header>
@@ -564,7 +564,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
       <!-- 打刻エリア -->
       <div id="punchSubArea">
         <div class="section-header mb-28"><div class="section-title">⛳ 出勤状況</div></div>
-        <div class="card mb-20"><div class="punch-time" id="liveClock">22:54:32</div><div class="punch-date-display" id="liveDate">2026年4月21日火曜日</div></div>
+        <div class="card mb-20"><div class="punch-time" id="liveClock">23:38:18</div><div class="punch-date-display" id="liveDate">2026年4月21日火曜日</div></div>
         <div class="grid-3 mb-20">
           <div class="stat-card"><div class="stat-label">本日出勤</div><div class="stat-value" id="todayPunchCount">0<span>名</span></div></div>
           <div class="stat-card"><div class="stat-label">本日退勤</div><div class="stat-value" id="todayDoneCount">0<span>名</span></div></div>
@@ -912,7 +912,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
             <div class="form-group">
               <label>会社ロゴ（シフト表に表示）</label>
               <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
-                <img id="logoPreview" src="file:///C:/Users/winst/Downloads/caddypro_firebase_31.html" style="display:none;max-height:60px;max-width:180px;border-radius:6px;border:1px solid rgba(201,168,76,0.3);">
+                <img id="logoPreview" src="file:///C:/Users/winst/Downloads/caddypro_firebase_32.html" style="display:none;max-height:60px;max-width:180px;border-radius:6px;border:1px solid rgba(201,168,76,0.3);">
                 <div>
                   <label style="display:inline-block;padding:8px 14px;background:rgba(201,168,76,0.2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--goldl);font-size:13px;cursor:pointer;">
                     📁 ロゴを選択
@@ -951,7 +951,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
               <div style="font-size:11px;color:var(--goldl);margin-bottom:6px;">このアプリのURL（従業員に共有）</div>
               <div class="qr-area">
                 <div style="font-size:28px;">📱</div>
-                <div class="qr-url" id="shareUrl">file:///C:/Users/winst/Downloads/caddypro_firebase_31.html</div>
+                <div class="qr-url" id="shareUrl">file:///C:/Users/winst/Downloads/caddypro_firebase_32.html</div>
                 <button onclick="copyShareUrl()" style="margin-top:10px;padding:8px 16px;background:rgba(201,168,76,0.2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--goldl);font-size:12px;cursor:pointer;font-family:&#39;DM Mono&#39;,monospace;">🔗 URLをコピー</button>
               </div>
             </div>
@@ -1913,12 +1913,18 @@ function deleteEmployee(btn){
     showToast('🗑️ 削除しました');
   });
 }
+function populateCourseEmpChecks(assignedEmps){
+  const container=document.getElementById('courseEmpChecks');if(!container)return;
+  const assigned=(assignedEmps||[]).map(String);
+  container.innerHTML=state.employees.map(e=>`<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(26,58,42,0.4);border-radius:8px;cursor:pointer;"><input type="checkbox" value="${e.id}" ${assigned.includes(String(e.id))?'checked':''} onchange="renderCafeteriaEmpBurden()" style="width:15px;height:15px;accent-color:var(--gl);"><span style="font-size:13px;color:var(--cream);">${e.name}</span><span style="font-size:11px;color:var(--gray);margin-left:4px;">${e.role||''}</span></label>`).join('');
+}
 function openCourseModal(){
   document.getElementById('courseModalTitle')?document.getElementById('courseModalTitle').textContent='⛳ ゴルフ場追加':'';
   document.getElementById('courseModalSaveBtn').textContent='追加';
   document.getElementById('courseModalSaveBtn').dataset.editId='';
   ['newCourseName','newCourseAddress','newCoursePhone','newCourseManager','newCourseRate','newCourseWeekdayRate','newCourseWeekendRate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const rt=document.getElementById('newCourseRateType');if(rt)rt.value='fixed';
+  populateCourseEmpChecks([]);
   document.getElementById('courseModal').classList.add('open');
   renderCafeteriaEmpBurden();
 }
@@ -1936,6 +1942,7 @@ function openEditCourseModal(btn){
   if(document.getElementById('newCourseWeekendRate'))document.getElementById('newCourseWeekendRate').value=c.weekendRate||'';
   const isWd=(c.rateType==='weekday_weekend'||c.rateType==='per_person_weekday');
   const wwf=document.getElementById('weekdayWeekendFields');if(wwf)wwf.style.display=isWd?'block':'none';
+  populateCourseEmpChecks(c.assignedEmps||[]);
   document.getElementById('courseModal').classList.add('open');
   renderCafeteriaEmpBurden(c.cafeteriaBurdens);
 }
@@ -1950,11 +1957,14 @@ async function saveCourse(){
   const weekdayRate=(rateType==='weekday_weekend'||rateType==='per_person_weekday')?Number(document.getElementById('newCourseWeekdayRate')?document.getElementById('newCourseWeekdayRate').value:0)||0:0;
   const weekendRate=(rateType==='weekday_weekend'||rateType==='per_person_weekday')?Number(document.getElementById('newCourseWeekendRate')?document.getElementById('newCourseWeekendRate').value:0)||0:0;
   const editId=document.getElementById('courseModalSaveBtn').dataset.editId;
+  // 所属キャディーを取得
+  const checks=document.getElementById('courseEmpChecks')?document.getElementById('courseEmpChecks').getElementsByTagName('input'):[];
+  const assignedEmps=[];for(let i=0;i<checks.length;i++){if(checks[i].checked)assignedEmps.push(String(checks[i].value));}
   if(editId){
     const c=state.courses.find(x=>String(x.id)===String(editId));
-    if(c)Object.assign(c,{name,address,phone,manager,rateType,fixedRate,weekdayRate,weekendRate});
+    if(c)Object.assign(c,{name,address,phone,manager,rateType,fixedRate,weekdayRate,weekendRate,assignedEmps});
   } else {
-    state.courses.push({id:Date.now(),name,address,phone,manager,rateType,fixedRate,weekdayRate,weekendRate,assignedEmps:[]});
+    state.courses.push({id:Date.now(),name,address,phone,manager,rateType,fixedRate,weekdayRate,weekendRate,assignedEmps});
   }
   await saveState();closeModal('courseModal');renderCourseTable();populateCourseSelects();renderRateMatrix();
   showToast('✅ ゴルフ場を保存しました');
