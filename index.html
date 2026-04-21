@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0057)file:///C:/Users/winst/Downloads/caddypro_firebase_2.html -->
+<!-- saved from url=(0058)file:///C:/Users/winst/Downloads/caddypro_firebase_18.html -->
 <html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
   <link rel="manifest" href="file:///C:/Users/winst/Downloads/manifest.json">
@@ -278,7 +278,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
   <div class="login-sub">キャディー派遣管理システム</div>
   <div class="login-box">
     <div class="login-label">ログイン方法を選んでください</div>
-    <button class="login-choice-btn" id="empLoginBtn">👤 従業員ログイン（PIN番号）</button>
+    <button class="login-choice-btn" id="empLoginBtn" onclick="showPinScreen()">👤 従業員ログイン（PIN番号）</button>
     <button class="admin-link-btn" id="adminLoginBtn" onclick="googleSignIn()">🔒 管理者ログイン（Google）</button>
   </div>
 </div>
@@ -339,7 +339,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
 
 <!-- ===== 従業員モード ===== -->
 <div class="screen" id="empScreen">
-  <div class="emp-clock" id="empClock">20:33:09</div>
+  <div class="emp-clock" id="empClock">20:55:27</div>
   <div class="emp-date" id="empDate">2026年4月21日</div>
   <div class="emp-card">
     <div class="emp-name-display" id="empNameDisplay">---</div>
@@ -521,7 +521,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
-      <div class="current-date" id="headerDate">2026年4月21日<br>20:33:09</div>
+      <div class="current-date" id="headerDate">2026年4月21日<br>20:55:27</div>
       <button class="logout-btn" onclick="logoutAdmin()">← ログアウト</button>
     </div>
   </header>
@@ -565,7 +565,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
       <!-- 打刻エリア -->
       <div id="punchSubArea">
         <div class="section-header mb-28"><div class="section-title">⛳ 出勤状況</div></div>
-        <div class="card mb-20"><div class="punch-time" id="liveClock">20:33:09</div><div class="punch-date-display" id="liveDate">2026年4月21日火曜日</div></div>
+        <div class="card mb-20"><div class="punch-time" id="liveClock">20:55:27</div><div class="punch-date-display" id="liveDate">2026年4月21日火曜日</div></div>
         <div class="grid-3 mb-20">
           <div class="stat-card"><div class="stat-label">本日出勤</div><div class="stat-value" id="todayPunchCount">0<span>名</span></div></div>
           <div class="stat-card"><div class="stat-label">本日退勤</div><div class="stat-value" id="todayDoneCount">0<span>名</span></div></div>
@@ -913,7 +913,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
             <div class="form-group">
               <label>会社ロゴ（シフト表に表示）</label>
               <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
-                <img id="logoPreview" src="file:///C:/Users/winst/Downloads/caddypro_firebase_2.html" style="display:none;max-height:60px;max-width:180px;border-radius:6px;border:1px solid rgba(201,168,76,0.3);">
+                <img id="logoPreview" src="file:///C:/Users/winst/Downloads/caddypro_firebase_18.html" style="display:none;max-height:60px;max-width:180px;border-radius:6px;border:1px solid rgba(201,168,76,0.3);">
                 <div>
                   <label style="display:inline-block;padding:8px 14px;background:rgba(201,168,76,0.2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--goldl);font-size:13px;cursor:pointer;">
                     📁 ロゴを選択
@@ -952,7 +952,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
               <div style="font-size:11px;color:var(--goldl);margin-bottom:6px;">このアプリのURL（従業員に共有）</div>
               <div class="qr-area">
                 <div style="font-size:28px;">📱</div>
-                <div class="qr-url" id="shareUrl">file:///C:/Users/winst/Downloads/caddypro_firebase_2.html</div>
+                <div class="qr-url" id="shareUrl">file:///C:/Users/winst/Downloads/caddypro_firebase_18.html</div>
                 <button onclick="copyShareUrl()" style="margin-top:10px;padding:8px 16px;background:rgba(201,168,76,0.2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--goldl);font-size:12px;cursor:pointer;font-family:&#39;DM Mono&#39;,monospace;">🔗 URLをコピー</button>
               </div>
             </div>
@@ -1633,6 +1633,13 @@ function updateEmpPunchState(emp){
   const isTraining=['training','training_baito','training_invoice'].includes(emp.contract);
   if(rec&&rec.punchIn){btn.className='big-btn done';btn.textContent=isTraining?'✓ 本日の研修を記録しました':rec.pending?'⏳ 承認待ち':'✓ 本日の出勤を記録しました';info.textContent=`${isTraining?'研修':'出勤'}時刻: ${rec.punchIn}${rec.pending?' （管理者承認待ち）':''}`; }
   else{btn.className='big-btn in';btn.textContent=isTraining?'📚 研修出勤する':'🕓 出勤する';info.textContent='';}
+}
+function updateEmpNoticeBadge(){
+  const btn=document.getElementById('empNoticeBtn');if(!btn)return;
+  const notices=state.notices||[];
+  const pending=notices.filter(n=>n.empId&&String(n.empId)===String(currentEmpId)&&!n.confirmed);
+  if(pending.length>0){btn.textContent=`🔔 明日の出勤確認（${pending.length}件）`;btn.style.background='rgba(192,57,43,0.4)';}
+  else{btn.textContent='🔔 明日の出勤確認';btn.style.background='rgba(192,57,43,0.15)';}
 }
 
 // 打刻時に売上を自動登録する共通関数
