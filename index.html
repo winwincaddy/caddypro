@@ -932,12 +932,22 @@ tr:hover td{background:rgba(201,168,76,0.05);}
             <div class="form-group"><label>振込先 口座名義</label><input type="text" id="bankHolder" oninput="saveSettings()"></div>
             <div class="form-group"><label>代表者名</label><input type="text" id="companyRep" oninput="saveSettings()"></div>
             <div class="form-group" style="border-top:1px solid rgba(201,168,76,0.2);margin-top:14px;padding-top:14px;">
-              <label style="margin-bottom:8px;display:block;">業務委託の消費税計算</label>
-              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-                <input type="checkbox" id="applyConsumptionTax" onchange="saveSettings()" style="width:18px;height:18px;accent-color:var(--gold);">
-                <span style="font-size:13px;color:var(--cream);">消費税10%を適用する（÷1.08×1.1）</span>
-              </label>
-              <div style="font-size:11px;color:var(--gray);margin-top:6px;padding-left:28px;">業務委託・インボイス対象者の請求額を8%→10%に換算して表示します</div>
+              <label style="margin-bottom:10px;display:block;">業務委託の消費税計算</label>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                  <input type="radio" name="consumptionTaxMode" id="taxModeNone" value="none" onchange="saveSettings()" style="width:16px;height:16px;accent-color:var(--gold);" checked>
+                  <span style="font-size:13px;color:var(--cream);">適用しない</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                  <input type="radio" name="consumptionTaxMode" id="taxMode1" value="tax10" onchange="saveSettings()" style="width:16px;height:16px;accent-color:var(--gold);">
+                  <span style="font-size:13px;color:var(--cream);">① 給料 × 10%</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                  <input type="radio" name="consumptionTaxMode" id="taxMode2" value="tax8to10" onchange="saveSettings()" style="width:16px;height:16px;accent-color:var(--gold);">
+                  <span style="font-size:13px;color:var(--cream);">② 給料 ÷ 1.08 × 1.1</span>
+                </label>
+              </div>
+              <div style="font-size:11px;color:var(--gray);margin-top:8px;">業務委託・インボイス対象者の請求額に適用されます</div>
             </div>
           </div>
         </div>
@@ -1505,8 +1515,8 @@ function saveSettings(){
   state.settings.companyRep=document.getElementById('companyRep').value;
   const ap=document.getElementById('adminPin').value;
   state.settings.adminPin=ap?String(ap).padStart(4,'0').slice(-4):'0000';
-  const taxEl=document.getElementById('applyConsumptionTax');
-  state.settings.applyConsumptionTax=taxEl?taxEl.checked:false;
+  const taxMode=document.querySelector('input[name="consumptionTaxMode"]:checked');
+  state.settings.consumptionTaxMode=taxMode?taxMode.value:'none';
   saveState();
 }
 function loadSettings(){
@@ -1514,7 +1524,9 @@ function loadSettings(){
   ['companyName','companyAddress','companyPhone','companyInvoiceNo','bankName','bankAccount','bankHolder','companyRep']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.value=state.settings[id]||'';});
   const ap=document.getElementById('adminPin');if(ap)ap.value=state.settings.adminPin||'0000';
-  const taxEl=document.getElementById('applyConsumptionTax');if(taxEl)taxEl.checked=!!state.settings.applyConsumptionTax;
+  const taxMode=state.settings.consumptionTaxMode||'none';
+  const taxRadio=document.querySelector(`input[name="consumptionTaxMode"][value="${taxMode}"]`);
+  if(taxRadio)taxRadio.checked=true;
   const gasUrl=localStorage.getItem('gas_url')||'';
   const gasEl=document.getElementById('gasUrl');if(gasEl)gasEl.value=gasUrl;
   updateSheetStatus(!!gasUrl);
@@ -2977,7 +2989,11 @@ function renderAttendanceTable(){
     const hasInvoice=contract==='invoice_yes'&&emp&&emp.invoiceNo;
     const isCommission=hasInvoice||contract==='invoice_no'||contract==='training_invoice';
     const wage=Number(r.wage||0);
-    if(isCommission&&state.settings.applyConsumptionTax){
+    const taxMode=state.settings.consumptionTaxMode||'none';
+    if(isCommission&&taxMode==='tax10'){
+      const tax=Math.round(wage*0.1);
+      totalTaxEx+=wage;totalTax+=tax;totalInc+=wage+tax;
+    } else if(isCommission&&taxMode==='tax8to10'){
       const taxEx=Math.round(wage/1.08);
       const billed=Math.round(taxEx*1.1);
       totalTaxEx+=taxEx;totalTax+=billed-taxEx;totalInc+=billed;
