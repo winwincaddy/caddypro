@@ -2125,7 +2125,7 @@ function renderEmpTable(){
   if(!state.employees.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px;">従業員が登録されていません</td></tr>';return;}
   tbody.innerHTML=state.employees.map(e=>{
     const contractBadge=e.contract==='baito'||!e.contract?'<span class="badge badge-gold">アルバイト</span>':e.contract==='invoice_yes'?'<span class="badge badge-green">業務委託 IN有</span>':e.contract==='training'?'<span class="badge" style="background:rgba(74,140,92,0.3);color:#6dbf7e;">📚 研修</span>':e.contract==='training_baito'?'<span class="badge" style="background:rgba(74,140,92,0.2);color:#6dbf7e;">📚 研修AB</span>':e.contract==='training_invoice'?'<span class="badge" style="background:rgba(74,140,92,0.2);color:#adf;">📚 研修委託</span>':'<span class="badge" style="background:rgba(139,139,139,0.2);color:#aaa;">業務委託 IN無</span>';
-    return `<tr><td>${e.name}</td><td style="font-family:'DM Mono',monospace;">●●●●</td><td style="font-family:'DM Mono',monospace;">¥${Number(e.wage||0).toLocaleString()}</td><td>${e.role||'キャディー'}</td><td>${contractBadge}</td><td><button class="btn btn-outline btn-sm" onclick="openEditEmpModal(this)" data-id="${e.id}">編集</button> <button class="btn btn-outline btn-sm" onclick="deleteEmployee(this)" data-id="${e.id}">削除</button></td></tr>`;
+    return `<tr><td>${e.name}</td><td style="font-family:'DM Mono',monospace;cursor:pointer;" onclick="togglePinDisplay(this,'${e.pin||'----'}')" title="クリックで表示"><span class="pin-hidden">●●●●</span></td><td style="font-family:'DM Mono',monospace;">¥${Number(e.wage||0).toLocaleString()}</td><td>${e.role||'キャディー'}</td><td>${contractBadge}</td><td><button class="btn btn-outline btn-sm" onclick="openEditEmpModal(this)" data-id="${e.id}">編集</button> <button class="btn btn-outline btn-sm" onclick="deleteEmployee(this)" data-id="${e.id}">削除</button></td></tr>`;
   }).join('');
 }
 function renderCourseTable(){
@@ -3947,6 +3947,18 @@ function importData(input){
   input.value='';
 }
 
+async function togglePinDisplay(td, pin){
+  const span=td.querySelector('.pin-hidden');
+  if(!span)return;
+  if(span.textContent==='●●●●'){
+    span.textContent=pin;
+    span.style.color='var(--goldl)';
+    setTimeout(()=>{span.textContent='●●●●';span.style.color='';},3000);
+  } else {
+    span.textContent='●●●●';
+    span.style.color='';
+  }
+}
 async function autoAssign(){
   const ym=`${shiftYear}-${String(shiftMonth+1).padStart(2,'0')}`;
   const reqs=(state.shiftRequests||[]).filter(r=>r.date&&r.date.startsWith(ym)&&r.status==='approved');
