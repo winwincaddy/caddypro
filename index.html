@@ -3576,7 +3576,7 @@ function updateNoticeEmps(){
     if(assigned.length)emps=state.employees.filter(e=>assigned.includes(String(e.id)));
   }
   const html=emps.map(e=>`<label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-    <input type="checkbox" data-emp="${e.id}" checked style="width:16px;height:16px;accent-color:var(--gold);">
+    <input type="checkbox" data-emp="${e.id}" style="width:16px;height:16px;accent-color:var(--gold);">
     <span style="font-size:13px;color:var(--cream);">${e.name}</span>
   </label>`).join('');
   checksEls.forEach(el=>{el.innerHTML=html||'<div style="color:var(--gray);font-size:12px;">従業員なし</div>';});
