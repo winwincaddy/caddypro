@@ -3468,9 +3468,14 @@ function initNoticeForm(){
       const confirmed=(state.notices||[]).filter(x=>x.noticeId===n.id&&x.confirmed).length;
       const total=n.empIds?n.empIds.length:1;
       return `<div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:10px;margin-bottom:8px;">
-        <div style="font-weight:700;color:var(--cream);font-size:13px;">${n.date} ${n.courseName?'⛳'+n.courseName:''}</div>
-        <div style="font-size:12px;color:var(--gray);margin-top:2px;">${n.time?'🕐'+n.time:''} ${n.memo||''}</div>
-        <div style="font-size:11px;color:var(--goldl);margin-top:4px;">確認: ${confirmed}/${total}名</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div>
+            <div style="font-weight:700;color:var(--cream);font-size:13px;">${n.date} ${n.courseName?'⛳'+n.courseName:''}</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:2px;">${n.time?'🕐'+n.time:''} ${n.memo||''}</div>
+            <div style="font-size:11px;color:var(--goldl);margin-top:4px;">確認: ${confirmed}/${total}名</div>
+          </div>
+          <button onclick="deleteNotice('${n.id}')" style="flex-shrink:0;padding:4px 10px;background:rgba(192,57,43,0.2);border:1px solid rgba(192,57,43,0.4);border-radius:8px;color:#e88;font-size:11px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">取り消し</button>
+        </div>
       </div>`;
     }).join('');
   });
@@ -3607,6 +3612,14 @@ function updateNoticeEmps(){
     <span style="font-size:13px;color:var(--cream);">${e.name}</span>
   </label>`).join('');
   checksEls.forEach(el=>{el.innerHTML=html||'<div style="color:var(--gray);font-size:12px;">従業員なし</div>';});
+}
+async function deleteNotice(id){
+  showConfirm('この連絡を取り消しますか？（従業員側の通知も削除されます）', async()=>{
+    state.notices=state.notices.filter(n=>String(n.id)!==String(id)&&String(n.noticeId)!==String(id));
+    await saveState();
+    initNoticeForm();
+    showToast('🗑️ 連絡を取り消しました');
+  });
 }
 async function sendNotice(){
   const dateEl=document.querySelector('#noticeDate');
