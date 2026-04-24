@@ -779,7 +779,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
                 <option value="1.5">1.5 R</option>
               </select>
             </div>
-
+            <button class="btn btn-primary" onclick="saveManualAttendance()" style="width:100%;justify-content:center;margin-top:12px;">✅ 出勤を登録する</button>
           </div>
         </div>
       </div>
@@ -3947,7 +3947,44 @@ function importData(input){
   input.value='';
 }
 
-async function togglePinDisplay(td, pin){
+async async function saveManualAttendance(){
+  const courseEl=document.getElementById('manualAttCourse');
+  const roundsEl=document.getElementById('manualAttRounds');
+  const courseId=courseEl?courseEl.value:'';
+  const rounds=roundsEl?Number(roundsEl.value):1;
+  const course=courseId?state.courses.find(c=>String(c.id)===String(courseId)):null;
+  const entries=Object.entries(manualAttSelections).filter(([,empId])=>empId);
+  if(!entries.length){showToast('⚠ 日付と従業員を選択してください');return;}
+  let added=0;
+  entries.forEach(([date,empId])=>{
+    const emp=state.employees.find(e=>String(e.id)===String(empId));
+    if(!emp)return;
+    const exists=state.attendance.find(a=>a.date===date&&String(a.empId)===String(empId));
+    if(exists){return;}
+    const wage=Number(getRate(empId,courseId,date)||emp.wage||0);
+    state.attendance.push({
+      id:Date.now()+Math.random(),
+      date,
+      empId:String(empId),
+      empName:emp.name,
+      courseId:String(courseId||''),
+      courseName:course?course.name:'',
+      rounds,
+      wage:wage*rounds,
+      punchIn:'手動入力',
+      punchOut:'手動入力',
+      manual:true
+    });
+    added++;
+  });
+  if(!added){showToast('⚠ 追加できる記録がありません（重複確認）');return;}
+  await saveState();
+  manualAttSelections={};
+  renderManualCal();
+  renderAttendanceTable();
+  showToast(`✅ ${added}件の出勤を登録しました`);
+}
+function togglePinDisplay(td, pin){
   const span=td.querySelector('.pin-hidden');
   if(!span)return;
   if(span.textContent==='●●●●'){
