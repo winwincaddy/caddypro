@@ -1563,7 +1563,11 @@ function checkAdminPin(){
   else{document.getElementById('adminPinError').textContent='PINが違います。もう一度お試しください。';adminPinBuffer='';updateAdminPinDots();}
 }
 async function googleSignIn(){
-  if(!window._auth)return alert('Firebase Authが読み込まれていません');
+  if(!window._auth){
+    // Firebaseが未ロードの場合はPINログインに切り替え
+    showScreen('adminPinScreen');
+    return;
+  }
   try{
     const result=await window._signInWithPopup(window._auth,window._googleProvider);
     const user=result.user;
@@ -1577,7 +1581,12 @@ async function googleSignIn(){
     loginAsAdmin();
     showToast(`✅ ${user.email} でログインしました`);
   }catch(e){
-    if(e.code!=='auth/popup-closed-by-user')alert('ログインに失敗しました: '+e.message);
+    if(e.code==='auth/popup-blocked'){
+      // ポップアップがブロックされた場合はPINログインに切り替え
+      showScreen('adminPinScreen');
+    } else if(e.code!=='auth/popup-closed-by-user'){
+      alert('ログインに失敗しました: '+e.message);
+    }
   }
 }
 async function googleSignOut(){
@@ -4034,12 +4043,20 @@ async function autoAssign(){
 
 // ページ読み込み完了後にinit()を実行
 document.addEventListener('DOMContentLoaded', function(){
-  // ボタンのイベント登録を直接設定（firebase-ready待ちなし）
-  const empBtn=document.getElementById('empLoginBtn');
-  if(empBtn)empBtn.onclick=function(){showPinScreen();};
-  const adminBtn=document.getElementById('adminLoginBtn');
-  if(adminBtn)adminBtn.onclick=function(){googleSignIn();};
-  init();
+  // ボタンのイベント登録を直接設定（iOS対応・エラー保護付き）
+  try{
+    const empBtn=document.getElementById('empLoginBtn');
+    if(empBtn){
+      empBtn.onclick=null;
+      empBtn.addEventListener('click',function(e){e.stopPropagation();showPinScreen();});
+    }
+    const adminBtn=document.getElementById('adminLoginBtn');
+    if(adminBtn){
+      adminBtn.onclick=null;
+      adminBtn.addEventListener('click',function(e){e.stopPropagation();showAdminPinScreen();});
+    }
+  }catch(e){console.error('ボタン登録エラー:',e);}
+  try{init();}catch(e){console.error('init()エラー:',e);}
 });
 </script>
 
