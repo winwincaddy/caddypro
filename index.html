@@ -931,6 +931,14 @@ tr:hover td{background:rgba(201,168,76,0.05);}
             <div class="form-group"><label>振込先 口座種別・番号</label><input type="text" id="bankAccount" oninput="saveSettings()"></div>
             <div class="form-group"><label>振込先 口座名義</label><input type="text" id="bankHolder" oninput="saveSettings()"></div>
             <div class="form-group"><label>代表者名</label><input type="text" id="companyRep" oninput="saveSettings()"></div>
+            <div class="form-group" style="border-top:1px solid rgba(201,168,76,0.2);margin-top:14px;padding-top:14px;">
+              <label style="margin-bottom:8px;display:block;">業務委託の消費税計算</label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                <input type="checkbox" id="applyConsumptionTax" onchange="saveSettings()" style="width:18px;height:18px;accent-color:var(--gold);">
+                <span style="font-size:13px;color:var(--cream);">消費税10%を適用する（÷1.08×1.1）</span>
+              </label>
+              <div style="font-size:11px;color:var(--gray);margin-top:6px;padding-left:28px;">業務委託・インボイス対象者の請求額を8%→10%に換算して表示します</div>
+            </div>
           </div>
         </div>
         <div>
@@ -1497,6 +1505,8 @@ function saveSettings(){
   state.settings.companyRep=document.getElementById('companyRep').value;
   const ap=document.getElementById('adminPin').value;
   state.settings.adminPin=ap?String(ap).padStart(4,'0').slice(-4):'0000';
+  const taxEl=document.getElementById('applyConsumptionTax');
+  state.settings.applyConsumptionTax=taxEl?taxEl.checked:false;
   saveState();
 }
 function loadSettings(){
@@ -1504,6 +1514,7 @@ function loadSettings(){
   ['companyName','companyAddress','companyPhone','companyInvoiceNo','bankName','bankAccount','bankHolder','companyRep']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.value=state.settings[id]||'';});
   const ap=document.getElementById('adminPin');if(ap)ap.value=state.settings.adminPin||'0000';
+  const taxEl=document.getElementById('applyConsumptionTax');if(taxEl)taxEl.checked=!!state.settings.applyConsumptionTax;
   const gasUrl=localStorage.getItem('gas_url')||'';
   const gasEl=document.getElementById('gasUrl');if(gasEl)gasEl.value=gasUrl;
   updateSheetStatus(!!gasUrl);
@@ -2966,7 +2977,7 @@ function renderAttendanceTable(){
     const hasInvoice=contract==='invoice_yes'&&emp&&emp.invoiceNo;
     const isCommission=hasInvoice||contract==='invoice_no'||contract==='training_invoice';
     const wage=Number(r.wage||0);
-    if(isCommission){
+    if(isCommission&&state.settings.applyConsumptionTax){
       const taxEx=Math.round(wage/1.08);
       const billed=Math.round(taxEx*1.1);
       totalTaxEx+=taxEx;totalTax+=billed-taxEx;totalInc+=billed;
