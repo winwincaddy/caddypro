@@ -278,7 +278,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
   <div class="login-box">
     <div class="login-label">ログイン方法を選んでください</div>
     <button class="login-choice-btn" id="empLoginBtn" onclick="showPinScreen()">👤 従業員ログイン（PIN番号）</button>
-    <button class="admin-link-btn" id="adminLoginBtn" onclick="googleSignIn()">🔒 管理者ログイン（Google）</button>
+    <button class="admin-link-btn" id="adminLoginBtn" onclick="showAdminPinScreen()">🔒 管理者ログイン</button>
   </div>
 </div>
 
@@ -333,6 +333,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
     <button class="pin-key del" onclick="adminPinDel()">⌫</button>
   </div>
   <div class="pin-error" id="adminPinError"></div>
+  <button onclick="googleSignIn()" style="margin-top:16px;width:100%;max-width:280px;padding:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:var(--goldl);font-size:13px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">🔑 Googleアカウントでログイン</button>
   <button class="pin-back" onclick="showScreen(&#39;topScreen&#39;)">← 戻る</button>
 </div>
 
@@ -1553,7 +1554,7 @@ function checkPin(){
 }
 
 // ── PIN 管理者 ──
-function showAdminPinScreen(){googleSignIn();}
+function showAdminPinScreen(){adminPinBuffer='';updateAdminPinDots();document.getElementById('adminPinError').textContent='';showScreen('adminPinScreen');}
 function adminPinKey(k){if(adminPinBuffer.length>=4)return;adminPinBuffer+=k;updateAdminPinDots();if(adminPinBuffer.length===4)setTimeout(checkAdminPin,150);}
 function adminPinDel(){adminPinBuffer=adminPinBuffer.slice(0,-1);updateAdminPinDots();}
 function updateAdminPinDots(){for(let i=0;i<4;i++)document.getElementById('ad'+i).classList.toggle('filled',i<adminPinBuffer.length);}
@@ -1581,11 +1582,12 @@ async function googleSignIn(){
     loginAsAdmin();
     showToast(`✅ ${user.email} でログインしました`);
   }catch(e){
-    if(e.code==='auth/popup-blocked'){
-      // ポップアップがブロックされた場合はPINログインに切り替え
+    if(e.code==='auth/popup-blocked'||e.code==='auth/unauthorized-domain'||e.code==='auth/operation-not-allowed'){
+      document.getElementById('adminPinError').textContent='Google認証が使用できません。PIN番号でログインしてください。';
       showScreen('adminPinScreen');
     } else if(e.code!=='auth/popup-closed-by-user'){
-      alert('ログインに失敗しました: '+e.message);
+      document.getElementById('adminPinError').textContent='エラー: '+e.message;
+      showScreen('adminPinScreen');
     }
   }
 }
