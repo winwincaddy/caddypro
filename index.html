@@ -1096,8 +1096,14 @@ tr:hover td{background:rgba(201,168,76,0.05);}
       <div class="form-group"><label>振込先 口座種別・番号</label><input type="text" id="newEmpBankAccount" placeholder="普通 1234567"></div>
       <div class="form-group"><label>振込先 口座名義</label><input type="text" id="newEmpBankHolder" placeholder="ヤマダ タロウ"></div>
     </div>
+    <!-- 契約ゴルフ場・給料設定 -->
+    <div style="border-top:1px solid rgba(201,168,76,0.2);margin:14px 0;padding-top:14px;">
+      <div style="font-size:11px;color:var(--goldl);font-family:'DM Mono',monospace;margin-bottom:10px;">⛳ 契約ゴルフ場・給料設定</div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:10px;">勤務するゴルフ場にチェックし、ゴルフ場ごとの給料を設定（未入力は基本日給を使用）</div>
+      <div id="empCourseWageList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal(&#39;empModal&#39;)">キャンセル</button>
+      <button class="btn btn-outline" onclick="closeModal('empModal')">キャンセル</button>
       <button class="btn btn-primary" id="empModalSaveBtn" onclick="saveEmployee()">追加</button>
     </div>
   </div>
@@ -1639,7 +1645,11 @@ function loginAsEmp(emp){
   if(trainingArea)trainingArea.style.display=isTraining?'block':'none';
   if(!isTraining){
     const sel=document.getElementById('empCourseSelect');
-    sel.innerHTML='<option value="">-- ゴルフ場を選択 --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    // 従業員に契約ゴルフ場が設定されていればそれのみ、未設定なら全コース
+    const empCourses=emp.courses&&emp.courses.length>0
+      ?state.courses.filter(c=>emp.courses.includes(String(c.id)))
+      :state.courses;
+    sel.innerHTML='<option value="">-- ゴルフ場を選択 --</option>'+empCourses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   }
   document.getElementById('empNameDisplay').textContent=emp.name+(isTraining?' 📚':'');
   // 請求書 or 源泉徴収票ボタンを動的に切り替え
@@ -1892,6 +1902,7 @@ function openEmpModal(){
   const whf=document.getElementById('withholdingField');if(whf)whf.style.display='block';
   const whi=document.getElementById('newEmpWithholding');if(whi)whi.checked=false;
   const ef=document.getElementById('newEmpEmail');if(ef)ef.value='';
+  renderEmpCourseWageList([],{});
   document.getElementById('empModal').classList.add('open');
 }
 function openEditEmpModal(btn){
@@ -1913,6 +1924,7 @@ function openEditEmpModal(btn){
   const isBaito=['baito','training','training_baito'].includes(emp.contract||'baito');
   const wf=document.getElementById('withholdingField');if(wf)wf.style.display=isBaito?'block':'none';
   const wh=document.getElementById('newEmpWithholding');if(wh)wh.checked=!!emp.withholding;
+  renderEmpCourseWageList(emp.courses||[],emp.courseWages||{});
   document.getElementById('empModal').classList.add('open');
 }
 async function saveEmployee(){
@@ -1931,12 +1943,21 @@ async function saveEmployee(){
   const bankHolder=document.getElementById('newEmpBankHolder')?document.getElementById('newEmpBankHolder').value.trim():'';
   if(!name){alert('氏名を入力してください');return;}
   if(!pin||pin.length!==4){alert('PIN番号を4桁で入力してください');return;}
+  // 契約ゴルフ場・給料読み取り
+  const courses=[];const courseWages={};
+  document.querySelectorAll('#empCourseWageList input[type=checkbox]').forEach(cb=>{
+    if(cb.checked){
+      courses.push(String(cb.value));
+      const wEl=document.getElementById('empCourseWage_'+cb.value);
+      if(wEl&&wEl.value)courseWages[String(cb.value)]=Number(wEl.value);
+    }
+  });
   const editId=document.getElementById('empModalSaveBtn').dataset.editId;
   if(editId){
     const emp=state.employees.find(e=>String(e.id)===String(editId));
-    if(emp)Object.assign(emp,{name,pin,wage,role,contract,address,phone,invoiceNo,bankName,bankAccount,bankHolder,withholding,email});
+    if(emp)Object.assign(emp,{name,pin,wage,role,contract,address,phone,invoiceNo,bankName,bankAccount,bankHolder,withholding,email,courses,courseWages});
   } else {
-    state.employees.push({id:Date.now(),name,pin,wage,role,contract,address,phone,invoiceNo,bankName,bankAccount,bankHolder,withholding,email,courseWages:{}});
+    state.employees.push({id:Date.now(),name,pin,wage,role,contract,address,phone,invoiceNo,bankName,bankAccount,bankHolder,withholding,email,courses,courseWages});
   }
   await saveState();closeModal('empModal');renderEmpTable();renderEmployeeGrid();renderRateMatrix();populateEmpInvSelect();
   showToast('✅ 従業員を保存しました');
@@ -1949,6 +1970,33 @@ function deleteEmployee(btn){
     await saveState();renderEmpTable();renderEmployeeGrid();renderRateMatrix();
     showToast('🗑️ 削除しました');
   });
+}
+// 従業員モーダル：契約ゴルフ場・給料リスト
+function renderEmpCourseWageList(empCourses,empCourseWages){
+  const container=document.getElementById('empCourseWageList');if(!container)return;
+  empCourses=(empCourses||[]).map(String);
+  empCourseWages=empCourseWages||{};
+  if(!state.courses.length){container.innerHTML='<div style="font-size:12px;color:var(--gray);">ゴルフ場が登録されていません</div>';return;}
+  container.innerHTML=state.courses.map(c=>{
+    const checked=empCourses.includes(String(c.id));
+    const wage=empCourseWages[String(c.id)]||'';
+    return `<div style="background:rgba(26,58,42,0.4);border:1px solid rgba(201,168,76,0.15);border-radius:10px;padding:10px 12px;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" value="${c.id}" ${checked?'checked':''} onchange="toggleEmpCourseWage(this)" style="width:16px;height:16px;accent-color:var(--gold);">
+        <span style="font-size:14px;font-weight:700;color:var(--cream);">⛳ ${c.name}</span>
+      </label>
+      <div id="empCourseWageRow_${c.id}" style="display:${checked?'flex':'none'};align-items:center;gap:8px;margin-top:8px;">
+        <span style="font-size:12px;color:var(--gray);white-space:nowrap;">給料（円/日）</span>
+        <input type="number" id="empCourseWage_${c.id}" value="${wage}" placeholder="例: 12000" min="0"
+          style="flex:1;padding:7px 10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-size:13px;font-family:'DM Mono',monospace;">
+        <span style="font-size:11px;color:var(--gray);white-space:nowrap;">未入力=基本給</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleEmpCourseWage(cb){
+  const row=document.getElementById('empCourseWageRow_'+cb.value);
+  if(row)row.style.display=cb.checked?'flex':'none';
 }
 function populateCourseEmpChecks(assignedEmps){
   const container=document.getElementById('courseEmpChecks');if(!container)return;
@@ -2240,9 +2288,12 @@ function setShiftSubTab(tab){
 // RATE
 // =====================================================
 function getRate(empId,courseId,dateStr){
+  // 従業員ごとのゴルフ場別給料設定を最優先
+  const emp=state.employees.find(e=>String(e.id)===String(empId));
+  if(emp&&emp.courseWages&&emp.courseWages[String(courseId)])return Number(emp.courseWages[String(courseId)]);
   const course=state.courses.find(c=>String(c.id)===String(courseId));
-  if(!course)return 0;
-  if(course.rateType==='fixed'||!course.rateType)return course.fixedRate||0;
+  if(!course)return emp?Number(emp.wage||0):0;
+  if(course.rateType==='fixed'||!course.rateType)return course.fixedRate||emp?.wage||0;
   if(course.rateType==='weekday_weekend')return dateStr&&isWeekendOrHoliday(dateStr)?(course.weekendRate||0):(course.weekdayRate||0);
   // per_person系：course.perPersonFees を優先、なければ state.rates を参照
   const pf=course.perPersonFees||{};
@@ -2392,7 +2443,8 @@ function renderDashboard(){
   state.courses.forEach(course=>{
     const req=dayReqs.find(r=>String(r.courseId)===String(course.id));
     const shift=dayShifts.find(s=>String(s.courseId)===String(course.id));
-    const assignedEmps=state.employees;
+    // emp.coursesが設定されている場合はそのゴルフ場に絞り込み、未設定なら全員表示
+    const assignedEmps=state.employees.filter(e=>!e.courses||!e.courses.length||e.courses.includes(String(course.id)));
     const confirmedIds=shift?((shift.employees||[]).map(String)):[];
     const neededCount=req?req.count:0;
     const confirmedCount=confirmedIds.length;
