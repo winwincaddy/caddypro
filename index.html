@@ -4405,6 +4405,10 @@ async function saveManualAttendance(){
       punchOut:'手動入力',
       manual:true
     });
+    // 売上にも反映（ゴルフ場が設定されている場合）
+    if(courseId){
+      autoAddSales(empId,emp.name,courseId,course?course.name:'',date,rounds);
+    }
     added++;
   });
   if(!added){showToast('⚠ 追加できる記録がありません（重複確認）');return;}
@@ -4413,6 +4417,8 @@ async function saveManualAttendance(){
   renderManualCal();
   renderManualAttStatus();
   renderAttendanceTable();
+  renderSalesTable();
+  updateSalesStats();
   // ログイン中の従業員に手動追加した場合は打刻状態を更新
   if(currentEmpId){
     const loggedEmp=state.employees.find(e=>String(e.id)===String(currentEmpId));
