@@ -1179,10 +1179,8 @@ tr:hover td{background:rgba(201,168,76,0.05);}
         <div class="form-group"><label>指名料（円/回）</label><input type="number" id="newCourseShimeiFee" placeholder="例: 1000" min="0"></div>
       </div>
     </div>
-    <div class="form-group" style="margin-top:4px;">
-      <label>👤 所属キャディー</label>
-      <div id="courseEmpChecks" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;padding:4px 0;"></div>
-    </div>
+    <!-- 所属キャディー選択は廃止 (id保持のみ) -->
+    <div id="courseEmpChecks" style="display:none;"></div>
     <div id="perPersonFeeArea" style="display:none;">
       <div style="font-size:11px;color:var(--goldl);font-family:&#39;DM Mono&#39;,monospace;margin-bottom:8px;">💴 キャディーごとの契約金</div>
       <div id="perPersonFeeFields" style="display:flex;flex-direction:column;gap:8px;"></div>
@@ -1641,10 +1639,7 @@ function loginAsEmp(emp){
   if(trainingArea)trainingArea.style.display=isTraining?'block':'none';
   if(!isTraining){
     const sel=document.getElementById('empCourseSelect');
-    // 所属キャディーにチェックされているゴルフ場のみ表示
-    const myCourses=state.courses.filter(c=>(c.assignedEmps||[]).map(String).includes(String(emp.id)));
-    const displayCourses=myCourses.length>0?myCourses:state.courses;
-    sel.innerHTML='<option value="">-- ゴルフ場を選択 --</option>'+displayCourses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    sel.innerHTML='<option value="">-- ゴルフ場を選択 --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   }
   document.getElementById('empNameDisplay').textContent=emp.name+(isTraining?' 📚':'');
   // 請求書 or 源泉徴収票ボタンを動的に切り替え
@@ -1966,7 +1961,6 @@ function openCourseModal(){
   document.getElementById('courseModalSaveBtn').dataset.editId='';
   ['newCourseName','newCourseAddress','newCoursePhone','newCourseManager','newCourseRate','newCourseWeekdayRate','newCourseWeekendRate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const rt=document.getElementById('newCourseRateType');if(rt)rt.value='fixed';
-  populateCourseEmpChecks([]);
   document.getElementById('courseModal').classList.add('open');
   renderCafeteriaEmpBurden();
 }
@@ -1984,7 +1978,6 @@ function openEditCourseModal(btn){
   if(document.getElementById('newCourseWeekendRate'))document.getElementById('newCourseWeekendRate').value=c.weekendRate||'';
   const isWd=(c.rateType==='weekday_weekend'||c.rateType==='per_person_weekday');
   const wwf=document.getElementById('weekdayWeekendFields');if(wwf)wwf.style.display=isWd?'block':'none';
-  populateCourseEmpChecks(c.assignedEmps||[]);
   document.getElementById('courseModal').classList.add('open');
   renderCafeteriaEmpBurden(c.cafeteriaBurdens);
 }
@@ -1999,14 +1992,11 @@ async function saveCourse(){
   const weekdayRate=(rateType==='weekday_weekend'||rateType==='per_person_weekday')?Number(document.getElementById('newCourseWeekdayRate')?document.getElementById('newCourseWeekdayRate').value:0)||0:0;
   const weekendRate=(rateType==='weekday_weekend'||rateType==='per_person_weekday')?Number(document.getElementById('newCourseWeekendRate')?document.getElementById('newCourseWeekendRate').value:0)||0:0;
   const editId=document.getElementById('courseModalSaveBtn').dataset.editId;
-  // 所属キャディーを取得
-  const checks=document.getElementById('courseEmpChecks')?document.getElementById('courseEmpChecks').getElementsByTagName('input'):[];
-  const assignedEmps=[];for(let i=0;i<checks.length;i++){if(checks[i].checked)assignedEmps.push(String(checks[i].value));}
   if(editId){
     const c=state.courses.find(x=>String(x.id)===String(editId));
-    if(c)Object.assign(c,{name,address,phone,manager,rateType,fixedRate,weekdayRate,weekendRate,assignedEmps});
+    if(c)Object.assign(c,{name,address,phone,manager,rateType,fixedRate,weekdayRate,weekendRate});
   } else {
-    state.courses.push({id:Date.now(),name,address,phone,manager,rateType,fixedRate,weekdayRate,weekendRate,assignedEmps});
+    state.courses.push({id:Date.now(),name,address,phone,manager,rateType,fixedRate,weekdayRate,weekendRate});
   }
   await saveState();closeModal('courseModal');renderCourseTable();populateCourseSelects();renderRateMatrix();
   showToast('✅ ゴルフ場を保存しました');
@@ -2043,20 +2033,13 @@ function toggleShimeiFee(){
 function renderCafeteriaEmpBurden(savedBurdens){
   savedBurdens=savedBurdens||{};
   const area=document.getElementById('cafeteriaEmpBurdenArea');if(!area)return;
-  // 所属キャディーのチェック済み従業員を取得
-  const checks=document.getElementById('courseEmpChecks').getElementsByTagName('input');
-  const checkedEmps=[];
-  for(let i=0;i<checks.length;i++){
-    if(checks[i].checked){
-      const emp=state.employees.find(e=>String(e.id)===checks[i].value);
-      if(emp)checkedEmps.push(emp);
-    }
-  }
-  if(!checkedEmps.length){
-    area.innerHTML='<div style="font-size:12px;color:var(--gray);padding:8px;">👆 先に所属キャディーを選択してください</div>';
+  // 全従業員を対象にする
+  const allEmps=state.employees;
+  if(!allEmps.length){
+    area.innerHTML='<div style="font-size:12px;color:var(--gray);padding:8px;">従業員が登録されていません</div>';
     return;
   }
-  area.innerHTML=checkedEmps.map(emp=>{
+  area.innerHTML=allEmps.map(emp=>{
     const saved=savedBurdens[String(emp.id)]||'company';
     return `<div style="display:flex;align-items:center;gap:10px;background:rgba(0,0,0,0.2);padding:10px 12px;border-radius:10px;border:1px solid rgba(201,168,76,0.15);">
       <span style="font-size:13px;color:var(--cream);font-weight:700;min-width:80px;">${emp.name}</span>
@@ -2361,15 +2344,9 @@ function renderEmployeeGrid(){
     filterSel.innerHTML='<option value="">⛳ 全員表示</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
     filterSel.value=cur;
   }
-  const filterCourseId=filterSel?filterSel.value:'';
-  // 表示する従業員を絞り込み
-  let emps=state.employees;
-  if(filterCourseId){
-    const course=state.courses.find(c=>String(c.id)===String(filterCourseId));
-    const assigned=(course&&course.assignedEmps||[]).map(String);
-    emps=state.employees.filter(e=>assigned.includes(String(e.id)));
-  }
-  if(!emps.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;">このゴルフ場に所属キャディーがいません</div>';updatePunchStats();return;}
+  // 全従業員を表示（ゴルフ場フィルターは表示用のみ、所属絞り込みは廃止）
+  const emps=state.employees;
+  if(!emps.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;">従業員が登録されていません</div>';updatePunchStats();return;}
   grid.innerHTML=emps.map(emp=>{
     const rec=state.attendance.find(a=>String(a.empId)===String(emp.id)&&a.date===today);
     const isIn=rec&&rec.punchIn;
@@ -2415,8 +2392,7 @@ function renderDashboard(){
   state.courses.forEach(course=>{
     const req=dayReqs.find(r=>String(r.courseId)===String(course.id));
     const shift=dayShifts.find(s=>String(s.courseId)===String(course.id));
-    const assignedEmpIds=(course.assignedEmps||[]).map(String);
-    const assignedEmps=assignedEmpIds.map(eid=>state.employees.find(e=>String(e.id)===eid)).filter(Boolean);
+    const assignedEmps=state.employees;
     const confirmedIds=shift?((shift.employees||[]).map(String)):[];
     const neededCount=req?req.count:0;
     const confirmedCount=confirmedIds.length;
