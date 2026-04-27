@@ -940,24 +940,6 @@ tr:hover td{background:rgba(201,168,76,0.05);}
             <div class="form-group"><label>振込先 口座種別・番号</label><input type="text" id="bankAccount" oninput="saveSettings()"></div>
             <div class="form-group"><label>振込先 口座名義</label><input type="text" id="bankHolder" oninput="saveSettings()"></div>
             <div class="form-group"><label>代表者名</label><input type="text" id="companyRep" oninput="saveSettings()"></div>
-            <div class="form-group" style="border-top:1px solid rgba(201,168,76,0.2);margin-top:14px;padding-top:14px;">
-              <label style="margin-bottom:10px;display:block;">業務委託の消費税計算</label>
-              <div style="display:flex;flex-direction:column;gap:8px;">
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-                  <input type="radio" name="consumptionTaxMode" id="taxModeNone" value="none" onchange="saveSettings()" style="width:16px;height:16px;accent-color:var(--gold);" checked>
-                  <span style="font-size:13px;color:var(--cream);">適用しない</span>
-                </label>
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-                  <input type="radio" name="consumptionTaxMode" id="taxMode1" value="tax10" onchange="saveSettings()" style="width:16px;height:16px;accent-color:var(--gold);">
-                  <span style="font-size:13px;color:var(--cream);">① 給料 × 10%</span>
-                </label>
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-                  <input type="radio" name="consumptionTaxMode" id="taxMode2" value="tax8to10" onchange="saveSettings()" style="width:16px;height:16px;accent-color:var(--gold);">
-                  <span style="font-size:13px;color:var(--cream);">② 給料 ÷ 1.08 × 1.1</span>
-                </label>
-              </div>
-              <div style="font-size:11px;color:var(--gray);margin-top:8px;">業務委託・インボイス対象者の請求額に適用されます</div>
-            </div>
           </div>
         </div>
         <div>
@@ -1078,6 +1060,26 @@ tr:hover td{background:rgba(201,168,76,0.05);}
           <span style="font-size:13px;color:var(--cream);font-weight:700;">源泉徴収あり（月額表甲欄）</span>
         </label>
         <div style="font-size:11px;color:var(--gray);margin-top:6px;">※ 毎月の給与から源泉所得税を自動計算します</div>
+      </div>
+    </div>
+    <div id="empTaxModeField" style="display:none;">
+      <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:10px;padding:12px 14px;margin-top:10px;">
+        <div style="font-size:11px;color:var(--goldl);font-family:'DM Mono',monospace;margin-bottom:8px;">🧾 業務委託の消費税計算</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="radio" name="empTaxMode" value="none" id="empTaxModeNone" style="width:16px;height:16px;accent-color:var(--gold);" checked>
+            <span style="font-size:13px;color:var(--cream);">適用しない</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="radio" name="empTaxMode" value="tax10" id="empTaxMode1" style="width:16px;height:16px;accent-color:var(--gold);">
+            <span style="font-size:13px;color:var(--cream);">① 給料 × 10%</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="radio" name="empTaxMode" value="tax8to10" id="empTaxMode2" style="width:16px;height:16px;accent-color:var(--gold);">
+            <span style="font-size:13px;color:var(--cream);">② 給料 ÷ 1.08 × 1.1</span>
+          </label>
+        </div>
+        <div style="font-size:11px;color:var(--gray);margin-top:8px;">業務委託の請求額に適用されます</div>
       </div>
     </div>
     <div style="border-top:1px solid rgba(201,168,76,0.2);margin:14px 0;padding-top:14px;">
@@ -1527,8 +1529,6 @@ async function saveSettings(){
   state.settings.companyRep=g('companyRep');
   const ap=g('adminPin');
   state.settings.adminPin=ap?String(ap).padStart(4,'0').slice(-4):'0000';
-  const taxMode=document.querySelector('input[name="consumptionTaxMode"]:checked');
-  state.settings.consumptionTaxMode=taxMode?taxMode.value:'none';
   await saveState();
   showToast('✅ 設定を保存しました');
 }
@@ -1537,9 +1537,6 @@ function loadSettings(){
   ['companyName','companyAddress','companyPhone','companyInvoiceNo','bankName','bankAccount','bankHolder','companyRep']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.value=state.settings[id]||'';});
   const ap=document.getElementById('adminPin');if(ap)ap.value=state.settings.adminPin||'0000';
-  const taxMode=state.settings.consumptionTaxMode||'none';
-  const taxRadio=document.querySelector(`input[name="consumptionTaxMode"][value="${taxMode}"]`);
-  if(taxRadio)taxRadio.checked=true;
   const gasUrl=localStorage.getItem('gas_url')||'';
   const gasEl=document.getElementById('gasUrl');if(gasEl)gasEl.value=gasUrl;
   updateSheetStatus(!!gasUrl);
@@ -1871,7 +1868,9 @@ function toggleInvoiceField(){
   const contract=document.getElementById('newEmpContract').value;
   document.getElementById('invoiceNoField').style.display=contract==='invoice_yes'?'block':'none';
   const isBaito=['baito','training','training_baito'].includes(contract);
+  const isCommission=['invoice_yes','invoice_no','training_invoice'].includes(contract);
   const wf=document.getElementById('withholdingField');if(wf)wf.style.display=isBaito?'block':'none';
+  const tf=document.getElementById('empTaxModeField');if(tf)tf.style.display=isCommission?'block':'none';
 }
 function populateCourseSelects(){
   ['reqCourse','newSalesCourse','invoiceCourse','manualAttCourse'].forEach(id=>{
@@ -1898,6 +1897,8 @@ function openEmpModal(){
   document.getElementById('invoiceNoField').style.display='none';
   const whf=document.getElementById('withholdingField');if(whf)whf.style.display='block';
   const whi=document.getElementById('newEmpWithholding');if(whi)whi.checked=false;
+  const tf=document.getElementById('empTaxModeField');if(tf)tf.style.display='none';
+  const tmn=document.getElementById('empTaxModeNone');if(tmn)tmn.checked=true;
   const ef=document.getElementById('newEmpEmail');if(ef)ef.value='';
   renderEmpCourseWageList([],{});
   document.getElementById('empModal').classList.add('open');
@@ -1919,8 +1920,11 @@ function openEditEmpModal(btn){
   if(document.getElementById('newEmpBankHolder'))document.getElementById('newEmpBankHolder').value=emp.bankHolder||'';
   document.getElementById('invoiceNoField').style.display=emp.contract==='invoice_yes'?'block':'none';
   const isBaito=['baito','training','training_baito'].includes(emp.contract||'baito');
+  const isCommission=['invoice_yes','invoice_no','training_invoice'].includes(emp.contract||'');
   const wf=document.getElementById('withholdingField');if(wf)wf.style.display=isBaito?'block':'none';
   const wh=document.getElementById('newEmpWithholding');if(wh)wh.checked=!!emp.withholding;
+  const tf=document.getElementById('empTaxModeField');if(tf)tf.style.display=isCommission?'block':'none';
+  const tm=document.querySelector(`input[name="empTaxMode"][value="${emp.taxMode||'none'}"]`);if(tm)tm.checked=true;
   renderEmpCourseWageList(emp.courses||[],emp.courseWages||{});
   document.getElementById('empModal').classList.add('open');
 }
@@ -1934,6 +1938,8 @@ async function saveEmployee(){
   const phone=document.getElementById('newEmpPhone')?document.getElementById('newEmpPhone').value.trim():'';
   const invoiceNo=contract==='invoice_yes'?document.getElementById('newEmpInvoiceNo').value.trim():'';
   const withholding=document.getElementById('newEmpWithholding')?document.getElementById('newEmpWithholding').checked:false;
+  const taxModeEl=document.querySelector('input[name="empTaxMode"]:checked');
+  const taxMode=taxModeEl?taxModeEl.value:'none';
   const email=document.getElementById('newEmpEmail')?document.getElementById('newEmpEmail').value.trim():'';
   const bankName=document.getElementById('newEmpBankName')?document.getElementById('newEmpBankName').value.trim():'';
   const bankBranch=document.getElementById('newEmpBankBranch')?document.getElementById('newEmpBankBranch').value.trim():'';
@@ -1971,9 +1977,9 @@ async function saveEmployee(){
   const editId=document.getElementById('empModalSaveBtn').dataset.editId;
   if(editId){
     const emp=state.employees.find(e=>String(e.id)===String(editId));
-    if(emp)Object.assign(emp,{name,pin,wage,role,contract,address,phone,invoiceNo,bankName,bankBranch,bankAccount,bankHolder,withholding,email,courses,courseWages});
+    if(emp)Object.assign(emp,{name,pin,wage,role,contract,address,phone,invoiceNo,bankName,bankBranch,bankAccount,bankHolder,withholding,taxMode,email,courses,courseWages});
   } else {
-    state.employees.push({id:Date.now(),name,pin,wage,role,contract,address,phone,invoiceNo,bankName,bankBranch,bankAccount,bankHolder,withholding,email,courses,courseWages});
+    state.employees.push({id:Date.now(),name,pin,wage,role,contract,address,phone,invoiceNo,bankName,bankBranch,bankAccount,bankHolder,withholding,taxMode,email,courses,courseWages});
   }
   await saveState();closeModal('empModal');renderEmpTable();renderEmployeeGrid();renderRateMatrix();populateEmpInvSelect();
   showToast('✅ 従業員を保存しました');
@@ -3138,7 +3144,7 @@ function renderAttendanceTable(){
     const hasInvoice=contract==='invoice_yes'&&emp&&emp.invoiceNo;
     const isCommission=hasInvoice||contract==='invoice_no'||contract==='training_invoice';
     const wage=Number(r.wage||0);
-    const taxMode=state.settings.consumptionTaxMode||'none';
+    const taxMode=emp?(emp.taxMode||state.settings.consumptionTaxMode||'none'):(state.settings.consumptionTaxMode||'none');
     if(isCommission&&taxMode==='tax10'){
       const tax=Math.round(wage*0.1);
       totalTaxEx+=wage;totalTax+=tax;totalInc+=wage+tax;
