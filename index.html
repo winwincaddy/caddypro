@@ -1716,7 +1716,8 @@ function renderEmpHistory(){
   const taxMode=isCommission?(emp.taxMode||(state.settings&&state.settings.consumptionTaxMode)||'none'):'none';
   let totalWage=0;
   records.forEach(r=>{
-    const base=Number(r.wage||0)||getEmpDailyWage(emp.id,r.courseId);
+    const dailyRate=Number(r.wage||0)||getEmpDailyWage(emp.id,r.courseId);
+    const base=Math.round(dailyRate*Number(r.rounds||1));
     let tax=0;
     if(taxMode==='tax10')tax=Math.round(base*0.1);
     else if(taxMode==='tax8to10')tax=Math.round(base/1.08*1.1)-base;
@@ -1728,7 +1729,9 @@ function renderEmpHistory(){
   if(wageEl)wageEl.textContent=`¥${totalWage.toLocaleString()}`;
   if(!records.length){list.innerHTML='<div class="empty-state">この月の出勤記録はありません</div>';return;}
   list.innerHTML=records.map(r=>{
-    const base=Number(r.wage||0)||getEmpDailyWage(emp.id,r.courseId);
+    const dailyRate=Number(r.wage||0)||getEmpDailyWage(emp.id,r.courseId);
+    const rounds=Number(r.rounds||1);
+    const base=Math.round(dailyRate*rounds);
     let tax=0;
     if(taxMode==='tax10')tax=Math.round(base*0.1);
     else if(taxMode==='tax8to10')tax=Math.round(base/1.08*1.1)-base;
@@ -1737,10 +1740,11 @@ function renderEmpHistory(){
     const dayTotal=base+tax-caf+shi;
     const[,m,d]=r.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(r.date).getDay()];
     let note='';
+    if(rounds!==1)note+=` <span style="color:#aaa;font-size:11px;">${dailyRate.toLocaleString()}×${rounds}R</span>`;
     if(tax>0)note+=` <span style="color:#aaa;font-size:11px;">+消費税¥${tax.toLocaleString()}</span>`;
     if(caf>0)note+=` <span style="color:#e88;font-size:11px;">食堂-¥${caf.toLocaleString()}</span>`;
     if(shi>0)note+=` <span style="color:#6dbf7e;font-size:11px;">指名+¥${shi.toLocaleString()}</span>`;
-    return `<div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px 14px;margin-bottom:8px;"><div style="font-weight:700;color:var(--cream);">${parseInt(m)}月${parseInt(d)}日（${dow}）</div><div style="font-size:13px;color:var(--gray);margin-top:4px;">${r.courseName||'研修'}　<span style="color:var(--goldl);font-weight:700;">¥${dayTotal.toLocaleString()}</span>${note}</div></div>`;
+    return `<div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px 14px;margin-bottom:8px;"><div style="font-weight:700;color:var(--cream);">${parseInt(m)}月${parseInt(d)}日（${dow}）<span style="font-size:11px;color:var(--gray);margin-left:6px;">${rounds}R</span></div><div style="font-size:13px;color:var(--gray);margin-top:4px;">${r.courseName||'研修'}　<span style="color:var(--goldl);font-weight:700;">¥${dayTotal.toLocaleString()}</span>${note}</div></div>`;
   }).join('');
 }
 function showEmpShiftApply(){
@@ -4196,8 +4200,10 @@ function renderEmpMyInvoice(){
   const taxMode=isCommission?(emp.taxMode||s.consumptionTaxMode||'none'):'none';
   let baseTotal=0,taxTotal=0,cafTotal=0,shimeiTotal=0;
   const rows=atts.map(a=>{
-    // 給料: 出勤時に保存された値 → なければ従業員設定から取得
-    const baseWage=Number(a.wage||0)||getEmpDailyWage(emp.id,a.courseId);
+    // 給料: 1R単価 × ラウンド数（0.5Rは半額）
+    const dailyRate=Number(a.wage||0)||getEmpDailyWage(emp.id,a.courseId);
+    const rounds=Number(a.rounds||1);
+    const baseWage=Math.round(dailyRate*rounds);
     // 消費税
     let tax=0;
     if(taxMode==='tax10') tax=Math.round(baseWage*0.1);
@@ -4208,10 +4214,11 @@ function renderEmpMyInvoice(){
     baseTotal+=baseWage;taxTotal+=tax;cafTotal+=cafFee;shimeiTotal+=shimFee;
     const[,mm,dd]=a.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(a.date).getDay()];
     let note='';
+    if(rounds!==1)note+=` <span style="color:#aaa;font-size:10px;">(${dailyRate.toLocaleString()}×${rounds}R)</span>`;
     if(tax>0)note+=` <span style="color:#888;font-size:10px;">+消費税¥${tax.toLocaleString()}</span>`;
     if(cafFee>0)note+=` <span style="color:#c66;font-size:10px;">食堂-¥${cafFee.toLocaleString()}</span>`;
     if(shimFee>0)note+=` <span style="color:#6a6;font-size:10px;">指名+¥${shimFee.toLocaleString()}</span>`;
-    return `<tr><td style="padding:6px;border:1px solid #ddd;">${parseInt(mm)}/${parseInt(dd)}(${dow})</td><td style="padding:6px;border:1px solid #ddd;">${a.courseName||'研修'}</td><td style="padding:6px;text-align:right;border:1px solid #ddd;">${a.rounds||1}R</td><td style="padding:6px;text-align:right;border:1px solid #ddd;">¥${dayTotal.toLocaleString()}${note}</td></tr>`;
+    return `<tr><td style="padding:6px;border:1px solid #ddd;">${parseInt(mm)}/${parseInt(dd)}(${dow})</td><td style="padding:6px;border:1px solid #ddd;">${a.courseName||'研修'}</td><td style="padding:6px;text-align:right;border:1px solid #ddd;">${rounds}R</td><td style="padding:6px;text-align:right;border:1px solid #ddd;">¥${dayTotal.toLocaleString()}${note}</td></tr>`;
   }).join('');
   const grandTotal=baseTotal+taxTotal-cafTotal+shimeiTotal;
   let summaryRows='';
