@@ -1939,6 +1939,7 @@ async function saveEmployee(){
   const withholding=document.getElementById('newEmpWithholding')?document.getElementById('newEmpWithholding').checked:false;
   const email=document.getElementById('newEmpEmail')?document.getElementById('newEmpEmail').value.trim():'';
   const bankName=document.getElementById('newEmpBankName')?document.getElementById('newEmpBankName').value.trim():'';
+  const bankBranch=document.getElementById('newEmpBankBranch')?document.getElementById('newEmpBankBranch').value.trim():'';
   const bankAccount=document.getElementById('newEmpBankAccount')?document.getElementById('newEmpBankAccount').value.trim():'';
   const bankHolder=document.getElementById('newEmpBankHolder')?document.getElementById('newEmpBankHolder').value.trim():'';
   if(!name){alert('氏名を入力してください');return;}
@@ -1955,9 +1956,9 @@ async function saveEmployee(){
   const editId=document.getElementById('empModalSaveBtn').dataset.editId;
   if(editId){
     const emp=state.employees.find(e=>String(e.id)===String(editId));
-    if(emp)Object.assign(emp,{name,pin,wage,role,contract,address,phone,invoiceNo,bankName,bankAccount,bankHolder,withholding,email,courses,courseWages});
+    if(emp)Object.assign(emp,{name,pin,wage,role,contract,address,phone,invoiceNo,bankName,bankBranch,bankAccount,bankHolder,withholding,email,courses,courseWages});
   } else {
-    state.employees.push({id:Date.now(),name,pin,wage,role,contract,address,phone,invoiceNo,bankName,bankAccount,bankHolder,withholding,email,courses,courseWages});
+    state.employees.push({id:Date.now(),name,pin,wage,role,contract,address,phone,invoiceNo,bankName,bankBranch,bankAccount,bankHolder,withholding,email,courses,courseWages});
   }
   await saveState();closeModal('empModal');renderEmpTable();renderEmployeeGrid();renderRateMatrix();populateEmpInvSelect();
   showToast('✅ 従業員を保存しました');
@@ -2485,7 +2486,7 @@ function renderDashboard(){
         </div>
       </div>
       <!-- 従業員選択 -->
-      ${assignedEmps.length?`<div style="display:flex;flex-direction:column;gap:6px;">${empItems}</div>`:'<div style="font-size:12px;color:var(--gray);">所属キャディー未設定</div>'}
+      ${assignedEmps.length?`<div style="display:flex;flex-direction:column;gap:6px;">${empItems}</div>`:'<div style="font-size:12px;color:var(--gray);">従業員が登録されていません</div>'}
     </div>`;
   });
 
@@ -2922,8 +2923,10 @@ async function cancelPunchIn(recId){
 async function adminPunchIn(empId){
   const now=new Date();const time=now.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
   const emp=state.employees.find(e=>String(e.id)===String(empId));
-  // 所属ゴルフ場を取得
-  const myCourses=state.courses.filter(c=>(c.assignedEmps||[]).map(String).includes(String(empId)));
+  // 従業員に設定された契約ゴルフ場を取得（未設定なら全コース）
+  const myCourses=emp&&emp.courses&&emp.courses.length>0
+    ?state.courses.filter(c=>emp.courses.includes(String(c.id)))
+    :state.courses;
   // ゴルフ場選択モーダル
   const result=await selectCourseAndRoundsModal(emp.name, myCourses);
   if(result===null)return;
@@ -3753,9 +3756,9 @@ function updateNoticeEmps(){
   const courseId=courseEl.length?courseEl[0].value:'';
   let emps=state.employees;
   if(courseId){
-    const course=state.courses.find(c=>String(c.id)===String(courseId));
-    const assigned=(course&&course.assignedEmps||[]).map(String);
-    if(assigned.length)emps=state.employees.filter(e=>assigned.includes(String(e.id)));
+    // emp.coursesが設定されている従業員のみ絞り込み（未設定は全コース対象）
+    const filtered=state.employees.filter(e=>!e.courses||!e.courses.length||e.courses.includes(String(courseId)));
+    if(filtered.length)emps=filtered;
   }
   const html=emps.map(e=>`<label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
     <input type="checkbox" data-emp="${e.id}" style="width:16px;height:16px;accent-color:var(--gold);">
