@@ -3363,7 +3363,7 @@ function renderSalesTable(){
     byCourse[cid].rounds+=Number(r.rounds||1);
     // 売上計算
     const sale=salesRecs.find(s=>String(s.empId)===String(r.empId)&&s.date===r.date&&String(s.courseId)===String(r.courseId));
-    const amount=sale?Number(sale.totalAmount||sale.amount||0):0;
+    const amount=sale?Number(sale.total||sale.totalAmount||sale.amount||0):0;
     byCourse[cid].sales+=amount;
     if(!byCourse[cid].emps[r.empId])byCourse[cid].emps[r.empId]={name:r.empName,dates:[]};
     byCourse[cid].emps[r.empId].dates.push(r.date);
@@ -3424,6 +3424,15 @@ function renderSalesTable(){
 // =====================================================
 // 追加実装: 欠けていた関数群
 // =====================================================
+function updateSalesStats(){
+  const now=new Date();
+  const month=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const salesRecs=(state.sales||[]).filter(s=>s.date&&s.date.startsWith(month));
+  const total=salesRecs.reduce((a,s)=>a+Number(s.total||s.totalAmount||s.amount||0),0);
+  // ダッシュボードの売上合計カードを更新
+  const el=document.getElementById('monthSalesTotal');
+  if(el)el.innerHTML=`¥${total.toLocaleString()}`;
+}
 
 // --- 状態変数 ---
 let manualCalYear=new Date().getFullYear(), manualCalMonth=new Date().getMonth();
