@@ -1984,10 +1984,12 @@ function deleteEmployee(btn){
   });
 }
 // 従業員モーダル：契約ゴルフ場・給料リスト
+let _currentEmpWages={};
 function renderEmpCourseWageList(empCourses,empCourseWages){
   const container=document.getElementById('empCourseWageList');if(!container)return;
   empCourses=(empCourses||[]).map(String);
   empCourseWages=empCourseWages||{};
+  _currentEmpWages=empCourseWages; // チェック切り替え時に参照するため保持
   if(!state.courses.length){container.innerHTML='<div style="font-size:12px;color:var(--gray);">ゴルフ場が登録されていません</div>';return;}
   const inputStyle='flex:1;padding:7px 10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-size:13px;font-family:\'DM Mono\',monospace;';
   container.innerHTML=state.courses.map(c=>{
@@ -2054,8 +2056,34 @@ function renderEmpCourseWageList(empCourses,empCourseWages){
   }).join('');
 }
 function toggleEmpCourseWage(cb){
-  const row=document.getElementById('empCourseWageRow_'+cb.value);
-  if(row)row.style.display=cb.checked?'block':'none';
+  const cid=String(cb.value);
+  const row=document.getElementById('empCourseWageRow_'+cid);
+  if(!row)return;
+  if(cb.checked){
+    // そのコースの保存済みデータのみで入力欄を初期化（他コースの値を引き継がない）
+    const course=state.courses.find(c=>String(c.id)===cid);
+    const rt=course?course.rateType:'fixed';
+    const saved=_currentEmpWages[cid];
+    if(rt==='per_person_weekday'||rt==='weekday_weekend'){
+      const wdEl=document.getElementById('empCourseWage_'+cid+'_wd');
+      const weEl=document.getElementById('empCourseWage_'+cid+'_we');
+      if(wdEl)wdEl.value=typeof saved==='object'&&saved&&saved.wd?saved.wd:'';
+      if(weEl)weEl.value=typeof saved==='object'&&saved&&saved.we?saved.we:'';
+    } else {
+      const wEl=document.getElementById('empCourseWage_'+cid);
+      if(wEl)wEl.value=typeof saved==='number'&&saved?saved:'';
+    }
+    row.style.display='block';
+  } else {
+    // チェックを外したら入力欄をクリア（次回チェック時に汚染しない）
+    const wdEl=document.getElementById('empCourseWage_'+cid+'_wd');
+    const weEl=document.getElementById('empCourseWage_'+cid+'_we');
+    const wEl=document.getElementById('empCourseWage_'+cid);
+    if(wdEl)wdEl.value='';
+    if(weEl)weEl.value='';
+    if(wEl)wEl.value='';
+    row.style.display='none';
+  }
 }
 function populateCourseEmpChecks(assignedEmps){
   const container=document.getElementById('courseEmpChecks');if(!container)return;
