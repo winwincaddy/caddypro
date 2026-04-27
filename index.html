@@ -1344,6 +1344,7 @@ function loadState(){
   if(!state.shifts)state.shifts=[];
   if(!state.shiftRequests)state.shiftRequests=[];
   if(!state.notices)state.notices=[];
+  if(!state.settings)state.settings={};
   if(!state.settings.adminPin)state.settings.adminPin='0000';
 }
 
@@ -3134,10 +3135,11 @@ async function notifyShiftAssigned(dateStr, courseId, empIds){
 }
 async function cancelPunchIn(recId){
   showConfirm('この出勤記録を取り消しますか？',async()=>{
+    const rec=state.attendance.find(a=>String(a.id)===String(recId));
     state.attendance=state.attendance.filter(a=>String(a.id)!==String(recId));
-    // 売上も削除
-    state.sales=state.sales.filter(s=>String(s.attendanceId)!==String(recId));
-    await saveState();renderEmployeeGrid();renderAttendanceTable();
+    // 売上も連動削除（empId + date + courseId で特定）
+    if(rec)state.sales=state.sales.filter(s=>!(String(s.empId)===String(rec.empId)&&s.date===rec.date&&String(s.courseId)===String(rec.courseId)));
+    await saveState();renderEmployeeGrid();renderAttendanceTable();renderSalesTable();updateSalesStats();
     showToast('🗑️ 出勤を取り消しました');
   });
 }
@@ -3250,18 +3252,25 @@ function renderAttendanceTable(){
   const tbody=document.getElementById('attendanceTableBody');
   if(!records.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--gray);padding:28px;">この月のデータがありません</td></tr>';
     document.getElementById('monthTotalDays').innerHTML='0<span>日</span>';document.getElementById('monthTotalWage').textContent='¥0';document.getElementById('empTotalCount').innerHTML=`${state.employees.length}<span>名</span>`;return;}
-  tbody.innerHTML=records.map(r=>`<tr${r.isTraining?' style="background:rgba(74,140,92,0.1);"':''}><td>${formatDate(r.date)}</td><td><strong>${r.empName}</strong>${r.isTraining?`<span style="font-size:10px;color:#6dbf7e;margin-left:4px;">📚${r.trainingType||'研修'}</span>`:''}</td><td class="hl">${r.isTraining?'<span style="color:#6dbf7e;">¥7,000（会社負担）</span>':'¥'+Number(r.wage||0).toLocaleString()}</td><td><span class="badge badge-green">出勤済み</span></td><td><button class="btn btn-outline btn-sm" onclick="deleteAttendance(this)" data-id="${r.id}">削除</button></td></tr>`).join('');
-  const done=records.filter(r=>r.punchOut);
+  tbody.innerHTML=records.map(r=>{
+    // 給料: 日給 × ラウンド数
+    const dailyRate=Number(r.wage||0);
+    const rounds=Number(r.rounds||1);
+    const wageDisplay=r.isTraining?'<span style="color:#6dbf7e;">¥7,000（会社負担）</span>':`¥${Math.round(dailyRate*rounds).toLocaleString()}${rounds!==1?`<span style="font-size:10px;color:var(--gray);"> (${rounds}R)</span>`:''}`;
+    const pendingBadge=r.pending?'<span style="font-size:10px;background:rgba(255,165,0,0.3);color:#f9a825;padding:1px 5px;border-radius:4px;margin-left:4px;">承認待ち</span>':'';
+    return `<tr${r.isTraining?' style="background:rgba(74,140,92,0.1);"':''}><td>${formatDate(r.date)}</td><td><strong>${r.empName}</strong>${r.isTraining?`<span style="font-size:10px;color:#6dbf7e;margin-left:4px;">📚${r.trainingType||'研修'}</span>`:''}${pendingBadge}</td><td class="hl">${wageDisplay}</td><td><span class="badge badge-green">${r.pending?'承認待ち':'出勤済み'}</span></td><td><button class="btn btn-outline btn-sm" onclick="deleteAttendance(this)" data-id="${r.id}">削除</button></td></tr>`;
+  }).join('');
+  const done=records.filter(r=>!r.pending);
   document.getElementById('monthTotalDays').innerHTML=`${done.length}<span>日</span>`;
-  // 税別・消費税・税込み計算
+  // 税別・消費税・税込み計算（rounds反映）
   let totalTaxEx=0,totalTax=0,totalInc=0;
   done.forEach(r=>{
     const emp=state.employees.find(e=>String(e.id)===String(r.empId));
     const contract=emp?emp.contract:'baito';
     const hasInvoice=contract==='invoice_yes'&&emp&&emp.invoiceNo;
     const isCommission=hasInvoice||contract==='invoice_no'||contract==='training_invoice';
-    const wage=Number(r.wage||0);
-    const taxMode=emp?(emp.taxMode||state.settings.consumptionTaxMode||'none'):(state.settings.consumptionTaxMode||'none');
+    const wage=Math.round(Number(r.wage||0)*Number(r.rounds||1));
+    const taxMode=emp?(emp.taxMode||(state.settings&&state.settings.consumptionTaxMode)||'none'):((state.settings&&state.settings.consumptionTaxMode)||'none');
     if(isCommission&&taxMode==='tax10'){
       const tax=Math.round(wage*0.1);
       totalTaxEx+=wage;totalTax+=tax;totalInc+=wage+tax;
@@ -3278,8 +3287,23 @@ function renderAttendanceTable(){
   if(document.getElementById('monthTotalWage'))document.getElementById('monthTotalWage').textContent='¥'+totalInc.toLocaleString();
   document.getElementById('empTotalCount').innerHTML=`${state.employees.length}<span>名</span>`;
 }
-function deleteAttendance(btn){const id=btn.dataset.id;showConfirm('この勤怠記録を削除しますか？',async()=>{state.attendance=state.attendance.filter(a=>String(a.id)!==String(id));await saveState();renderAttendanceTable();renderEmployeeGrid();});}
-function deleteAttendanceById(id){showConfirm('この勤怠記録を削除しますか？',async()=>{state.attendance=state.attendance.filter(a=>String(a.id)!==String(id));await saveState();renderAttendanceTable();renderEmployeeGrid();renderManualCal();renderManualAttStatus();});}
+function deleteAttendance(btn){
+  const id=btn.dataset.id;
+  showConfirm('この勤怠記録を削除しますか？',async()=>{
+    const rec=state.attendance.find(a=>String(a.id)===String(id));
+    state.attendance=state.attendance.filter(a=>String(a.id)!==String(id));
+    if(rec)state.sales=state.sales.filter(s=>!(String(s.empId)===String(rec.empId)&&s.date===rec.date&&String(s.courseId)===String(rec.courseId)));
+    await saveState();renderAttendanceTable();renderEmployeeGrid();renderSalesTable();updateSalesStats();
+  });
+}
+function deleteAttendanceById(id){
+  showConfirm('この勤怠記録を削除しますか？',async()=>{
+    const rec=state.attendance.find(a=>String(a.id)===String(id));
+    state.attendance=state.attendance.filter(a=>String(a.id)!==String(id));
+    if(rec)state.sales=state.sales.filter(s=>!(String(s.empId)===String(rec.empId)&&s.date===rec.date&&String(s.courseId)===String(rec.courseId)));
+    await saveState();renderAttendanceTable();renderEmployeeGrid();renderManualCal();renderManualAttStatus();renderSalesTable();updateSalesStats();
+  });
+}
 
 // =====================================================
 // SALES
@@ -4166,7 +4190,7 @@ function updateEmpInvoicePreview(){
   const [y,m]=month.split('-');const reiwa=parseInt(y)-2018;
   let total=0;
   const rows=atts.map(a=>{
-    const sale=sales.find(x=>x.date===a.date&&String(x.courseId)===String(a.courseId));
+    const sale=sales.find(x=>x.date===a.date&&String(x.courseId)===String(a.courseId)&&String(x.empId)===String(a.empId));
     const amount=sale?Number(sale.total||0):0;total+=amount;
     const [,mm,dd]=a.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(a.date).getDay()];
     return `<tr><td style="padding:6px;border:1px solid #ddd;">${parseInt(mm)}/${parseInt(dd)}(${dow})</td><td style="padding:6px;border:1px solid #ddd;">${a.courseName||'−'}</td><td style="padding:6px;text-align:right;border:1px solid #ddd;">${a.rounds||1}R</td><td style="padding:6px;text-align:right;border:1px solid #ddd;">¥${amount.toLocaleString()}</td></tr>`;
