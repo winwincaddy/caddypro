@@ -3393,8 +3393,10 @@ function renderSalesTable(){
     const sale=salesRecs.find(s=>String(s.empId)===String(r.empId)&&s.date===r.date&&String(s.courseId)===String(r.courseId));
     const amount=sale?Number(sale.total||sale.totalAmount||sale.amount||0):0;
     byCourse[cid].sales+=amount;
-    if(!byCourse[cid].emps[r.empId])byCourse[cid].emps[r.empId]={name:r.empName,dates:[]};
+    if(!byCourse[cid].emps[r.empId])byCourse[cid].emps[r.empId]={name:r.empName,dates:[],sales:0,rounds:0};
     byCourse[cid].emps[r.empId].dates.push(r.date);
+    byCourse[cid].emps[r.empId].sales+=amount;
+    byCourse[cid].emps[r.empId].rounds+=Number(r.rounds||1);
     totalDays++;totalRounds+=Number(r.rounds||1);totalSales+=amount;
   });
   // 合計更新
@@ -3416,10 +3418,16 @@ function renderSalesTable(){
         const dowColor=dow==='日'?'#e88':dow==='土'?'#99c':'var(--gray)';
         return `<span style="display:inline-block;background:rgba(26,58,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:2px 7px;font-size:11px;color:${dowColor};margin:2px;">${parseInt(mm)}/${parseInt(dd)}(${dow})</span>`;
       }).join('');
+      const empSalesStr=emp.sales>0?`¥${emp.sales.toLocaleString()}`:'';
+      const empRoundsStr=emp.rounds!==emp.dates.length?`${emp.rounds}R`:'';
       return `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
           <span style="font-size:13px;font-weight:700;color:var(--cream);">${emp.name}</span>
-          <span style="font-size:12px;color:var(--goldl);">${emp.dates.length}日</span>
+          <span style="display:flex;gap:8px;align-items:center;">
+            ${empRoundsStr?`<span style="font-size:11px;color:var(--gray);">${empRoundsStr}</span>`:''}
+            ${empSalesStr?`<span style="font-size:12px;font-weight:700;color:#6dbf7e;">${empSalesStr}</span>`:''}
+            <span style="font-size:12px;color:var(--goldl);">${emp.dates.length}日</span>
+          </span>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:2px;">${dateTags}</div>
       </div>`;
