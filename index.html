@@ -756,31 +756,39 @@ tr:hover td{background:rgba(201,168,76,0.05);}
           <div>
             <!-- カレンダー複数選択 -->
             <div style="background:rgba(26,58,42,0.6);border:1px solid rgba(201,168,76,0.25);border-radius:12px;padding:14px;margin-bottom:14px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
                 <button onclick="manualCalPrev()" style="background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--goldl);font-size:18px;width:32px;height:32px;cursor:pointer;">‹</button>
-                <div id="manualCalTitle" style="font-size:14px;font-weight:700;color:var(--cream);font-family:&#39;DM Mono&#39;,monospace;"></div>
+                <div id="manualCalTitle" style="font-size:14px;font-weight:700;color:var(--cream);font-family:'DM Mono',monospace;"></div>
                 <button onclick="manualCalNext()" style="background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--goldl);font-size:18px;width:32px;height:32px;cursor:pointer;">›</button>
+              </div>
+              <!-- 凡例 -->
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+                <span style="font-size:10px;color:var(--gray);display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:10px;height:10px;background:rgba(74,140,92,0.6);border:2px solid var(--gold);border-radius:2px;"></span>選択中</span>
+                <span style="font-size:10px;color:var(--gray);display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:10px;height:10px;background:rgba(109,191,126,0.3);border:1px solid rgba(109,191,126,0.5);border-radius:2px;"></span>出勤済</span>
               </div>
               <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;text-align:center;">
                 <div style="font-size:10px;color:#e88;">日</div><div style="font-size:10px;color:var(--gray);">月</div><div style="font-size:10px;color:var(--gray);">火</div><div style="font-size:10px;color:var(--gray);">水</div><div style="font-size:10px;color:var(--gray);">木</div><div style="font-size:10px;color:var(--gray);">金</div><div style="font-size:10px;color:#99c;">土</div>
               </div>
               <div id="manualAttCal" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"></div>
-              <div id="manualAttSelectedDates" style="margin-top:10px;min-height:20px;font-size:11px;color:var(--goldl);"></div>
+              <div id="manualAttSelectedDates" style="margin-top:8px;min-height:18px;font-size:11px;color:var(--goldl);"></div>
             </div>
-            <div class="form-group"><label>ゴルフ場</label><select id="manualAttCourse" onchange="manualAttSelections={};renderManualCal();" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:&#39;Noto Sans JP&#39;,sans-serif;font-size:14px;"><option value="">-- 選択 --</option></select></div>
-            <div style="font-size:12px;color:var(--gray);">📅 日付をタップ → 従業員を選択</div>
+            <div class="form-group"><label>ゴルフ場</label><select id="manualAttCourse" onchange="onManualAttFilterChange()" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px;"><option value="">-- 全ゴルフ場 --</option></select></div>
+            <div class="form-group"><label>従業員</label><select id="manualAttEmpFilter" onchange="onManualAttFilterChange()" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px;"><option value="">-- 全員（日付ごとに選択） --</option></select></div>
+            <div id="manualAttHint" style="font-size:12px;color:var(--gray);margin-bottom:6px;">📅 日付をタップ → 従業員を選択</div>
             <!-- 選択済み表示 -->
-            <div id="manualAttSelList" style="margin-top:10px;"></div>
+            <div id="manualAttSelList" style="margin-top:8px;"></div>
           </div>
           <div>
             <div class="form-group"><label>ラウンド数</label>
-              <select id="manualAttRounds" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:&#39;Noto Sans JP&#39;,sans-serif;font-size:14px;">
+              <select id="manualAttRounds" style="width:100%;padding:10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:14px;">
                 <option value="0.5">0.5 R</option>
                 <option value="1" selected="">1 R</option>
                 <option value="1.5">1.5 R</option>
               </select>
             </div>
             <button class="btn btn-primary" onclick="saveManualAttendance()" style="width:100%;justify-content:center;margin-top:12px;">✅ 出勤を登録する</button>
+            <!-- 出勤状況パネル -->
+            <div id="manualAttStatus" style="margin-top:16px;"></div>
           </div>
         </div>
       </div>
@@ -3018,6 +3026,7 @@ function renderAttendanceTable(){
   document.getElementById('empTotalCount').innerHTML=`${state.employees.length}<span>名</span>`;
 }
 function deleteAttendance(btn){const id=btn.dataset.id;showConfirm('この勤怠記録を削除しますか？',async()=>{state.attendance=state.attendance.filter(a=>String(a.id)!==String(id));await saveState();renderAttendanceTable();renderEmployeeGrid();});}
+function deleteAttendanceById(id){showConfirm('この勤怠記録を削除しますか？',async()=>{state.attendance=state.attendance.filter(a=>String(a.id)!==String(id));await saveState();renderAttendanceTable();renderEmployeeGrid();renderManualCal();renderManualAttStatus();});}
 
 // =====================================================
 // SALES
@@ -3478,13 +3487,14 @@ function initManualAttForm(){
   if(!manualCalYear)manualCalYear=new Date().getFullYear();
   if(manualCalMonth===undefined)manualCalMonth=new Date().getMonth();
   manualAttSelections={};
-  ['manualAttCourse'].forEach(id=>{
-    const sel=document.getElementById(id);if(!sel)return;
-    const cur=sel.value;
-    sel.innerHTML='<option value="">-- 選択 --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-    if(cur)sel.value=cur;
-  });
+  // ゴルフ場セレクト初期化
+  const courseEl=document.getElementById('manualAttCourse');
+  if(courseEl){const cur=courseEl.value;courseEl.innerHTML='<option value="">-- 全ゴルフ場 --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');if(cur)courseEl.value=cur;}
+  // 従業員セレクト初期化
+  const empEl=document.getElementById('manualAttEmpFilter');
+  if(empEl){const cur=empEl.value;empEl.innerHTML='<option value="">-- 全員（日付ごとに選択） --</option>'+state.employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');if(cur)empEl.value=cur;}
   renderManualCal();
+  renderManualAttStatus();
 }
 function initNoticeForm(){
   const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
@@ -3519,46 +3529,121 @@ function initNoticeForm(){
 }
 
 // --- 手動カレンダー ---
+function onManualAttFilterChange(){
+  manualAttSelections={};
+  renderManualCal();
+  renderManualAttStatus();
+}
+function renderManualAttStatus(){
+  const statusEl=document.getElementById('manualAttStatus');
+  if(!statusEl)return;
+  const courseId=document.getElementById('manualAttCourse')?document.getElementById('manualAttCourse').value:'';
+  const empId=document.getElementById('manualAttEmpFilter')?document.getElementById('manualAttEmpFilter').value:'';
+  if(!courseId&&!empId){statusEl.innerHTML='';return;}
+  const ym=`${manualCalYear}-${String(manualCalMonth+1).padStart(2,'0')}`;
+  let atts=(state.attendance||[]).filter(a=>!a.pending&&a.date.startsWith(ym));
+  if(courseId)atts=atts.filter(a=>String(a.courseId)===String(courseId));
+  if(empId)atts=atts.filter(a=>String(a.empId)===String(empId));
+  atts.sort((a,b)=>a.date.localeCompare(b.date));
+  const course=courseId?state.courses.find(c=>String(c.id)===String(courseId)):null;
+  const emp=empId?state.employees.find(e=>String(e.id)===String(empId)):null;
+  let titleParts=[];
+  if(course)titleParts.push(`⛳ ${course.name}`);
+  if(emp)titleParts.push(`👤 ${emp.name}`);
+  const headerTitle=titleParts.join(' / ');
+  if(!atts.length){
+    statusEl.innerHTML=`<div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:12px;">
+      <div style="font-size:12px;font-weight:700;color:var(--goldl);margin-bottom:6px;">📋 出勤状況 — ${headerTitle}</div>
+      <div style="font-size:12px;color:var(--gray);">この月の出勤記録はありません</div>
+    </div>`;
+    return;
+  }
+  const rows=atts.map(a=>{
+    const[,m,d]=a.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(a.date).getDay()];
+    const empLabel=emp?'':`<span style="color:var(--cream);">👤 ${a.empName||'?'}</span>`;
+    const courseLabel=course?'':`<span style="color:var(--gray);font-size:11px;">⛳ ${a.courseName||'?'}</span>`;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+      <div style="display:flex;flex-direction:column;gap:1px;">
+        <span style="font-size:12px;color:var(--goldl);font-weight:700;">${parseInt(m)}/${parseInt(d)}(${dow})</span>
+        ${empLabel}${courseLabel}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;color:var(--cream);font-family:'DM Mono',monospace;">${a.rounds||1}R</span>
+        <button onclick="deleteAttendanceById('${a.id}')" style="padding:2px 7px;background:rgba(192,57,43,0.2);border:1px solid rgba(192,57,43,0.4);border-radius:6px;color:#e88;font-size:11px;cursor:pointer;">削除</button>
+      </div>
+    </div>`;
+  }).join('');
+  statusEl.innerHTML=`<div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:12px;">
+    <div style="font-size:12px;font-weight:700;color:var(--goldl);margin-bottom:4px;">📋 出勤状況 — ${headerTitle}</div>
+    <div style="font-size:11px;color:var(--gray);margin-bottom:8px;">${manualCalYear}年${manualCalMonth+1}月 合計 ${atts.length}件 / ${atts.reduce((s,a)=>s+Number(a.rounds||1),0)}R</div>
+    ${rows}
+  </div>`;
+}
 function renderManualCal(){
   const cal=document.getElementById('manualAttCal');
   const title=document.getElementById('manualCalTitle');
   const selDiv=document.getElementById('manualAttSelectedDates');
   const selList=document.getElementById('manualAttSelList');
+  const hint=document.getElementById('manualAttHint');
   if(!cal)return;
   const reiwa=manualCalYear-2018;
   if(title)title.textContent=`令和${reiwa}年 ${manualCalMonth+1}月`;
   const ym=`${manualCalYear}-${String(manualCalMonth+1).padStart(2,'0')}`;
+  const courseId=document.getElementById('manualAttCourse')?document.getElementById('manualAttCourse').value:'';
+  const empId=document.getElementById('manualAttEmpFilter')?document.getElementById('manualAttEmpFilter').value:'';
+  // ヒントテキスト更新
+  if(hint)hint.textContent=empId?`📅 日付をタップで ${state.employees.find(e=>String(e.id)===String(empId))?.name||''} の出勤を追加`:'📅 日付をタップ → 従業員を選択';
   const firstDay=new Date(manualCalYear,manualCalMonth,1).getDay();
   const daysInMonth=new Date(manualCalYear,manualCalMonth+1,0).getDate();
   let cells='';
   for(let i=0;i<firstDay;i++)cells+='<div></div>';
   for(let d=1;d<=daysInMonth;d++){
     const dateStr=`${ym}-${String(d).padStart(2,'0')}`;
-    const sel=manualAttSelections[dateStr];
+    const selected=manualAttSelections[dateStr]!==undefined;
     const dow=new Date(manualCalYear,manualCalMonth,d).getDay();
     const dayColor=dow===0?'#e88':dow===6?'#99c':'var(--cream)';
-    const bg=sel?'rgba(74,140,92,0.5)':'rgba(26,58,42,0.4)';
-    cells+=`<div onclick="toggleManualDate('${dateStr}')" style="background:${bg};border:1px solid rgba(201,168,76,0.15);border-radius:5px;padding:3px 1px;cursor:pointer;min-height:30px;text-align:center;">
+    // 出勤済み判定（フィルタ条件に合致する出勤記録があるか）
+    const alreadyAtt=(state.attendance||[]).some(a=>
+      !a.pending&&a.date===dateStr&&
+      (!courseId||String(a.courseId)===String(courseId))&&
+      (!empId||String(a.empId)===String(empId))
+    );
+    const bg=selected?'rgba(74,140,92,0.6)':alreadyAtt?'rgba(109,191,126,0.2)':'rgba(26,58,42,0.4)';
+    const border=selected?'2px solid var(--gold)':alreadyAtt?'1px solid rgba(109,191,126,0.4)':'1px solid rgba(201,168,76,0.15)';
+    const badge=alreadyAtt&&!selected?'<div style="font-size:9px;color:#6dbf7e;line-height:1;">✓</div>':'';
+    cells+=`<div onclick="toggleManualDate('${dateStr}')" style="background:${bg};border:${border};border-radius:5px;padding:3px 1px;cursor:pointer;min-height:32px;text-align:center;">
       <div style="font-size:11px;font-weight:700;color:${dayColor};">${d}</div>
+      ${badge}
     </div>`;
   }
   cal.innerHTML=cells;
   const selDates=Object.keys(manualAttSelections).sort();
-  if(selDiv)selDiv.textContent=selDates.length?selDates.map(d=>{const[,m,dd]=d.split('-');return `${parseInt(m)}/${parseInt(dd)}`;}).join(', '):'';
+  if(selDiv)selDiv.textContent=selDates.length?`選択: ${selDates.map(d=>{const[,m,dd]=d.split('-');return `${parseInt(m)}/${parseInt(dd)}`;}).join(', ')}`:'';
   if(selList){
     if(!selDates.length){selList.innerHTML='';return;}
-    const courseEl=document.getElementById('manualAttCourse');
-    const course=courseEl?state.courses.find(c=>String(c.id)===String(courseEl.value)):null;
-    selList.innerHTML=selDates.map(date=>{
-      const[,m,d]=date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(date).getDay()];
-      const empOpts=state.employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
-      return `<div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:10px;margin-bottom:8px;">
-        <div style="font-weight:700;color:var(--goldl);margin-bottom:6px;">${parseInt(m)}月${parseInt(d)}日（${dow}）</div>
-        <select style="width:100%;padding:8px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:13px;" onchange="manualAttSelections['${date}']=this.value;">
-          <option value="">-- 従業員選択 --</option>${empOpts}
-        </select>
+    if(empId){
+      // 従業員が選択済みの場合：日付リストのみ表示（自動割当）
+      const empName=state.employees.find(e=>String(e.id)===String(empId))?.name||'?';
+      selList.innerHTML=`<div style="background:rgba(45,90,61,0.4);border:1px solid rgba(109,191,126,0.3);border-radius:10px;padding:10px;">
+        <div style="font-size:12px;color:#6dbf7e;font-weight:700;margin-bottom:4px;">👤 ${empName} に追加する日付：</div>
+        <div style="font-size:13px;color:var(--cream);">${selDates.map(d=>{const[,m,dd]=d.split('-');const dow=['日','月','火','水','木','金','土'][new Date(d).getDay()];return `${parseInt(m)}/${parseInt(dd)}(${dow})`;}).join('　')}</div>
       </div>`;
-    }).join('');
+      // manualAttSelectionsに従業員IDをセット
+      selDates.forEach(d=>{manualAttSelections[d]=empId;});
+    } else {
+      // 従業員未選択：日付ごとにドロップダウン
+      const empOpts=state.employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+      selList.innerHTML=selDates.map(date=>{
+        const[,m,d]=date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(date).getDay()];
+        const curVal=manualAttSelections[date]||'';
+        return `<div style="background:rgba(26,58,42,0.5);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:10px;margin-bottom:8px;">
+          <div style="font-weight:700;color:var(--goldl);margin-bottom:6px;">${parseInt(m)}月${parseInt(d)}日（${dow}）</div>
+          <select style="width:100%;padding:8px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-family:'Noto Sans JP',sans-serif;font-size:13px;" onchange="manualAttSelections['${date}']=this.value;">
+            <option value="">-- 従業員選択 --</option>${empOpts.replace(`value="${curVal}"`,`value="${curVal}" selected`)}
+          </select>
+        </div>`;
+      }).join('');
+    }
   }
 }
 function toggleManualDate(dateStr){
@@ -3568,11 +3653,11 @@ function toggleManualDate(dateStr){
 }
 function manualCalPrev(){
   manualCalMonth--;if(manualCalMonth<0){manualCalMonth=11;manualCalYear--;}
-  renderManualCal();
+  renderManualCal();renderManualAttStatus();
 }
 function manualCalNext(){
   manualCalMonth++;if(manualCalMonth>11){manualCalMonth=0;manualCalYear++;}
-  renderManualCal();
+  renderManualCal();renderManualAttStatus();
 }
 
 // --- 一覧ページ ---
@@ -4031,6 +4116,7 @@ async function saveManualAttendance(){
   await saveState();
   manualAttSelections={};
   renderManualCal();
+  renderManualAttStatus();
   renderAttendanceTable();
   showToast(`✅ ${added}件の出勤を登録しました`);
 }
