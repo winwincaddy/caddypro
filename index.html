@@ -1515,20 +1515,22 @@ function updateLogoPreview(){
   if(state.settings.companyLogo){img.src=state.settings.companyLogo;img.style.display='block';}
   else{img.src='';img.style.display='none';}
 }
-function saveSettings(){
-  state.settings.companyName=document.getElementById('companyName').value;
-  state.settings.companyAddress=document.getElementById('companyAddress').value;
-  state.settings.companyPhone=document.getElementById('companyPhone').value;
-  state.settings.companyInvoiceNo=document.getElementById('companyInvoiceNo').value;
-  state.settings.bankName=document.getElementById('bankName').value;
-  state.settings.bankAccount=document.getElementById('bankAccount').value;
-  state.settings.bankHolder=document.getElementById('bankHolder').value;
-  state.settings.companyRep=document.getElementById('companyRep').value;
-  const ap=document.getElementById('adminPin').value;
+async function saveSettings(){
+  const g=id=>{const el=document.getElementById(id);return el?el.value:'';};
+  state.settings.companyName=g('companyName');
+  state.settings.companyAddress=g('companyAddress');
+  state.settings.companyPhone=g('companyPhone');
+  state.settings.companyInvoiceNo=g('companyInvoiceNo');
+  state.settings.bankName=g('bankName');
+  state.settings.bankAccount=g('bankAccount');
+  state.settings.bankHolder=g('bankHolder');
+  state.settings.companyRep=g('companyRep');
+  const ap=g('adminPin');
   state.settings.adminPin=ap?String(ap).padStart(4,'0').slice(-4):'0000';
   const taxMode=document.querySelector('input[name="consumptionTaxMode"]:checked');
   state.settings.consumptionTaxMode=taxMode?taxMode.value:'none';
-  saveState();
+  await saveState();
+  showToast('✅ 設定を保存しました');
 }
 function loadSettings(){
   updateLogoPreview();
@@ -1828,7 +1830,6 @@ function renderRateMatrix(){
   if(saveBtn)saveBtn.style.display='block';
   let headerCells='';perPersonCourses.forEach(c=>{if(c.rateType==='per_person_weekday'){headerCells+=`<th style="text-align:center;min-width:100px;font-size:11px;">${c.name}<br><span style="color:#aaa;font-weight:400;">平日</span></th><th style="text-align:center;min-width:100px;font-size:11px;">${c.name}<br><span style="color:#88c;font-weight:400;">土日祝</span></th>`;}else{headerCells+=`<th style="text-align:center;min-width:110px;font-size:11px;">${c.name}</th>`;}});
   const rows=state.employees.map(emp=>{
-    const pf=course=>course.perPersonFees||{};const sr=emp=>(state.rates[String(emp.id)]||{});
     let cells='';perPersonCourses.forEach(course=>{
       const fees=course.perPersonFees||{};const empRates=state.rates[String(emp.id)]||{};
       if(course.rateType==='per_person_weekday'){
@@ -2105,11 +2106,6 @@ function toggleEmpCourseWage(cb){
     });
     row.style.display='none';
   }
-}
-function populateCourseEmpChecks(assignedEmps){
-  const container=document.getElementById('courseEmpChecks');if(!container)return;
-  const assigned=(assignedEmps||[]).map(String);
-  container.innerHTML=state.employees.map(e=>`<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(26,58,42,0.4);border-radius:8px;cursor:pointer;"><input type="checkbox" value="${e.id}" ${assigned.includes(String(e.id))?'checked':''} onchange="renderCafeteriaEmpBurden()" style="width:15px;height:15px;accent-color:var(--gl);"><span style="font-size:13px;color:var(--cream);">${e.name}</span><span style="font-size:11px;color:var(--gray);margin-left:4px;">${e.role||''}</span></label>`).join('');
 }
 function openCourseModal(){
   document.getElementById('courseModalTitle')?document.getElementById('courseModalTitle').textContent='⛳ ゴルフ場追加':'';
@@ -2479,21 +2475,6 @@ async function approvePunch(recId){
   showToast(`✅ ${rec.empName} さんの打刻を承認しました`);
 }
 
-// 過去のpending打刻を一括承認（ページ読み込み時に実行）
-async function approveAllPastPendingPunches(){
-  const today=todayStr();
-  const pastPending=state.attendance.filter(a=>a.pending&&a.date<today);
-  if(!pastPending.length)return;
-  pastPending.forEach(rec=>{
-    delete rec.pending;
-    if(rec.courseId){
-      const dupSales=state.sales.find(s=>String(s.empId)===String(rec.empId)&&s.date===rec.date&&String(s.courseId)===String(rec.courseId));
-      if(!dupSales)autoAddSales(rec.empId,rec.empName,rec.courseId,rec.courseName,rec.date,rec.rounds||1);
-    }
-  });
-  await saveState();
-  console.log(`過去の打刻 ${pastPending.length}件を自動承認しました`);
-}
 async function rejectPunch(recId){
   showConfirm('この打刻を却下（削除）しますか？',async()=>{
     const rec=state.attendance.find(a=>String(a.id)===String(recId));
