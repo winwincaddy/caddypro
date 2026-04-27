@@ -2225,12 +2225,14 @@ function openCourseModal(){
   document.getElementById('courseModalTitle')?document.getElementById('courseModalTitle').textContent='⛳ ゴルフ場追加':'';
   document.getElementById('courseModalSaveBtn').textContent='追加';
   document.getElementById('courseModalSaveBtn').dataset.editId='';
-  ['newCourseName','newCourseAddress','newCoursePhone','newCourseManager','newCourseRate','newCourseWeekdayRate','newCourseWeekendRate','newCourseCafeteriaFee','newCourseShimeiFee'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['newCourseName','newCourseAddress','newCoursePhone','newCourseContact','newCourseManager','newCourseContractFee','newCourseContractFeeWd','newCourseContractFeeWe','newCourseCafeteriaFee','newCourseShimeiFee'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const rt=document.getElementById('newCourseRateType');if(rt)rt.value='fixed';
   const hc=document.getElementById('newCourseHasCafeteria');if(hc)hc.checked=false;
   const hs=document.getElementById('newCourseHasShimei');if(hs)hs.checked=false;
   const cfa=document.getElementById('cafeteriaFeeArea');if(cfa)cfa.style.display='none';
   const sfa=document.getElementById('shimeiFeeArea');if(sfa)sfa.style.display='none';
+  const cffixed=document.getElementById('contractFeeFixed');if(cffixed)cffixed.style.display='block';
+  const cfweekday=document.getElementById('contractFeeWeekday');if(cfweekday)cfweekday.style.display='none';
   document.getElementById('courseModal').classList.add('open');
 }
 function openEditCourseModal(btn){
@@ -2240,12 +2242,19 @@ function openEditCourseModal(btn){
   if(document.getElementById('newCourseName'))document.getElementById('newCourseName').value=c.name||'';
   if(document.getElementById('newCourseAddress'))document.getElementById('newCourseAddress').value=c.address||'';
   if(document.getElementById('newCoursePhone'))document.getElementById('newCoursePhone').value=c.phone||'';
-  if(document.getElementById('newCourseManager'))document.getElementById('newCourseManager').value=c.manager||'';
+  // 担当者名（newCourseContact / newCourseManager どちらのIDでも対応）
+  const contactEl=document.getElementById('newCourseContact')||document.getElementById('newCourseManager');
+  if(contactEl)contactEl.value=c.manager||'';
   if(document.getElementById('newCourseRateType'))document.getElementById('newCourseRateType').value=c.rateType||'fixed';
-  if(document.getElementById('newCourseRate'))document.getElementById('newCourseRate').value=c.fixedRate||'';
-  if(document.getElementById('newCourseWeekdayRate'))document.getElementById('newCourseWeekdayRate').value=c.weekdayRate||'';
-  if(document.getElementById('newCourseWeekendRate'))document.getElementById('newCourseWeekendRate').value=c.weekendRate||'';
+  // 契約金ドロップダウンを復元
   const isWd=(c.rateType==='weekday_weekend'||c.rateType==='per_person_weekday');
+  const isFixed=(c.rateType==='fixed'||c.rateType==='per_person'||!c.rateType);
+  const cfEl=document.getElementById('newCourseContractFee');if(cfEl&&isFixed)cfEl.value=c.fixedRate||'';
+  const cfWdEl=document.getElementById('newCourseContractFeeWd');if(cfWdEl&&isWd)cfWdEl.value=c.weekdayRate||'';
+  const cfWeEl=document.getElementById('newCourseContractFeeWe');if(cfWeEl&&isWd)cfWeEl.value=c.weekendRate||'';
+  // 表示切り替え
+  const cffixed=document.getElementById('contractFeeFixed');if(cffixed)cffixed.style.display=isFixed?'block':'none';
+  const cfweekday=document.getElementById('contractFeeWeekday');if(cfweekday)cfweekday.style.display=isWd?'block':'none';
   const wwf=document.getElementById('weekdayWeekendFields');if(wwf)wwf.style.display=isWd?'block':'none';
   // 食堂設定を復元
   const hc=document.getElementById('newCourseHasCafeteria');if(hc)hc.checked=!!c.hasCafeteria;
@@ -2262,11 +2271,12 @@ async function saveCourse(){
   if(!name){alert('ゴルフ場名を入力してください');return;}
   const address=document.getElementById('newCourseAddress')?document.getElementById('newCourseAddress').value.trim():'';
   const phone=document.getElementById('newCoursePhone')?document.getElementById('newCoursePhone').value.trim():'';
-  const manager=document.getElementById('newCourseManager')?document.getElementById('newCourseManager').value.trim():'';
+  const manager=(document.getElementById('newCourseContact')||document.getElementById('newCourseManager')||{value:''}).value.trim();
   const rateType=document.getElementById('newCourseRateType')?document.getElementById('newCourseRateType').value:'fixed';
-  const fixedRate=Number(document.getElementById('newCourseRate')?document.getElementById('newCourseRate').value:0)||0;
-  const weekdayRate=(rateType==='weekday_weekend'||rateType==='per_person_weekday')?Number(document.getElementById('newCourseWeekdayRate')?document.getElementById('newCourseWeekdayRate').value:0)||0:0;
-  const weekendRate=(rateType==='weekday_weekend'||rateType==='per_person_weekday')?Number(document.getElementById('newCourseWeekendRate')?document.getElementById('newCourseWeekendRate').value:0)||0:0;
+  // 契約金はドロップダウン(newCourseContractFee系)から直接読む
+  const fixedRate=(rateType==='fixed'||rateType==='per_person')?Number(document.getElementById('newCourseContractFee')?document.getElementById('newCourseContractFee').value:0)||0:0;
+  const weekdayRate=(rateType==='weekday_weekend'||rateType==='per_person_weekday')?Number(document.getElementById('newCourseContractFeeWd')?document.getElementById('newCourseContractFeeWd').value:0)||0:0;
+  const weekendRate=(rateType==='weekday_weekend'||rateType==='per_person_weekday')?Number(document.getElementById('newCourseContractFeeWe')?document.getElementById('newCourseContractFeeWe').value:0)||0:0;
   const hasCafeteria=!!(document.getElementById('newCourseHasCafeteria')&&document.getElementById('newCourseHasCafeteria').checked);
   const cafeteriaFee=hasCafeteria?Number(document.getElementById('newCourseCafeteriaFee')?document.getElementById('newCourseCafeteriaFee').value:0)||0:0;
   const hasShimei=!!(document.getElementById('newCourseHasShimei')&&document.getElementById('newCourseHasShimei').checked);
