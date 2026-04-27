@@ -1948,9 +1948,20 @@ async function saveEmployee(){
   const courses=[];const courseWages={};
   document.querySelectorAll('#empCourseWageList input[type=checkbox]').forEach(cb=>{
     if(cb.checked){
-      courses.push(String(cb.value));
-      const wEl=document.getElementById('empCourseWage_'+cb.value);
-      if(wEl&&wEl.value)courseWages[String(cb.value)]=Number(wEl.value);
+      const cid=String(cb.value);
+      courses.push(cid);
+      const course=state.courses.find(c=>String(c.id)===cid);
+      const rt=course?course.rateType:'fixed';
+      if(rt==='per_person_weekday'){
+        const wdEl=document.getElementById('empCourseWage_'+cid+'_wd');
+        const weEl=document.getElementById('empCourseWage_'+cid+'_we');
+        const wd=wdEl&&wdEl.value?Number(wdEl.value):null;
+        const we=weEl&&weEl.value?Number(weEl.value):null;
+        if(wd!==null||we!==null)courseWages[cid]={wd:wd||0,we:we||0};
+      } else {
+        const wEl=document.getElementById('empCourseWage_'+cid);
+        if(wEl&&wEl.value)courseWages[cid]=Number(wEl.value);
+      }
     }
   });
   const editId=document.getElementById('empModalSaveBtn').dataset.editId;
@@ -1978,26 +1989,58 @@ function renderEmpCourseWageList(empCourses,empCourseWages){
   empCourses=(empCourses||[]).map(String);
   empCourseWages=empCourseWages||{};
   if(!state.courses.length){container.innerHTML='<div style="font-size:12px;color:var(--gray);">ゴルフ場が登録されていません</div>';return;}
+  const inputStyle='flex:1;padding:7px 10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-size:13px;font-family:\'DM Mono\',monospace;';
   container.innerHTML=state.courses.map(c=>{
     const checked=empCourses.includes(String(c.id));
-    const wage=empCourseWages[String(c.id)]||'';
+    const savedWage=empCourseWages[String(c.id)];
+    const rt=c.rateType||'fixed';
+    let badge='';
+    let wageRow='';
+    if(rt==='per_person'){
+      badge='<span style="font-size:10px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;padding:1px 5px;margin-left:6px;">👤 人ごと</span>';
+      const val=typeof savedWage==='number'?savedWage:(savedWage||'');
+      wageRow=`<div id="empCourseWageRow_${c.id}" style="display:${checked?'block':'none'};margin-top:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;color:var(--gray);white-space:nowrap;">契約金（円）</span>
+          <input type="number" id="empCourseWage_${c.id}" value="${val}" placeholder="例: 3000" min="0" style="${inputStyle}">
+          <span style="font-size:11px;color:var(--gray);white-space:nowrap;">未入力=コース設定</span>
+        </div>
+      </div>`;
+    } else if(rt==='per_person_weekday'){
+      badge='<span style="font-size:10px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;padding:1px 5px;margin-left:6px;">👤 人ごと平日/土日</span>';
+      const wdVal=typeof savedWage==='object'&&savedWage?savedWage.wd:'';
+      const weVal=typeof savedWage==='object'&&savedWage?savedWage.we:'';
+      wageRow=`<div id="empCourseWageRow_${c.id}" style="display:${checked?'block':'none'};margin-top:8px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:12px;color:var(--gray);white-space:nowrap;">平日（円）</span>
+          <input type="number" id="empCourseWage_${c.id}_wd" value="${wdVal}" placeholder="例: 3000" min="0" style="${inputStyle}">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;color:var(--gray);white-space:nowrap;">土日祝（円）</span>
+          <input type="number" id="empCourseWage_${c.id}_we" value="${weVal}" placeholder="例: 3500" min="0" style="${inputStyle}">
+        </div>
+        <div style="font-size:10px;color:var(--gray);margin-top:4px;">未入力=コース設定を使用</div>
+      </div>`;
+    } else {
+      const val=typeof savedWage==='number'?savedWage:(savedWage||'');
+      wageRow=`<div id="empCourseWageRow_${c.id}" style="display:${checked?'flex':'none'};align-items:center;gap:8px;margin-top:8px;">
+        <span style="font-size:12px;color:var(--gray);white-space:nowrap;">給料（円/日）</span>
+        <input type="number" id="empCourseWage_${c.id}" value="${val}" placeholder="例: 12000" min="0" style="${inputStyle}">
+        <span style="font-size:11px;color:var(--gray);white-space:nowrap;">未入力=基本給</span>
+      </div>`;
+    }
     return `<div style="background:rgba(26,58,42,0.4);border:1px solid rgba(201,168,76,0.15);border-radius:10px;padding:10px 12px;">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
         <input type="checkbox" value="${c.id}" ${checked?'checked':''} onchange="toggleEmpCourseWage(this)" style="width:16px;height:16px;accent-color:var(--gold);">
-        <span style="font-size:14px;font-weight:700;color:var(--cream);">⛳ ${c.name}</span>
+        <span style="font-size:14px;font-weight:700;color:var(--cream);">⛳ ${c.name}</span>${badge}
       </label>
-      <div id="empCourseWageRow_${c.id}" style="display:${checked?'flex':'none'};align-items:center;gap:8px;margin-top:8px;">
-        <span style="font-size:12px;color:var(--gray);white-space:nowrap;">給料（円/日）</span>
-        <input type="number" id="empCourseWage_${c.id}" value="${wage}" placeholder="例: 12000" min="0"
-          style="flex:1;padding:7px 10px;background:rgba(26,58,42,0.8);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--cream);font-size:13px;font-family:'DM Mono',monospace;">
-        <span style="font-size:11px;color:var(--gray);white-space:nowrap;">未入力=基本給</span>
-      </div>
+      ${wageRow}
     </div>`;
   }).join('');
 }
 function toggleEmpCourseWage(cb){
   const row=document.getElementById('empCourseWageRow_'+cb.value);
-  if(row)row.style.display=cb.checked?'flex':'none';
+  if(row)row.style.display=cb.checked?'block':'none';
 }
 function populateCourseEmpChecks(assignedEmps){
   const container=document.getElementById('courseEmpChecks');if(!container)return;
@@ -2291,8 +2334,18 @@ function setShiftSubTab(tab){
 function getRate(empId,courseId,dateStr){
   // 従業員ごとのゴルフ場別給料設定を最優先
   const emp=state.employees.find(e=>String(e.id)===String(empId));
-  if(emp&&emp.courseWages&&emp.courseWages[String(courseId)])return Number(emp.courseWages[String(courseId)]);
   const course=state.courses.find(c=>String(c.id)===String(courseId));
+  const empWage=emp&&emp.courseWages?emp.courseWages[String(courseId)]:undefined;
+  if(empWage!==undefined&&empWage!==null&&empWage!==''){
+    // per_person_weekday の場合は {wd, we} オブジェクト
+    if(typeof empWage==='object'){
+      const isWe=dateStr?isWeekendOrHoliday(dateStr):false;
+      const val=isWe?empWage.we:empWage.wd;
+      if(val)return Number(val);
+    } else if(Number(empWage)){
+      return Number(empWage);
+    }
+  }
   if(!course)return emp?Number(emp.wage||0):0;
   if(course.rateType==='fixed'||!course.rateType)return course.fixedRate||emp?.wage||0;
   if(course.rateType==='weekday_weekend')return dateStr&&isWeekendOrHoliday(dateStr)?(course.weekendRate||0):(course.weekdayRate||0);
