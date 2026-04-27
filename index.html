@@ -1297,7 +1297,7 @@ function subscribeFirebase(){
 function todayStr(){const n=new Date();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;}
 function formatDate(d){if(!d)return '−';const[y,m,dd]=d.split('-');const reiwa=parseInt(y)-2018;return `令和${reiwa}年${parseInt(m)}月${parseInt(dd)}日`;}
 
-function onStateUpdated(){
+async function onStateUpdated(){
   // 過去のpending打刻を自動承認
   const today=todayStr();
   const pastPending=state.attendance.filter(a=>a.pending&&a.date<today);
@@ -1309,7 +1309,7 @@ function onStateUpdated(){
         if(!dup)autoAddSales(rec.empId,rec.empName,rec.courseId,rec.courseName,rec.date,rec.rounds||1);
       }
     });
-    saveState();
+    await saveState();
   }
   // 表示中の画面を更新
   if(document.getElementById('adminUI').classList.contains('active')){
@@ -1853,7 +1853,8 @@ function renderRateMatrix(){
   container.innerHTML=`<table><thead><tr><th>従業員 ＼ ゴルフ場</th>${headerCells}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 async function saveRateMatrix(){
-  const inputs=document.getElementById('rateMatrix').getElementsByTagName('input');
+  const rateMatrixEl=document.getElementById('rateMatrix');if(!rateMatrixEl)return;
+  const inputs=rateMatrixEl.getElementsByTagName('input');
   for(let i=0;i<inputs.length;i++){
     const input=inputs[i];const eid=input.dataset.emp,cid=input.dataset.course,dow=input.dataset.dow;
     const val=Number(input.value)||0;
@@ -2406,7 +2407,7 @@ function getRate(empId,courseId,dateStr){
     }
   }
   // per_person
-  const pfVal=typeof pf[String(empId)]==='number'?pf[String(empId)]:(typeof pf[String(empId)]==='object'?0:0);
+  const pfVal=typeof pf[String(empId)]==='number'?pf[String(empId)]:0;
   return pfVal||sr[String(courseId)]||0;
 }
 function isWeekendOrHoliday(d){const dow=new Date(d).getDay();return dow===0||dow===6||isHoliday(d);}
@@ -2449,7 +2450,7 @@ async function approvePunch(recId){
   delete rec.pending;
   // 売上に追加（重複チェック）
   if(rec.courseId){
-    const dupSales=state.sales.find(s=>s.empId===rec.empId&&s.date===rec.date&&String(s.courseId)===String(rec.courseId));
+    const dupSales=state.sales.find(s=>String(s.empId)===String(rec.empId)&&s.date===rec.date&&String(s.courseId)===String(rec.courseId));
     if(!dupSales)autoAddSales(rec.empId,rec.empName,rec.courseId,rec.courseName,rec.date,rec.rounds||1);
   }
   await saveState();renderPendingPunches();renderEmployeeGrid();renderAttendanceTable();
@@ -2465,7 +2466,7 @@ async function approveAllPastPendingPunches(){
   pastPending.forEach(rec=>{
     delete rec.pending;
     if(rec.courseId){
-      const dupSales=state.sales.find(s=>s.empId===rec.empId&&s.date===rec.date&&String(s.courseId)===String(rec.courseId));
+      const dupSales=state.sales.find(s=>String(s.empId)===String(rec.empId)&&s.date===rec.date&&String(s.courseId)===String(rec.courseId));
       if(!dupSales)autoAddSales(rec.empId,rec.empName,rec.courseId,rec.courseName,rec.date,rec.rounds||1);
     }
   });
@@ -3605,7 +3606,7 @@ function initAssignPage(){
       const[,m,d]=date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(date).getDay()];
       return `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
         <div style="font-size:12px;color:var(--goldl);font-weight:700;margin-bottom:4px;">${parseInt(m)}月${parseInt(d)}日（${dow}）</div>
-        <div>${ss.map(s=>`<span style="display:inline-block;background:rgba(26,58,42,0.6);border:1px solid rgba(201,168,76,0.2);border-radius:6px;padding:2px 8px;font-size:12px;color:var(--cream);margin:2px;">⛳${s.courseName||'?'} 👤${s.empName||'?'}</span>`).join('')}</div>
+        <div>${ss.map(s=>{const empNames=(s.employees&&s.employees.length)?s.employees.map(eid=>{const e=state.employees.find(e=>String(e.id)===String(eid));return e?e.name:'?';}).join('・'):(s.empName||'?');const cname=s.courseId?((state.courses.find(c=>String(c.id)===String(s.courseId))||{}).name||s.courseName||'?'):s.courseName||'?';return`<span style="display:inline-block;background:rgba(26,58,42,0.6);border:1px solid rgba(201,168,76,0.2);border-radius:6px;padding:2px 8px;font-size:12px;color:var(--cream);margin:2px;">⛳${cname} 👤${empNames}</span>`;}).join('')}</div>
       </div>`;
     }).join('');
   }
