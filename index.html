@@ -2513,23 +2513,23 @@ function getRate(empId,courseId,dateStr){
   }
   if(!course)return emp?Number(emp.wage||0):0;
   if(course.rateType==='fixed'||!course.rateType)return course.fixedRate||emp?.wage||0;
-  if(course.rateType==='weekday_weekend')return dateStr&&isWeekendOrHoliday(dateStr)?(course.weekendRate||0):(course.weekdayRate||0);
-  // per_person系：course.perPersonFees を優先、なければ state.rates を参照
+  if(course.rateType==='weekday_weekend')return dateStr&&isWeekendOrHoliday(dateStr)?(course.weekendRate||emp?.wage||0):(course.weekdayRate||emp?.wage||0);
+  // per_person系：course.perPersonFees を優先、なければ state.rates を参照、最終フォールバックは emp.wage
   const pf=course.perPersonFees||{};
   const sr=state.rates[String(empId)]||{};
   if(course.rateType==='per_person_weekday'){
     const isWe=dateStr?isWeekendOrHoliday(dateStr):false;
     if(isWe){
       const pfVal=typeof pf[String(empId)]==='object'?pf[String(empId)].we:0;
-      return pfVal||sr[String(courseId)+'_we']||0;
+      return pfVal||sr[String(courseId)+'_we']||Number(emp?.wage||0);
     } else {
       const pfVal=typeof pf[String(empId)]==='object'?pf[String(empId)].wd:0;
-      return pfVal||sr[String(courseId)+'_wd']||0;
+      return pfVal||sr[String(courseId)+'_wd']||Number(emp?.wage||0);
     }
   }
   // per_person
-  const pfVal=typeof pf[String(empId)]==='number'?pf[String(empId)]:0;
-  return pfVal||sr[String(courseId)]||0;
+  const pfVal=typeof pf[String(empId)]==='number'?pf[String(empId)]:(typeof pf[String(empId)]==='object'&&pf[String(empId)]?Number(pf[String(empId)].fee||0):0);
+  return pfVal||sr[String(courseId)]||Number(emp?.wage||0);
 }
 // 従業員の日給取得（契約金とは別枠、per_person系はwageフィールドを参照）
 function getEmpDailyWage(empId,courseId){
@@ -3155,7 +3155,8 @@ async function adminPunchIn(empId){
   const result=await selectCourseAndRoundsModal(emp.name, myCourses);
   if(result===null)return;
   const {courseId, courseName, rounds}=result;
-  state.attendance.push({id:Date.now(),empId:emp.id,empName:emp.name,date:todayStr(),punchIn:time,punchOut:null,hours:null,wage:emp.wage,courseId,courseName,rounds});
+  const dailyWage=getEmpDailyWage(emp.id,courseId);
+  state.attendance.push({id:Date.now(),empId:emp.id,empName:emp.name,date:todayStr(),punchIn:time,punchOut:null,hours:null,wage:dailyWage,courseId,courseName,rounds});
   if(courseId)autoAddSales(empId,emp.name,courseId,courseName,todayStr(),rounds);
   await saveState();renderEmployeeGrid();showToast(`✅ ${emp.name} さん、出勤しました！`);
 }
