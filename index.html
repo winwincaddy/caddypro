@@ -1414,6 +1414,26 @@ async function registerFCMToken(empId){
   }
 }
 
+// GAS経由でGmailメール送信
+async function sendEmailNotice(empIds, date, time, courseName, memo){
+  try{
+    const gasUrl=localStorage.getItem('gas_url');
+    if(!gasUrl)return false;
+    const targets=empIds.map(id=>{
+      const e=state.employees.find(x=>String(x.id)===String(id));
+      return e&&e.email?{email:e.email,name:e.name}:null;
+    }).filter(Boolean);
+    if(!targets.length)return false;
+    await fetch(gasUrl,{
+      method:'POST',
+      body:JSON.stringify({action:'sendEmail',targets,date,time,courseName,memo}),
+    });
+    return true;
+  }catch(e){
+    console.warn('[Email] 送信失敗:', e);
+    return false;
+  }
+}
 // GAS経由でFCM通知を送信（サーバーサイド処理）
 async function sendFCMNotice(empIds, title, body){
   try{
@@ -2651,6 +2671,11 @@ async function sendDashNotice(dateStr){
   // FCMプッシュ通知
   const allEmpIds=[...new Set(dayShifts.flatMap(s=>s.employees))];
   await sendFCMNotice(allEmpIds,'📨 出勤連絡が届きました',`明日 ${time}集合の出勤連絡を確認してください`);
+  // 従業員ごとに担当ゴルフ場を含めてメール送信
+  dayShifts.forEach(s=>{
+    const course=state.courses.find(c=>String(c.id)===String(s.courseId));
+    sendEmailNotice(s.employees,dateStr,time,course?course.name:'','').catch(()=>{});
+  });
   showToast(`📨 ${dayShifts.reduce((s,x)=>s+x.employees.length,0)}名に出勤連絡を送りました！`);
   renderDashboard();
 }
@@ -3927,6 +3952,7 @@ async function sendNotice(){
   const fcmTitle='📅 出勤連絡';
   const fcmBody=`${date}${time?' 🕐'+time:''} ${course?'⛳'+course.name:''}`;
   sendFCMNotice(empIds,fcmTitle,fcmBody).catch(()=>{});
+  sendEmailNotice(empIds,date,time,course?course.name:'',memo).catch(()=>{});
   initNoticeForm();
   showToast(`📨 ${empIds.length}名に連絡を送りました`);
 }
