@@ -2072,17 +2072,17 @@ function onEmpCourseChange(){
   if(course&&course.hasCafeteria){
     area.style.display='block';
     if(label)label.textContent=course.cafeteriaFee?`¥${Number(course.cafeteriaFee).toLocaleString()}/回`:'';
-  // 指名チェック欄
-  const shimeiArea=document.getElementById('shimeiCheckArea');
-  const shimeiLabel=document.getElementById('shimeiFeeLabel');
-  if(shimeiArea)shimeiArea.style.display=course.hasShimei?'flex':'none';
-  if(shimeiLabel)shimeiLabel.textContent=course.shimeiFee?`¥${Number(course.shimeiFee).toLocaleString()}/回`:'';
-  const shimeiCb=document.getElementById('empShimeiCheck');if(shimeiCb)shimeiCb.checked=false;
     if(check)check.checked=false;
   } else {
     area.style.display='none';
     if(check)check.checked=false;
   }
+  // 指名チェック欄（カフェテリアとは独立して制御）
+  const shimeiArea=document.getElementById('shimeiCheckArea');
+  const shimeiLabel=document.getElementById('shimeiFeeLabel');
+  if(shimeiArea)shimeiArea.style.display=(course&&course.hasShimei)?'flex':'none';
+  if(shimeiLabel&&course)shimeiLabel.textContent=course.shimeiFee?`¥${Number(course.shimeiFee).toLocaleString()}/回`:'';
+  const shimeiCb=document.getElementById('empShimeiCheck');if(shimeiCb)shimeiCb.checked=false;
 }
 
 // ラウンド数選択モーダル（管理者手動打刻用）
@@ -2409,7 +2409,7 @@ function renderDashboard(){
     const shift=dayShifts.find(s=>String(s.courseId)===String(course.id));
     const assignedEmpIds=(course.assignedEmps||[]).map(String);
     const assignedEmps=assignedEmpIds.map(eid=>state.employees.find(e=>String(e.id)===eid)).filter(Boolean);
-    const confirmedIds=shift?(shift.employees.map(String)):[];
+    const confirmedIds=shift?((shift.employees||[]).map(String)):[];
     const neededCount=req?req.count:0;
     const confirmedCount=confirmedIds.length;
     const isOk=neededCount>0&&confirmedCount>=neededCount;
@@ -2423,7 +2423,7 @@ function renderDashboard(){
     const empItems=assignedEmps.map(emp=>{
       const isConfirmed=confirmedIds.includes(String(emp.id));
       const hasHope=dayEmpReqs.some(r=>String(r.empId)===String(emp.id));
-      const otherShift=dayShifts.find(s=>String(s.courseId)!==String(course.id)&&s.employees.includes(String(emp.id)));
+      const otherShift=dayShifts.find(s=>String(s.courseId)!==String(course.id)&&(s.employees||[]).includes(String(emp.id)));
       const todayAtt=state.attendance.find(a=>String(a.empId)===String(emp.id)&&a.date===dateStr&&!a.pending);
       return `<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:${isConfirmed?'rgba(74,140,92,0.3)':'rgba(26,58,42,0.5)'};border:1px solid ${isConfirmed?'rgba(109,191,126,0.4)':'rgba(255,255,255,0.06)'};border-radius:10px;cursor:pointer;">
         <input type="checkbox" class="dashEmpCb" data-date="${dateStr}" data-course="${course.id}" data-emp="${emp.id}" ${isConfirmed?'checked':''} onchange="toggleDashEmp(this)" style="width:18px;height:18px;accent-color:var(--gl);">
@@ -2454,7 +2454,7 @@ function renderDashboard(){
   });
 
   // 連絡送信ボタン
-  const confirmed=dayShifts.filter(s=>s.employees.length>0);
+  const confirmed=dayShifts.filter(s=>(s.employees||[]).length>0);
   if(confirmed.length>0){
     html+=`<div style="margin-top:4px;padding:16px;background:rgba(74,140,92,0.15);border:1px solid rgba(109,191,126,0.3);border-radius:14px;">
       <div style="font-size:13px;color:#6dbf7e;margin-bottom:10px;">📨 割り振り完了後、出勤連絡を送る</div>
@@ -2479,11 +2479,11 @@ async function toggleDashEmp(cb){
   const dateStr=cb.dataset.date,courseId=cb.dataset.course,empId=cb.dataset.emp;
   let shift=state.shifts.find(s=>s.date===dateStr&&String(s.courseId)===String(courseId));
   if(cb.checked){
-    if(shift){if(!shift.employees.includes(String(empId)))shift.employees.push(String(empId));}
+    if(shift){if(!shift.employees)shift.employees=[];if(!shift.employees.includes(String(empId)))shift.employees.push(String(empId));}
     else{state.shifts.push({id:String(Date.now()),date:dateStr,courseId,employees:[String(empId)]});}
     await notifyShiftAssigned(dateStr,courseId,[empId]);
   } else {
-    if(shift){shift.employees=shift.employees.filter(e=>e!==String(empId));if(!shift.employees.length)state.shifts=state.shifts.filter(s=>!(s.date===dateStr&&String(s.courseId)===String(courseId)));}
+    if(shift){shift.employees=(shift.employees||[]).filter(e=>e!==String(empId));if(!shift.employees.length)state.shifts=state.shifts.filter(s=>!(s.date===dateStr&&String(s.courseId)===String(courseId)));}
   }
   await saveState();renderDashboard();renderShiftCalendar();
 }
@@ -2491,7 +2491,7 @@ async function toggleDashEmp(cb){
 async function sendDashNotice(dateStr){
   const time=document.getElementById('dashNoticeTime')?document.getElementById('dashNoticeTime').value:'07:00';
   if(!time){showToast('⚠ 集合時間を入力してください');return;}
-  const dayShifts=state.shifts.filter(s=>s.date===dateStr&&s.employees.length>0);
+  const dayShifts=state.shifts.filter(s=>s.date===dateStr&&(s.employees||[]).length>0);
   if(!dayShifts.length){showToast('⚠ 割り振りがありません');return;}
   if(!state.notices)state.notices=[];
   let sent=0;
@@ -2558,10 +2558,10 @@ function buildCourseCalHtml(course){
     let bg='rgba(26,58,42,0.4)';
     let border=isToday?'2px solid var(--goldl)':'1px solid rgba(201,168,76,0.08)';
     let badge='';
-    if(shift&&shift.employees.length>0){
+    if(shift&&(shift.employees||[]).length>0){
       bg='rgba(74,140,92,0.45)';
       if(!isToday)border='1px solid rgba(109,191,126,0.5)';
-      const confirmed=shift.employees.length;
+      const confirmed=(shift.employees||[]).length;
       const needed=req?req.count:0;
       const neededHtml=needed?'<div style="font-size:9px;color:rgba(109,191,126,0.7);">/ '+needed+'</div>':'';
       badge='<div style="text-align:center;"><div style="font-size:14px;font-weight:900;color:#6dbf7e;line-height:1;">'+confirmed+'名</div>'+neededHtml+'</div>';
@@ -3255,30 +3255,38 @@ function setAssignTab(tab){
 function renderAssignContent(tab){
   const cont=document.getElementById('assignContent');if(!cont)return;
   const ym=`${shiftYear}-${String(shiftMonth+1).padStart(2,'0')}`;
+  // shifts構造: {id, date, courseId, employees:[empId,...]}
+  // 後方互換: 旧形式 {empId, empName, courseName} も考慮
+  function _shiftEmps(s){return s.employees||(s.empId?[s.empId]:[]);}
+  function _courseName(s){
+    if(s.courseName)return s.courseName;
+    const c=state.courses.find(c=>String(c.id)===String(s.courseId));return c?c.name:'不明';
+  }
+  function _empName(empId){
+    if(!empId)return '不明';
+    const e=state.employees.find(e=>String(e.id)===String(empId));return e?e.name:'不明';
+  }
   if(tab==='conflict'){
     // 同日に複数ゴルフ場へアサインされている従業員を検出
-    const byDate={};
+    const byDateEmp={};
     (state.shifts||[]).filter(s=>s.date&&s.date.startsWith(ym)).forEach(s=>{
-      if(!byDate[s.date])byDate[s.date]={};
-      const key=String(s.empId);
-      if(!byDate[s.date][key])byDate[s.date][key]=[];
-      byDate[s.date][key].push(s);
-    });
-    const conflicts=[];
-    Object.entries(byDate).forEach(([date,emps])=>{
-      Object.entries(emps).forEach(([empId,shifts])=>{
-        if(shifts.length>1){
-          const emp=state.employees.find(e=>String(e.id)===String(empId));
-          conflicts.push({date,empName:emp?emp.name:'不明',shifts});
-        }
+      _shiftEmps(s).forEach(empId=>{
+        const k=`${s.date}__${empId}`;
+        if(!byDateEmp[k])byDateEmp[k]={date:s.date,empId,courses:[]};
+        byDateEmp[k].courses.push(s.courseId);
       });
     });
+    const conflicts=Object.values(byDateEmp).filter(x=>x.courses.length>1).map(x=>({
+      date:x.date,
+      empName:_empName(x.empId),
+      courseNames:x.courses.map(cid=>{const c=state.courses.find(c=>String(c.id)===String(cid));return c?c.name:'不明';})
+    }));
     if(!conflicts.length){cont.innerHTML='<div class="empty-state">⚡ 被りなし</div>';return;}
     cont.innerHTML=conflicts.map(c=>{
       const [,m,d]=c.date.split('-');
       return `<div style="background:rgba(192,57,43,0.15);border:1px solid rgba(192,57,43,0.4);border-radius:10px;padding:12px;margin-bottom:8px;">
         <div style="font-weight:700;color:#e88;">${parseInt(m)}月${parseInt(d)}日 — ${c.empName}</div>
-        <div style="font-size:12px;color:var(--gray);margin-top:4px;">${c.shifts.map(s=>s.courseName||'不明').join(' / ')}</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:4px;">${c.courseNames.join(' / ')}</div>
       </div>`;
     }).join('');
   } else if(tab==='date'){
@@ -3288,28 +3296,46 @@ function renderAssignContent(tab){
     shifts.forEach(s=>{if(!byDate[s.date])byDate[s.date]=[];byDate[s.date].push(s);});
     cont.innerHTML=Object.entries(byDate).map(([date,ss])=>{
       const [,m,d]=date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(date).getDay()];
+      const rows=ss.map(s=>{
+        const cname=_courseName(s);
+        const emps=_shiftEmps(s);
+        if(emps.length===0)return `<div style="font-size:13px;color:var(--cream);padding:2px 0;">⛳ ${cname} — （未割り振り）</div>`;
+        return emps.map(eid=>`<div style="font-size:13px;color:var(--cream);padding:2px 0;">⛳ ${cname} — ${_empName(eid)}</div>`).join('');
+      }).join('');
       return `<div style="background:rgba(26,58,42,0.4);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px;margin-bottom:8px;">
         <div style="font-weight:700;color:var(--goldl);margin-bottom:6px;">${parseInt(m)}月${parseInt(d)}日（${dow}）</div>
-        ${ss.map(s=>`<div style="font-size:13px;color:var(--cream);padding:2px 0;">⛳ ${s.courseName||'不明'} — ${s.empName||'不明'}</div>`).join('')}
+        ${rows}
       </div>`;
     }).join('');
   } else if(tab==='emp'){
     const shifts=(state.shifts||[]).filter(s=>s.date&&s.date.startsWith(ym));
     if(!shifts.length){cont.innerHTML='<div class="empty-state">割り振りなし</div>';return;}
     const byEmp={};
-    shifts.forEach(s=>{const k=String(s.empId);if(!byEmp[k])byEmp[k]={empName:s.empName,shifts:[]};byEmp[k].shifts.push(s);});
+    shifts.forEach(s=>{
+      const cname=_courseName(s);
+      _shiftEmps(s).forEach(empId=>{
+        const k=String(empId);
+        if(!byEmp[k])byEmp[k]={empName:_empName(empId),shifts:[]};
+        byEmp[k].shifts.push({date:s.date,courseName:cname});
+      });
+    });
     cont.innerHTML=Object.values(byEmp).map(e=>`<div style="background:rgba(26,58,42,0.4);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px;margin-bottom:8px;">
       <div style="font-weight:700;color:var(--goldl);margin-bottom:6px;">👤 ${e.empName}</div>
-      ${e.shifts.sort((a,b)=>a.date.localeCompare(b.date)).map(s=>{const[,m,d]=s.date.split('-');return `<div style="font-size:13px;color:var(--cream);padding:2px 0;">${parseInt(m)}/${parseInt(d)} ⛳ ${s.courseName||'不明'}</div>`;}).join('')}
+      ${e.shifts.sort((a,b)=>a.date.localeCompare(b.date)).map(s=>{const[,m,d]=s.date.split('-');return `<div style="font-size:13px;color:var(--cream);padding:2px 0;">${parseInt(m)}/${parseInt(d)} ⛳ ${s.courseName}</div>`;}).join('')}
     </div>`).join('');
   } else if(tab==='course'){
     const shifts=(state.shifts||[]).filter(s=>s.date&&s.date.startsWith(ym));
     if(!shifts.length){cont.innerHTML='<div class="empty-state">割り振りなし</div>';return;}
     const byCourse={};
-    shifts.forEach(s=>{const k=String(s.courseId);if(!byCourse[k])byCourse[k]={courseName:s.courseName,shifts:[]};byCourse[k].shifts.push(s);});
+    shifts.forEach(s=>{
+      const k=String(s.courseId);
+      const cname=_courseName(s);
+      if(!byCourse[k])byCourse[k]={courseName:cname,entries:[]};
+      _shiftEmps(s).forEach(empId=>byCourse[k].entries.push({date:s.date,empName:_empName(empId)}));
+    });
     cont.innerHTML=Object.values(byCourse).map(c=>`<div style="background:rgba(26,58,42,0.4);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px;margin-bottom:8px;">
       <div style="font-weight:700;color:var(--goldl);margin-bottom:6px;">⛳ ${c.courseName}</div>
-      ${c.shifts.sort((a,b)=>a.date.localeCompare(b.date)).map(s=>{const[,m,d]=s.date.split('-');return `<div style="font-size:13px;color:var(--cream);padding:2px 0;">${parseInt(m)}/${parseInt(d)} 👤 ${s.empName||'不明'}</div>`;}).join('')}
+      ${c.entries.sort((a,b)=>a.date.localeCompare(b.date)).map(e=>{const[,m,d]=e.date.split('-');return `<div style="font-size:13px;color:var(--cream);padding:2px 0;">${parseInt(m)}/${parseInt(d)} 👤 ${e.empName}</div>`;}).join('')}
     </div>`).join('');
   } else if(tab==='auto'){
     cont.innerHTML='<div class="card"><div class="card-title">🤖 自動割り振り</div><p style="color:var(--gray);font-size:13px;">シフト申請済みの従業員をゴルフ場要請に自動マッチングします。</p><button class="btn btn-primary" onclick="autoAssign()" style="margin-top:8px;">自動割り振りを実行</button></div>';
@@ -3705,7 +3731,7 @@ function showAssignCalModal(dateStr, courseId){
     <div style="font-size:16px;font-weight:700;color:var(--goldl);margin-bottom:16px;">🗓️ ${parseInt(m)}月${parseInt(d)}日（${dow}）${course?'⛳'+course.name:''}</div>
     <div style="font-size:12px;color:var(--gray);margin-bottom:12px;">アサインする従業員を選択</div>
     <div id="_assignModalEmps">${empOpts}</div>
-    ${existing.length?`<div style="font-size:11px;color:var(--goldl);margin:10px 0;">現在: ${existing.map(s=>s.empName).join(', ')}</div>`:''}
+    ${existing.length?`<div style="font-size:11px;color:var(--goldl);margin:10px 0;">現在: ${existing.flatMap(s=>(s.employees||[]).map(eid=>{const e=state.employees.find(e=>String(e.id)===String(eid));return e?e.name:'不明';})).join(', ')}</div>`:''}
     <div style="display:flex;gap:10px;margin-top:16px;">
       <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;padding:10px;background:none;border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:var(--goldl);font-size:13px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">キャンセル</button>
       <button onclick="confirmShiftFromReq('${dateStr}','${courseId}');this.closest('div[style*=fixed]').remove();" style="flex:2;padding:10px;background:var(--gold);border:none;border-radius:10px;color:var(--gd);font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">✅ 割り振り確定</button>
@@ -4027,20 +4053,25 @@ async function autoAssign(){
   if(!reqs.length){showToast('⚠ 承認済みのシフト申請がありません');return;}
   let count=0;
   courseReqs.forEach(req=>{
-    const available=reqs.filter(r=>r.date===req.date&&!(state.shifts||[]).find(s=>s.date===req.date&&String(s.empId)===String(r.empId)));
-    const needed=Number(req.count||1);
-    available.slice(0,needed).forEach(r=>{
-      state.shifts=state.shifts.filter(s=>!(s.date===req.date&&String(s.empId)===String(r.empId)&&String(s.courseId)===String(req.courseId)));
-      const emp=state.employees.find(e=>String(e.id)===String(r.empId));
-      const course=state.courses.find(c=>String(c.id)===String(req.courseId));
-      state.shifts.push({id:Date.now()+Math.random(),date:req.date,empId:String(r.empId),empName:emp?emp.name:'不明',courseId:String(req.courseId),courseName:course?course.name:'不明'});
-      count++;
-    });
+    // 既存シフト（{id,date,courseId,employees:[]}構造）を探す
+    const existing=(state.shifts||[]).find(s=>s.date===req.date&&String(s.courseId)===String(req.courseId));
+    const assignedIds=(existing?(existing.employees||[]):[]).map(String);
+    // まだアサインされていない承認済み申請者を抽出
+    const available=reqs.filter(r=>r.date===req.date&&!assignedIds.includes(String(r.empId)));
+    const needed=Math.max(0,Number(req.count||1)-assignedIds.length);
+    const toAdd=available.slice(0,needed).map(r=>String(r.empId));
+    if(!toAdd.length)return;
+    if(existing){
+      existing.employees=[...new Set([...assignedIds,...toAdd])];
+    } else {
+      state.shifts.push({id:String(Date.now()+Math.random()),date:req.date,courseId:String(req.courseId),employees:toAdd});
+    }
+    count+=toAdd.length;
   });
   if(!count){showToast('⚠ 自動マッチングできる組み合わせがありません');return;}
   await saveState();
   initAssignPage();
-  showToast(`✅ ${count}件を自動割り振りしました`);
+  showToast(`✅ ${count}名を自動割り振りしました`);
 }
 
 // ページ読み込み完了後にinit()を実行
