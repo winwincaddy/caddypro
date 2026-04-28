@@ -821,7 +821,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
         </div>
         <!-- 合計サマリー -->
         <div class="grid-3 mb-20">
-          <div class="stat-card"><div class="stat-label">売上合計（税込）</div><div class="stat-value" id="monthSalesTotal">¥0</div></div>
+          <div class="stat-card"><div class="stat-label">売上合計（税込）</div><div class="stat-value" id="monthSalesTotal">¥0</div><div style="font-size:10px;color:var(--gray);margin-top:2px;" id="monthSalesTaxBreak"></div></div>
           <div class="stat-card"><div class="stat-label">総ラウンド数</div><div class="stat-value" id="monthRounds">0<span>R</span></div></div>
           <div class="stat-card"><div class="stat-label">総出勤日数</div><div class="stat-value" id="monthAttDays">0<span>日</span></div></div>
         </div>
@@ -3403,32 +3403,37 @@ function renderSalesTable(){
   const records=state.attendance.filter(a=>a.date&&a.date.startsWith(month)&&!a.pending);
   // 売上データも参照
   const salesRecs=state.sales?state.sales.filter(s=>s.date&&s.date.startsWith(month)):[];
-  // 合計計算
-  let totalSales=0,totalRounds=0,totalDays=0;
+  // 合計計算（消費税10%込み）
+  const TAX_RATE=0.1;
+  let totalSalesEx=0,totalRounds=0,totalDays=0;
   // ゴルフ場ごとに集計
   const byCourse={};
   records.forEach(r=>{
     const cid=String(r.courseId||'');
-    if(!byCourse[cid])byCourse[cid]={courseId:cid,courseName:r.courseName||'不明',days:0,rounds:0,sales:0,emps:{}};
+    if(!byCourse[cid])byCourse[cid]={courseId:cid,courseName:r.courseName||'不明',days:0,rounds:0,salesEx:0,emps:{}};
     byCourse[cid].days++;
     byCourse[cid].rounds+=Number(r.rounds||1);
-    // 売上計算
+    // 売上計算（税抜き）
     const sale=salesRecs.find(s=>String(s.empId)===String(r.empId)&&s.date===r.date&&String(s.courseId)===String(r.courseId));
-    const amount=sale?Number(sale.total||sale.totalAmount||sale.amount||0):0;
-    byCourse[cid].sales+=amount;
-    if(!byCourse[cid].emps[r.empId])byCourse[cid].emps[r.empId]={name:r.empName,dates:[],sales:0,rounds:0};
+    const amountEx=sale?Number(sale.total||sale.totalAmount||sale.amount||0):0;
+    byCourse[cid].salesEx+=amountEx;
+    if(!byCourse[cid].emps[r.empId])byCourse[cid].emps[r.empId]={name:r.empName,dates:[],salesEx:0,rounds:0};
     byCourse[cid].emps[r.empId].dates.push(r.date);
-    byCourse[cid].emps[r.empId].sales+=amount;
+    byCourse[cid].emps[r.empId].salesEx+=amountEx;
     byCourse[cid].emps[r.empId].rounds+=Number(r.rounds||1);
-    totalDays++;totalRounds+=Number(r.rounds||1);totalSales+=amount;
+    totalDays++;totalRounds+=Number(r.rounds||1);totalSalesEx+=amountEx;
   });
-  // 合計更新
-  const tot=document.getElementById('monthSalesTotal');if(tot)tot.innerHTML=`¥${totalSales.toLocaleString()}`;
+  const totalTax=Math.round(totalSalesEx*TAX_RATE);
+  const totalSalesInc=totalSalesEx+totalTax;
+  // 合計更新（税込み表示）
+  const tot=document.getElementById('monthSalesTotal');if(tot)tot.innerHTML=`¥${totalSalesInc.toLocaleString()}`;
   const rnd=document.getElementById('monthRounds');if(rnd)rnd.innerHTML=`${totalRounds}<span>R</span>`;
   const att=document.getElementById('monthAttDays');if(att)att.innerHTML=`${totalDays}<span>日</span>`;
+  // 月合計の税内訳をサブテキストで表示
+  const taxBreakEl=document.getElementById('monthSalesTaxBreak');
+  if(taxBreakEl)taxBreakEl.innerHTML=totalSalesEx>0?`税抜 ¥${totalSalesEx.toLocaleString()} ＋ 消費税 ¥${totalTax.toLocaleString()}`:'';
   if(!Object.keys(byCourse).length){
     container.innerHTML='<div class="empty-state">この月の売上データがありません</div>';
-    // 旧互換
     updateSalesStats();return;
   }
   container.innerHTML=Object.values(byCourse).map(c=>{
@@ -3441,7 +3446,8 @@ function renderSalesTable(){
         const dowColor=dow==='日'?'#e88':dow==='土'?'#99c':'var(--gray)';
         return `<span style="display:inline-block;background:rgba(26,58,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:2px 7px;font-size:11px;color:${dowColor};margin:2px;">${parseInt(mm)}/${parseInt(dd)}(${dow})</span>`;
       }).join('');
-      const empSalesStr=emp.sales>0?`¥${emp.sales.toLocaleString()}`:'';
+      const empSalesInc=emp.salesEx>0?Math.round(emp.salesEx*(1+TAX_RATE)):0;
+      const empSalesStr=empSalesInc>0?`¥${empSalesInc.toLocaleString()}`:'';
       const empRoundsStr=emp.rounds!==emp.dates.length?`${emp.rounds}R`:'';
       return `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
@@ -3455,10 +3461,14 @@ function renderSalesTable(){
         <div style="display:flex;flex-wrap:wrap;gap:2px;">${dateTags}</div>
       </div>`;
     }).join('');
+    const cSalesEx=c.salesEx;const cTax=Math.round(cSalesEx*TAX_RATE);const cSalesInc=cSalesEx+cTax;
     return `<div style="background:rgba(26,58,42,0.4);border:1px solid rgba(201,168,76,0.2);border-radius:14px;padding:16px;margin-bottom:14px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
         <div style="font-size:15px;font-weight:900;color:var(--goldl);">⛳ ${c.courseName}</div>
-        ${c.sales>0?`<div style="font-size:14px;font-weight:700;color:#6dbf7e;">¥${c.sales.toLocaleString()}</div>`:''}
+        ${cSalesInc>0?`<div style="text-align:right;">
+          <div style="font-size:15px;font-weight:900;color:#6dbf7e;">¥${cSalesInc.toLocaleString()}<span style="font-size:10px;color:var(--gray);margin-left:3px;">税込</span></div>
+          <div style="font-size:10px;color:var(--gray);">税抜 ¥${cSalesEx.toLocaleString()} ＋ 消費税 ¥${cTax.toLocaleString()}</div>
+        </div>`:''}
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
         <div style="background:rgba(26,58,42,0.6);border-radius:10px;padding:10px;text-align:center;">
@@ -3487,10 +3497,11 @@ function updateSalesStats(){
   const now=new Date();
   const month=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const salesRecs=(state.sales||[]).filter(s=>s.date&&s.date.startsWith(month));
-  const total=salesRecs.reduce((a,s)=>a+Number(s.total||s.totalAmount||s.amount||0),0);
-  // ダッシュボードの売上合計カードを更新
+  const totalEx=salesRecs.reduce((a,s)=>a+Number(s.total||s.totalAmount||s.amount||0),0);
+  const totalInc=Math.round(totalEx*1.1);
+  // ダッシュボードの売上合計カードを更新（税込み）
   const el=document.getElementById('monthSalesTotal');
-  if(el)el.innerHTML=`¥${total.toLocaleString()}`;
+  if(el)el.innerHTML=`¥${totalInc.toLocaleString()}`;
 }
 
 // --- 状態変数 ---
