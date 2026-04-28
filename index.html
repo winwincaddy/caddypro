@@ -1889,6 +1889,20 @@ function calcTax(base,taxMode){
   }
   return 0;
 }
+// 給料に対して税込み計算を一括で行うヘルパー
+// 戻り値: {taxEx: 税抜き, tax: 消費税, total: 税込み合計}
+function calcWageWithTax(base,taxMode){
+  if(taxMode==='tax10'){
+    const tax=calcTax(base,'tax10');
+    return {taxEx:base,tax,total:base+tax};
+  }
+  if(taxMode==='tax8to10'){
+    const taxEx=Math.round(base/1.08);
+    const tax=calcTax(base,'tax8to10');
+    return {taxEx,tax,total:taxEx+tax};
+  }
+  return {taxEx:base,tax:0,total:base};
+}
 
 function refreshEmpCourseSelect(){
   if(!currentEmpId)return;
@@ -3285,13 +3299,9 @@ function renderAttendanceTable(){
     const isCommission=hasInvoice||contract==='invoice_no'||contract==='training_invoice';
     const wage=Math.round(Number(r.wage||0)*Number(r.rounds||1));
     const taxMode=emp?(emp.taxMode||(state.settings&&state.settings.consumptionTaxMode)||'none'):((state.settings&&state.settings.consumptionTaxMode)||'none');
-    if(isCommission&&taxMode==='tax10'){
-      const tax=Math.round(wage*0.1);
-      totalTaxEx+=wage;totalTax+=tax;totalInc+=wage+tax;
-    } else if(isCommission&&taxMode==='tax8to10'){
-      const taxEx=Math.round(wage/1.08);
-      const billed=Math.round(taxEx*1.1);
-      totalTaxEx+=taxEx;totalTax+=billed-taxEx;totalInc+=billed;
+    if(isCommission&&(taxMode==='tax10'||taxMode==='tax8to10')){
+      const w=calcWageWithTax(wage,taxMode);
+      totalTaxEx+=w.taxEx;totalTax+=w.tax;totalInc+=w.total;
     } else {
       totalTaxEx+=wage;totalInc+=wage;
     }
@@ -3708,13 +3718,9 @@ function renderSalesTable() {
     const contract = emp ? emp.contract : 'baito';
     const hasInvoice = (contract === 'invoice_yes' && emp && emp.invoiceNo);
     const isCommission = hasInvoice || contract === 'invoice_no' || contract === 'training_invoice' || (course && course.isExpense);
-    if (isCommission && taxMode === 'tax10') {
-      const tax = Math.round(base * 0.1);
-      wageTaxEx += base; wageTax += tax; wageInc += base + tax;
-    } else if (isCommission && taxMode === 'tax8to10') {
-      const ex = Math.round(base / 1.08);
-      const billed = Math.round(ex * 1.1);
-      wageTaxEx += ex; wageTax += billed - ex; wageInc += billed;
+    if (isCommission && (taxMode === 'tax10' || taxMode === 'tax8to10')) {
+      const w = calcWageWithTax(base, taxMode);
+      wageTaxEx += w.taxEx; wageTax += w.tax; wageInc += w.total;
     } else {
       wageTaxEx += base; wageInc += base;
     }
