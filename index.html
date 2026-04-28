@@ -825,6 +825,24 @@ tr:hover td{background:rgba(201,168,76,0.05);}
           <div class="stat-card"><div class="stat-label">総ラウンド数</div><div class="stat-value" id="monthRounds">0<span>R</span></div></div>
           <div class="stat-card"><div class="stat-label">総出勤日数</div><div class="stat-value" id="monthAttDays">0<span>日</span></div></div>
         </div>
+        <!-- 給料合計サマリー -->
+        <div style="background:rgba(26,58,42,0.4);border:1px solid rgba(201,168,76,0.2);border-radius:14px;padding:16px;margin-bottom:14px;" id="wagesSummaryCard">
+          <div style="font-size:13px;font-weight:700;color:var(--goldl);margin-bottom:12px;">💰 給料合計（税込）</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+            <div style="background:rgba(26,58,42,0.6);border-radius:10px;padding:10px;text-align:center;">
+              <div style="font-size:11px;color:var(--gray);margin-bottom:4px;">税抜</div>
+              <div style="font-size:16px;font-weight:900;color:var(--cream);font-family:'DM Mono',monospace;" id="monthWageTaxEx">¥0</div>
+            </div>
+            <div style="background:rgba(26,58,42,0.6);border-radius:10px;padding:10px;text-align:center;">
+              <div style="font-size:11px;color:var(--gray);margin-bottom:4px;">消費税</div>
+              <div style="font-size:16px;font-weight:900;color:#aaa;font-family:'DM Mono',monospace;" id="monthWageTax">¥0</div>
+            </div>
+            <div style="background:rgba(26,58,42,0.6);border-radius:10px;padding:10px;text-align:center;">
+              <div style="font-size:11px;color:var(--goldl);margin-bottom:4px;">税込合計</div>
+              <div style="font-size:16px;font-weight:900;color:var(--goldl);font-family:'DM Mono',monospace;" id="monthWageTotal">¥0</div>
+            </div>
+          </div>
+        </div>
         <!-- ゴルフ場別カード -->
         <div id="salesByCourseArea"></div>
         <!-- 非表示（互換用） -->
@@ -1183,6 +1201,28 @@ tr:hover td{background:rgba(201,168,76,0.05);}
       </label>
       <div id="shimeiFeeArea" style="display:none;">
         <div class="form-group"><label>指名料（円/回）</label><input type="number" id="newCourseShimeiFee" placeholder="例: 1000" min="0"></div>
+      </div>
+    </div>
+    <!-- 経費コース設定 -->
+    <div style="border-top:1px solid rgba(201,168,76,0.2);margin:14px 0;padding-top:14px;">
+      <div style="font-size:11px;color:var(--goldl);font-family:'DM Mono',monospace;margin-bottom:10px;">💼 経費コース設定</div>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:rgba(255,255,255,0.05);padding:12px 14px;border-radius:10px;border:1px solid rgba(201,168,76,0.15);margin-bottom:10px;">
+        <input type="checkbox" id="newCourseIsExpense" onchange="toggleExpenseCourse()" style="width:18px;height:18px;accent-color:var(--gold);">
+        <div>
+          <div style="font-size:14px;color:var(--cream);font-weight:700;">経費コース（売上に含めない）</div>
+          <div style="font-size:11px;color:var(--gray);margin-top:2px;">研修・業務委託など会社負担の業務</div>
+        </div>
+      </label>
+      <div id="expenseCourseArea" style="display:none;">
+        <div class="form-group"><label>支払い単価（税抜・円）</label><input type="number" id="newCourseExpenseRate" placeholder="例: 7000" min="0"></div>
+        <div class="form-group">
+          <label>消費税</label>
+          <select id="newCourseExpenseTax">
+            <option value="">なし</option>
+            <option value="tax10">消費税10%加算</option>
+            <option value="tax8to10">8%→10%切替</option>
+          </select>
+        </div>
       </div>
     </div>
     <!-- 所属キャディー選択は廃止 (id保持のみ) -->
@@ -1841,20 +1881,6 @@ function showEmpWithholdingScreen(){
   if(ysel)ysel.innerHTML=opts;renderEmpWithholding();showScreen('empWithholdingScreen');
 }
 
-const TAX_RATE=0.1;
-
-function autoAddSales(empId,empName,courseId,courseName,date,rounds){
-  const rate=getRate(empId,courseId,date);
-  if(!rate||!courseId)return;
-  state.sales=state.sales.filter(s=>!(s.date===date&&String(s.empId)===String(empId)&&String(s.courseId)===String(courseId)));
-  state.sales.push({id:Date.now()+Math.random(),date,courseId,courseName,empId:String(empId),empName,rounds:rounds||1,rate,total:(rounds||1)*rate});
-}
-
-function removeSalesForAtt(rec){
-  if(!rec)return;
-  state.sales=state.sales.filter(s=>!(String(s.empId)===String(rec.empId)&&s.date===rec.date&&String(s.courseId)===String(rec.courseId)));
-}
-
 function calcTax(base,taxMode){
   if(taxMode==='tax10')return Math.round(base*0.1);
   if(taxMode==='tax8to10')return Math.round(base/1.08*1.1)-base;
@@ -2257,6 +2283,11 @@ function openEditCourseModal(btn){
   const hs=document.getElementById('newCourseHasShimei');if(hs)hs.checked=!!c.hasShimei;
   const sfa=document.getElementById('shimeiFeeArea');if(sfa)sfa.style.display=c.hasShimei?'block':'none';
   const sff=document.getElementById('newCourseShimeiFee');if(sff)sff.value=c.shimeiFee||'';
+  // 経費コース設定を復元
+  const ie=document.getElementById('newCourseIsExpense');if(ie)ie.checked=!!c.isExpense;
+  const eca=document.getElementById('expenseCourseArea');if(eca)eca.style.display=c.isExpense?'block':'none';
+  const er=document.getElementById('newCourseExpenseRate');if(er)er.value=c.expenseRate||c.fixedRate||'';
+  const et=document.getElementById('newCourseExpenseTax');if(et)et.value=c.expenseTaxMode||'';
   document.getElementById('courseModal').classList.add('open');
 }
 async function saveCourse(){
@@ -2274,12 +2305,15 @@ async function saveCourse(){
   const cafeteriaFee=hasCafeteria?Number(document.getElementById('newCourseCafeteriaFee')?document.getElementById('newCourseCafeteriaFee').value:0)||0:0;
   const hasShimei=!!(document.getElementById('newCourseHasShimei')&&document.getElementById('newCourseHasShimei').checked);
   const shimeiFee=hasShimei?Number(document.getElementById('newCourseShimeiFee')?document.getElementById('newCourseShimeiFee').value:0)||0:0;
+  const isExpense=!!(document.getElementById('newCourseIsExpense')&&document.getElementById('newCourseIsExpense').checked);
+  const expenseRate=isExpense?Number(document.getElementById('newCourseExpenseRate')?document.getElementById('newCourseExpenseRate').value:0)||0:0;
+  const expenseTaxMode=isExpense?(document.getElementById('newCourseExpenseTax')?document.getElementById('newCourseExpenseTax').value:''):'';
   const editId=document.getElementById('courseModalSaveBtn').dataset.editId;
   if(editId){
     const c=state.courses.find(x=>String(x.id)===String(editId));
-    if(c)Object.assign(c,{name,address,phone,manager,rateType,fixedRate,weekdayRate,weekendRate,hasCafeteria,cafeteriaFee,hasShimei,shimeiFee});
+    if(c)Object.assign(c,{name,address,phone,manager,rateType,fixedRate,weekdayRate,weekendRate,hasCafeteria,cafeteriaFee,hasShimei,shimeiFee,isExpense,expenseRate,expenseTaxMode});
   } else {
-    state.courses.push({id:Date.now(),name,address,phone,manager,rateType,fixedRate,weekdayRate,weekendRate,hasCafeteria,cafeteriaFee,hasShimei,shimeiFee});
+    state.courses.push({id:Date.now(),name,address,phone,manager,rateType,fixedRate,weekdayRate,weekendRate,hasCafeteria,cafeteriaFee,hasShimei,shimeiFee,isExpense,expenseRate,expenseTaxMode});
   }
   await saveState();closeModal('courseModal');renderCourseTable();populateCourseSelects();renderRateMatrix();
   refreshEmpCourseSelect();
@@ -2313,6 +2347,11 @@ function toggleCafeteriaFee(){
 function toggleShimeiFee(){
   const el=document.getElementById('shimeiFeeArea');
   if(el)el.style.display=document.getElementById('newCourseHasShimei').checked?'block':'none';
+}
+function toggleExpenseCourse(){
+  const checked=document.getElementById('newCourseIsExpense').checked;
+  const area=document.getElementById('expenseCourseArea');
+  if(area)area.style.display=checked?'block':'none';
 }
 function renderCafeteriaEmpBurden(){/* 廃止：従業員ごとの負担区分は廃止済み */}
 function onEmpCourseChange(){
@@ -2497,50 +2536,6 @@ function setShiftSubTab(tab){
   if(tab==='notice'){initNoticeForm();}
 }
 
-// =====================================================
-// RATE
-// =====================================================
-function getRate(empId,courseId,dateStr){
-  // 従業員ごとのゴルフ場別給料設定を最優先
-  const emp=state.employees.find(e=>String(e.id)===String(empId));
-  const course=state.courses.find(c=>String(c.id)===String(courseId));
-  const empWage=emp&&emp.courseWages?emp.courseWages[String(courseId)]:undefined;
-  if(empWage!==undefined&&empWage!==null&&empWage!==''){
-    if(typeof empWage==='object'){
-      // fee/feeWd/feeWe フィールドのみ契約金として使用
-      // {wd,we} は給料データのため契約金に使わない
-      const isWe=dateStr?isWeekendOrHoliday(dateStr):false;
-      if(empWage.fee!==undefined&&empWage.fee)return Number(empWage.fee);
-      if(empWage.feeWd!==undefined||empWage.feeWe!==undefined){
-        const feeVal=isWe?(empWage.feeWe||0):(empWage.feeWd||0);
-        if(feeVal)return Number(feeVal);
-      }
-      // {wd,we} のみの場合はここで終了→コース設定にフォールスルー
-    } else if(Number(empWage)){
-      // 旧形式: 数値 → fixed タイプの旧データとして契約金扱い（後方互換）
-      return Number(empWage);
-    }
-  }
-  if(!course)return 0;
-  if(course.rateType==='fixed'||!course.rateType)return Number(course.fixedRate||0);
-  if(course.rateType==='weekday_weekend')return dateStr&&isWeekendOrHoliday(dateStr)?Number(course.weekendRate||0):Number(course.weekdayRate||0);
-  // per_person系：course.perPersonFees を優先、なければ state.rates を参照
-  const pf=course.perPersonFees||{};
-  const sr=state.rates[String(empId)]||{};
-  if(course.rateType==='per_person_weekday'){
-    const isWe=dateStr?isWeekendOrHoliday(dateStr):false;
-    if(isWe){
-      const pfVal=typeof pf[String(empId)]==='object'?Number(pf[String(empId)].we||0):0;
-      return pfVal||Number(sr[String(courseId)+'_we']||0);
-    } else {
-      const pfVal=typeof pf[String(empId)]==='object'?Number(pf[String(empId)].wd||0):0;
-      return pfVal||Number(sr[String(courseId)+'_wd']||0);
-    }
-  }
-  // per_person
-  const pfVal=typeof pf[String(empId)]==='number'?pf[String(empId)]:(typeof pf[String(empId)]==='object'&&pf[String(empId)]?Number(pf[String(empId)].fee||0):0);
-  return pfVal||Number(sr[String(courseId)]||0);
-}
 // 従業員の日給取得（契約金とは別枠、per_person系はwageフィールドを参照）
 function getEmpDailyWage(empId,courseId,dateStr){
   const emp=state.employees.find(e=>String(e.id)===String(empId));
@@ -3317,151 +3312,465 @@ function deleteAttendanceById(id){showConfirm('この勤怠記録を削除しま
 // =====================================================
 // SALES
 // =====================================================
-function openSalesModal(){populateCourseSelects();document.getElementById('newSalesDate').value=todayStr();document.getElementById('newSalesCourse').value='';document.getElementById('roundEntries').innerHTML='';document.getElementById('salesTotalDisplay').textContent='¥0';entryCounter=0;addRoundEntry();document.getElementById('salesModal').classList.add('open');}
-function onCourseChange(){document.querySelectorAll('.round-entry').forEach(e=>{const es=e.querySelector('.entry-emp');if(es&&es.value)fillEntryRate(e);});calcTotal();}
-function addRoundEntry(){
-  const id=++entryCounter;
-  const opts=state.employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
-  const div=document.createElement('div');div.className='round-entry';div.id=`entry-${id}`;
-  div.innerHTML=`<select class="entry-emp" onchange="onEntryEmpChange(${id})"><option value="">キャディー選択</option>${opts}</select><input type="number" class="entry-rounds" placeholder="R" min="1" value="1" oninput="calcTotal()"><input type="number" class="entry-rate" placeholder="単価" oninput="calcTotal()"><button class="remove-btn" onclick="removeEntry(${id})">×</button><div class="entry-subtotal" id="esub-${id}"></div>`;
+
+// 消費税率（10%）
+const TAX_RATE = 0.1;
+
+// -------------------------------------------------------
+// 契約単価取得
+// 優先順位:
+//   1. 従業員個別設定 (emp.courseWages[courseId])
+//      - per_person系: fee（一律）または feeWd/feeWe（平日/週末）
+//      - 旧形式: 数値（後方互換）
+//   2. コース設定 (course.rateType)
+//      - fixed:              course.fixedRate
+//      - weekday_weekend:    course.weekdayRate / course.weekendRate
+//      - per_person:         course.perPersonFees[empId]
+//      - per_person_weekday: course.perPersonFees[empId].wd / .we
+// -------------------------------------------------------
+function getRate(empId, courseId, dateStr) {
+  const emp    = state.employees.find(e => String(e.id) === String(empId));
+  const course = state.courses.find(c => String(c.id) === String(courseId));
+  if (!emp || !course) return 0;
+
+  // 1. 従業員個別設定を確認
+  const cw = emp.courseWages ? emp.courseWages[String(courseId)] : undefined;
+  if (cw !== undefined && cw !== null && cw !== '') {
+    if (typeof cw === 'object') {
+      // {fee} は一律契約金
+      if (cw.fee) return Number(cw.fee);
+      // {feeWd, feeWe} は平日/週末別契約金
+      if (cw.feeWd !== undefined || cw.feeWe !== undefined) {
+        const isWe = dateStr ? isWeekendOrHoliday(dateStr) : false;
+        const val  = isWe ? Number(cw.feeWe || 0) : Number(cw.feeWd || 0);
+        if (val) return val;
+      }
+      // {wd, we} は給料フィールドなので契約金には使わない → コース設定へ
+    } else if (Number(cw)) {
+      // 旧形式: 数値
+      return Number(cw);
+    }
+  }
+
+  // 2. コース設定を参照
+  const rateType = course.rateType || 'fixed';
+  const isWe     = dateStr ? isWeekendOrHoliday(dateStr) : false;
+
+  if (rateType === 'fixed') {
+    return Number(course.fixedRate || 0);
+  }
+
+  if (rateType === 'weekday_weekend') {
+    return isWe ? Number(course.weekendRate || 0) : Number(course.weekdayRate || 0);
+  }
+
+  // per_person 系: course.perPersonFees[empId] を参照
+  const pf    = course.perPersonFees || {};
+  const pfEmp = pf[String(empId)];
+
+  if (rateType === 'per_person') {
+    if (typeof pfEmp === 'number') return pfEmp;
+    if (typeof pfEmp === 'object' && pfEmp) return Number(pfEmp.fee || 0);
+    return 0;
+  }
+
+  if (rateType === 'per_person_weekday') {
+    if (typeof pfEmp === 'object' && pfEmp) {
+      return isWe ? Number(pfEmp.we || 0) : Number(pfEmp.wd || 0);
+    }
+    return 0;
+  }
+
+  return 0;
+}
+
+// -------------------------------------------------------
+// 売上レコード作成
+// 出勤1件につき1レコード。同日・同ゴルフ場・同従業員の
+// 既存レコードは上書き（重複防止）。
+// total は税抜き金額で保存し、表示時に×1.1して税込み換算。
+// -------------------------------------------------------
+function autoAddSales(empId, empName, courseId, courseName, date, rounds) {
+  if (!courseId) return;
+  // 経費コース（isExpense:true）は売上に含めない
+  const courseObj = state.courses.find(c => String(c.id) === String(courseId));
+  if (courseObj && courseObj.isExpense) return;
+  const rate = getRate(empId, courseId, date);
+  if (!rate) return;
+  // 重複削除
+  state.sales = state.sales.filter(s =>
+    !(s.date === date &&
+      String(s.empId) === String(empId) &&
+      String(s.courseId) === String(courseId))
+  );
+  state.sales.push({
+    id:         Date.now() + Math.random(),
+    date,
+    courseId,
+    courseName,
+    empId:      String(empId),
+    empName,
+    rounds:     rounds || 1,
+    rate,
+    total:      (rounds || 1) * rate   // 税抜き
+  });
+}
+
+// -------------------------------------------------------
+// 出勤レコードに紐づく売上を削除
+// -------------------------------------------------------
+function removeSalesForAtt(rec) {
+  if (!rec) return;
+  state.sales = state.sales.filter(s =>
+    !(String(s.empId)   === String(rec.empId) &&
+      s.date            === rec.date &&
+      String(s.courseId) === String(rec.courseId))
+  );
+}
+
+// -------------------------------------------------------
+// 売上モーダル
+// -------------------------------------------------------
+function openSalesModal() {
+  populateCourseSelects();
+  document.getElementById('newSalesDate').value = todayStr();
+  document.getElementById('newSalesCourse').value = '';
+  document.getElementById('roundEntries').innerHTML = '';
+  document.getElementById('salesTotalDisplay').textContent = '¥0';
+  entryCounter = 0;
+  addRoundEntry();
+  document.getElementById('salesModal').classList.add('open');
+}
+
+function onCourseChange() {
+  document.querySelectorAll('.round-entry').forEach(e => {
+    const es = e.querySelector('.entry-emp');
+    if (es && es.value) fillEntryRate(e);
+  });
+  calcTotal();
+}
+
+function addRoundEntry() {
+  const id   = ++entryCounter;
+  const opts = state.employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+  const div  = document.createElement('div');
+  div.className = 'round-entry';
+  div.id = `entry-${id}`;
+  div.innerHTML = `<select class="entry-emp" onchange="onEntryEmpChange(${id})"><option value="">キャディー選択</option>${opts}</select><input type="number" class="entry-rounds" placeholder="R" min="1" value="1" oninput="calcTotal()"><input type="number" class="entry-rate" placeholder="単価（税抜）" oninput="calcTotal()"><button class="remove-btn" onclick="removeEntry(${id})">×</button><div class="entry-subtotal" id="esub-${id}"></div>`;
   document.getElementById('roundEntries').appendChild(div);
 }
-function onEntryEmpChange(id){const e=document.getElementById(`entry-${id}`);fillEntryRate(e);calcTotal();}
-function fillEntryRate(entry){const cid=document.getElementById('newSalesCourse').value,eid=entry.querySelector('.entry-emp').value,dt=document.getElementById('newSalesDate').value;if(eid&&cid){const r=getRate(eid,cid,dt);if(r)entry.querySelector('.entry-rate').value=r;}}
-function removeEntry(id){const e=document.getElementById(`entry-${id}`);if(e)e.remove();calcTotal();}
-function calcTotal(){let t=0;document.querySelectorAll('.round-entry').forEach(e=>{const r=Number(e.querySelector('.entry-rounds').value)||0,ra=Number(e.querySelector('.entry-rate').value)||0,s=r*ra;t+=s;const se=e.querySelector('.entry-subtotal');if(se)se.textContent=s?`= ¥${s.toLocaleString()}`:''});document.getElementById('salesTotalDisplay').textContent='¥'+t.toLocaleString();}
-async function saveSales(){
-  const cid=document.getElementById('newSalesCourse').value;
-  const course=state.courses.find(c=>String(c.id)===String(cid));
-  if(!course){alert('ゴルフ場を選択してください');return;}
-  const date=document.getElementById('newSalesDate').value;let added=0;
-  document.querySelectorAll('.round-entry').forEach(entry=>{
-    const eid=entry.querySelector('.entry-emp').value;
-    const rounds=Number(entry.querySelector('.entry-rounds').value)||0;
-    const rate=Number(entry.querySelector('.entry-rate').value)||0;
-    if(!eid||!rounds||!rate)return;
-    const emp=state.employees.find(e=>String(e.id)===String(eid));
-    state.sales.push({id:Date.now()+Math.random(),date,courseId:cid,courseName:course.name,empId:eid,empName:emp?emp.name:'不明',rounds,rate,total:rounds*rate});
+
+function onEntryEmpChange(id) {
+  const e = document.getElementById(`entry-${id}`);
+  fillEntryRate(e);
+  calcTotal();
+}
+
+function fillEntryRate(entry) {
+  const cid = document.getElementById('newSalesCourse').value;
+  const eid = entry.querySelector('.entry-emp').value;
+  const dt  = document.getElementById('newSalesDate').value;
+  if (!eid || !cid) return;
+  const r = getRate(eid, cid, dt);
+  if (r) entry.querySelector('.entry-rate').value = r;
+}
+
+function removeEntry(id) {
+  const e = document.getElementById(`entry-${id}`);
+  if (e) e.remove();
+  calcTotal();
+}
+
+function calcTotal() {
+  let totalEx = 0;
+  document.querySelectorAll('.round-entry').forEach(e => {
+    const r  = Number(e.querySelector('.entry-rounds').value) || 0;
+    const ra = Number(e.querySelector('.entry-rate').value)   || 0;
+    const sub = r * ra;
+    totalEx += sub;
+    const se = e.querySelector('.entry-subtotal');
+    if (se) se.textContent = sub ? `= ¥${sub.toLocaleString()}（税抜）` : '';
+  });
+  const totalInc = Math.round(totalEx * (1 + TAX_RATE));
+  document.getElementById('salesTotalDisplay').textContent =
+    `¥${totalInc.toLocaleString()}（税込） / 税抜 ¥${totalEx.toLocaleString()}`;
+}
+
+async function saveSales() {
+  const cid    = document.getElementById('newSalesCourse').value;
+  const course = state.courses.find(c => String(c.id) === String(cid));
+  if (!course) { alert('ゴルフ場を選択してください'); return; }
+  const date = document.getElementById('newSalesDate').value;
+  let added = 0;
+  document.querySelectorAll('.round-entry').forEach(entry => {
+    const eid    = entry.querySelector('.entry-emp').value;
+    const rounds = Number(entry.querySelector('.entry-rounds').value) || 0;
+    const rate   = Number(entry.querySelector('.entry-rate').value)   || 0;
+    if (!eid || !rounds || !rate) return;
+    const emp = state.employees.find(e => String(e.id) === String(eid));
+    // 同日・同ゴルフ場・同従業員の重複を削除してから追加
+    state.sales = state.sales.filter(s =>
+      !(s.date === date && String(s.empId) === String(eid) && String(s.courseId) === String(cid))
+    );
+    state.sales.push({
+      id:        Date.now() + Math.random(),
+      date,
+      courseId:  cid,
+      courseName: course.name,
+      empId:     eid,
+      empName:   emp ? emp.name : '不明',
+      rounds,
+      rate,
+      total:     rounds * rate   // 税抜き
+    });
     added++;
   });
-  if(!added){alert('有効なラウンド入力がありません');return;}
-  await saveState();closeModal('salesModal');renderSalesTable();updateSalesStats();showToast(`💴 ${added}件の売上を登録しました`);
+  if (!added) { alert('有効なラウンド入力がありません'); return; }
+  await saveState();
+  closeModal('salesModal');
+  renderSalesTable();
+  showToast(`💴 ${added}件の売上を登録しました`);
 }
-let salesViewMode='month';
-function setSalesView(mode){
-  salesViewMode=mode;
-  ['month','year','all'].forEach(m=>{
-    const btn=document.getElementById('salesView'+m.charAt(0).toUpperCase()+m.slice(1)+'Btn');
-    if(btn)btn.style.cssText=m===mode?'padding:9px 20px;background:var(--gold);border:none;color:var(--gd);font-size:13px;font-weight:700;cursor:pointer;font-family:Noto Sans JP,sans-serif;':'padding:9px 20px;background:none;border:none;color:var(--goldl);font-size:13px;font-weight:700;cursor:pointer;font-family:Noto Sans JP,sans-serif;';
+
+// -------------------------------------------------------
+// 売上画面ナビゲーション
+// -------------------------------------------------------
+let salesViewMode = 'month';
+
+function setSalesView(mode) {
+  salesViewMode = mode;
+  ['month', 'year', 'all'].forEach(m => {
+    const btn = document.getElementById('salesView' + m.charAt(0).toUpperCase() + m.slice(1) + 'Btn');
+    if (btn) btn.style.cssText = m === mode
+      ? 'padding:9px 20px;background:var(--gold);border:none;color:var(--gd);font-size:13px;font-weight:700;cursor:pointer;font-family:Noto Sans JP,sans-serif;'
+      : 'padding:9px 20px;background:none;border:none;color:var(--goldl);font-size:13px;font-weight:700;cursor:pointer;font-family:Noto Sans JP,sans-serif;';
   });
-  const mp=document.getElementById('salesMonthPicker');const yp=document.getElementById('salesYearPicker');
-  if(mp)mp.style.display=mode==='month'?'flex':'none';
-  if(yp)yp.style.display=mode==='year'?'flex':'none';
-  if(mode==='year')initSalesYearSelect();
+  const mp = document.getElementById('salesMonthPicker');
+  const yp = document.getElementById('salesYearPicker');
+  if (mp) mp.style.display = mode === 'month' ? 'flex' : 'none';
+  if (yp) yp.style.display = mode === 'year'  ? 'flex' : 'none';
+  if (mode === 'year') initSalesYearSelect();
   renderSalesTable();
 }
-function salesNavPrev(){const m=document.getElementById('salesMonth');if(!m||!m.value)return;const d=new Date(m.value+'-01');d.setMonth(d.getMonth()-1);m.value=d.toISOString().slice(0,7);renderSalesTable();}
-function salesNavNext(){const m=document.getElementById('salesMonth');if(!m||!m.value)return;const d=new Date(m.value+'-01');d.setMonth(d.getMonth()+1);m.value=d.toISOString().slice(0,7);renderSalesTable();}
-function salesYearNavPrev(){const s=document.getElementById('salesYear');if(s&&s.value)s.value=String(Number(s.value)-1);renderSalesTable();}
-function salesYearNavNext(){const s=document.getElementById('salesYear');if(s&&s.value)s.value=String(Number(s.value)+1);renderSalesTable();}
-function initSalesYearSelect(){
-  const sel=document.getElementById('salesYear');if(!sel)return;
-  const years=new Set(state.sales.map(s=>s.date?s.date.slice(0,4):null).filter(Boolean));
-  const now=String(new Date().getFullYear());years.add(now);
-  const sorted=[...years].sort((a,b)=>b-a);
-  const cur=sel.value||now;
-  sel.innerHTML=sorted.map(y=>`<option value="${y}"${y===cur?'selected':''}>${y}年</option>`).join('');
+
+function salesNavPrev() {
+  const m = document.getElementById('salesMonth');
+  if (!m || !m.value) return;
+  const d = new Date(m.value + '-01');
+  d.setMonth(d.getMonth() - 1);
+  m.value = d.toISOString().slice(0, 7);
+  renderSalesTable();
 }
-function getFilteredSales(){
-  if(salesViewMode==='month'){const month=document.getElementById('salesMonth')?document.getElementById('salesMonth').value:'';return month?state.sales.filter(s=>s.date&&s.date.startsWith(month)):[];}
-  if(salesViewMode==='year'){const year=document.getElementById('salesYear')?document.getElementById('salesYear').value:'';return year?state.sales.filter(s=>s.date&&s.date.startsWith(year)):state.sales;}
-  return [...state.sales];
+
+function salesNavNext() {
+  const m = document.getElementById('salesMonth');
+  if (!m || !m.value) return;
+  const d = new Date(m.value + '-01');
+  d.setMonth(d.getMonth() + 1);
+  m.value = d.toISOString().slice(0, 7);
+  renderSalesTable();
 }
-function renderSalesTable(){
-  // 新しいゴルフ場別売上表示
-  const monthEl=document.getElementById('salesMonth');
-  const month=monthEl?monthEl.value:'';
-  const container=document.getElementById('salesByCourseArea');
-  if(!container)return;
-  if(!month){container.innerHTML='<div class="empty-state">月を選択してください</div>';return;}
-  const [y,m]=month.split('-');
-  const reiwa=parseInt(y)-2018;
-  const records=state.attendance.filter(a=>a.date&&a.date.startsWith(month)&&!a.pending);
-  // 売上データも参照
-  const salesRecs=state.sales?state.sales.filter(s=>s.date&&s.date.startsWith(month)):[];
-  let totalSalesEx=0,totalRounds=0,totalDays=0;
-  // ゴルフ場ごとに集計
-  const byCourse={};
-  records.forEach(r=>{
-    const cid=String(r.courseId||'');
-    if(!byCourse[cid])byCourse[cid]={courseId:cid,courseName:r.courseName||'不明',days:0,rounds:0,salesEx:0,emps:{}};
-    byCourse[cid].days++;
-    byCourse[cid].rounds+=Number(r.rounds||1);
-    // 売上計算（税抜き）
-    const sale=salesRecs.find(s=>String(s.empId)===String(r.empId)&&s.date===r.date&&String(s.courseId)===String(r.courseId));
-    const amountEx=sale?Number(sale.total||sale.totalAmount||sale.amount||0):0;
-    byCourse[cid].salesEx+=amountEx;
-    if(!byCourse[cid].emps[r.empId])byCourse[cid].emps[r.empId]={name:r.empName,dates:[],salesEx:0,rounds:0};
-    byCourse[cid].emps[r.empId].dates.push(r.date);
-    byCourse[cid].emps[r.empId].salesEx+=amountEx;
-    byCourse[cid].emps[r.empId].rounds+=Number(r.rounds||1);
-    totalDays++;totalRounds+=Number(r.rounds||1);totalSalesEx+=amountEx;
-  });
-  const totalTax=Math.round(totalSalesEx*TAX_RATE);
-  const totalSalesInc=totalSalesEx+totalTax;
-  // 合計更新（税込み表示）
-  const tot=document.getElementById('monthSalesTotal');if(tot)tot.innerHTML=`¥${totalSalesInc.toLocaleString()}`;
-  const rnd=document.getElementById('monthRounds');if(rnd)rnd.innerHTML=`${totalRounds}<span>R</span>`;
-  const att=document.getElementById('monthAttDays');if(att)att.innerHTML=`${totalDays}<span>日</span>`;
-  // 月合計の税内訳をサブテキストで表示
-  const taxBreakEl=document.getElementById('monthSalesTaxBreak');
-  if(taxBreakEl)taxBreakEl.innerHTML=totalSalesEx>0?`税抜 ¥${totalSalesEx.toLocaleString()} ＋ 消費税 ¥${totalTax.toLocaleString()}`:'';
-  if(!Object.keys(byCourse).length){
-    container.innerHTML='<div class="empty-state">この月の売上データがありません</div>';
-    updateSalesStats();return;
+
+function salesYearNavPrev() {
+  const s = document.getElementById('salesYear');
+  if (s && s.value) { s.value = String(Number(s.value) - 1); renderSalesTable(); }
+}
+
+function salesYearNavNext() {
+  const s = document.getElementById('salesYear');
+  if (s && s.value) { s.value = String(Number(s.value) + 1); renderSalesTable(); }
+}
+
+function initSalesYearSelect() {
+  const sel = document.getElementById('salesYear');
+  if (!sel) return;
+  const now    = String(new Date().getFullYear());
+  const years  = new Set((state.sales || []).map(s => s.date ? s.date.slice(0, 4) : null).filter(Boolean));
+  years.add(now);
+  const sorted = [...years].sort((a, b) => b - a);
+  const cur    = sel.value || now;
+  sel.innerHTML = sorted.map(y => `<option value="${y}"${y === cur ? ' selected' : ''}>${y}年</option>`).join('');
+}
+
+// -------------------------------------------------------
+// 売上表示メイン（ゴルフ場別・従業員別）
+// ・state.sales[].total は税抜きで保存
+// ・表示時のみ ×(1+TAX_RATE) して税込み換算
+// -------------------------------------------------------
+function renderSalesTable() {
+  const container = document.getElementById('salesByCourseArea');
+  if (!container) return;
+
+  // 表示対象の売上レコードを取得
+  let salesRecs = [];
+  let periodLabel = '';
+  if (salesViewMode === 'month') {
+    const monthEl = document.getElementById('salesMonth');
+    const month   = monthEl ? monthEl.value : '';
+    if (!month) {
+      container.innerHTML = '<div class="empty-state">月を選択してください</div>';
+      _clearSalesSummary();
+      return;
+    }
+    salesRecs  = (state.sales || []).filter(s => s.date && s.date.startsWith(month));
+    const [y, m] = month.split('-');
+    periodLabel = `${y}年${parseInt(m)}月`;
+  } else if (salesViewMode === 'year') {
+    const yearEl = document.getElementById('salesYear');
+    const year   = yearEl ? yearEl.value : '';
+    if (!year) { container.innerHTML = '<div class="empty-state">年を選択してください</div>'; _clearSalesSummary(); return; }
+    salesRecs  = (state.sales || []).filter(s => s.date && s.date.startsWith(year));
+    periodLabel = `${year}年`;
+  } else {
+    salesRecs  = [...(state.sales || [])];
+    periodLabel = '全期間';
   }
-  container.innerHTML=Object.values(byCourse).map(c=>{
-    // 従業員ごとの出勤日リスト
-    const empRows=Object.values(c.emps).map(emp=>{
-      const sortedDates=emp.dates.sort();
-      const dateTags=sortedDates.map(d=>{
-        const[,mm,dd]=d.split('-');
-        const dow=['日','月','火','水','木','金','土'][new Date(d).getDay()];
-        const dowColor=dow==='日'?'#e88':dow==='土'?'#99c':'var(--gray)';
+
+  // 出勤レコードから補助情報（出勤日数・ラウンド数）を集計
+  const attMonth = salesViewMode === 'month'
+    ? (document.getElementById('salesMonth') ? document.getElementById('salesMonth').value : '')
+    : salesViewMode === 'year'
+      ? (document.getElementById('salesYear') ? document.getElementById('salesYear').value : '')
+      : '';
+  const attRecs = state.attendance.filter(a =>
+    !a.pending && a.date && (attMonth ? a.date.startsWith(attMonth) : true)
+  );
+
+  // ゴルフ場別に集計
+  const byCourse = {};
+  salesRecs.forEach(s => {
+    const cid = String(s.courseId || '');
+    if (!byCourse[cid]) byCourse[cid] = {
+      courseId:   cid,
+      courseName: s.courseName || '不明',
+      totalEx:    0,
+      emps:       {}
+    };
+    const ex = Number(s.total || 0);
+    byCourse[cid].totalEx += ex;
+    if (!byCourse[cid].emps[s.empId]) byCourse[cid].emps[s.empId] = {
+      name:    s.empName,
+      totalEx: 0,
+      rounds:  0,
+      dates:   []
+    };
+    byCourse[cid].emps[s.empId].totalEx += ex;
+    byCourse[cid].emps[s.empId].rounds  += Number(s.rounds || 1);
+    if (s.date && !byCourse[cid].emps[s.empId].dates.includes(s.date))
+      byCourse[cid].emps[s.empId].dates.push(s.date);
+  });
+
+  // 出勤データから日数を補完
+  attRecs.forEach(a => {
+    const cid = String(a.courseId || '');
+    if (!byCourse[cid]) return;
+    if (!byCourse[cid].emps[a.empId]) return;
+    const emp = byCourse[cid].emps[a.empId];
+    if (a.date && !emp.dates.includes(a.date)) emp.dates.push(a.date);
+  });
+
+  // 全体合計（税抜き合算 → 最後に一括で消費税計算）
+  const grandTotalEx  = salesRecs.reduce((acc, s) => acc + Number(s.total || 0), 0);
+  const grandTax      = Math.round(grandTotalEx * TAX_RATE);
+  const grandTotalInc = grandTotalEx + grandTax;
+
+  // 総ラウンド数・総出勤日数（出勤レコードから）
+  const totalRounds = attRecs.reduce((acc, a) => acc + Number(a.rounds || 1), 0);
+  const totalDays   = attRecs.length;
+
+  // サマリーカード更新
+  const totEl = document.getElementById('monthSalesTotal');
+  if (totEl) totEl.innerHTML = `¥${grandTotalInc.toLocaleString()}`;
+  const taxBreakEl = document.getElementById('monthSalesTaxBreak');
+  if (taxBreakEl) taxBreakEl.innerHTML = grandTotalEx > 0
+    ? `税抜 ¥${grandTotalEx.toLocaleString()} ＋ 消費税 ¥${grandTax.toLocaleString()}` : '';
+  const rndEl = document.getElementById('monthRounds');
+  if (rndEl) rndEl.innerHTML = `${totalRounds}<span>R</span>`;
+  const attEl = document.getElementById('monthAttDays');
+  if (attEl) attEl.innerHTML = `${totalDays}<span>日</span>`;
+
+  // 給料合計（税込）集計
+  let wageTaxEx = 0, wageTax = 0, wageInc = 0;
+  attRecs.forEach(a => {
+    const emp = state.employees.find(e => String(e.id) === String(a.empId));
+    const course = state.courses.find(c => String(c.id) === String(a.courseId));
+    // 経費コースは expenseRate を使用、通常コースは getEmpDailyWage
+    const dailyWage = (course && course.isExpense)
+      ? Number(course.expenseRate || 0)
+      : Number(a.wage || 0) || getEmpDailyWage(a.empId, a.courseId, a.date);
+    const base = Math.round(dailyWage * Number(a.rounds || 1));
+    const taxMode = (course && course.isExpense)
+      ? (course.expenseTaxMode || '')
+      : (emp ? (emp.taxMode || (state.settings && state.settings.consumptionTaxMode) || 'none') : 'none');
+    const contract = emp ? emp.contract : 'baito';
+    const hasInvoice = (contract === 'invoice_yes' && emp && emp.invoiceNo);
+    const isCommission = hasInvoice || contract === 'invoice_no' || contract === 'training_invoice' || (course && course.isExpense);
+    if (isCommission && taxMode === 'tax10') {
+      const tax = Math.round(base * 0.1);
+      wageTaxEx += base; wageTax += tax; wageInc += base + tax;
+    } else if (isCommission && taxMode === 'tax8to10') {
+      const ex = Math.round(base / 1.08);
+      const billed = Math.round(ex * 1.1);
+      wageTaxEx += ex; wageTax += billed - ex; wageInc += billed;
+    } else {
+      wageTaxEx += base; wageInc += base;
+    }
+  });
+  const wExEl = document.getElementById('monthWageTaxEx'); if (wExEl) wExEl.textContent = '¥' + wageTaxEx.toLocaleString();
+  const wTxEl = document.getElementById('monthWageTax');   if (wTxEl) wTxEl.textContent = '¥' + wageTax.toLocaleString();
+  const wTlEl = document.getElementById('monthWageTotal'); if (wTlEl) wTlEl.textContent = '¥' + wageInc.toLocaleString();
+
+  if (!Object.keys(byCourse).length) {
+    container.innerHTML = '<div class="empty-state">この期間の売上データがありません</div>';
+    return;
+  }
+
+  container.innerHTML = Object.values(byCourse).map(c => {
+    const cTax    = Math.round(c.totalEx * TAX_RATE);
+    const cTotalInc = c.totalEx + cTax;
+
+    const empRows = Object.values(c.emps).map(emp => {
+      const empTax    = Math.round(emp.totalEx * TAX_RATE);
+      const empTotalInc = emp.totalEx + empTax;
+      const sortedDates = [...emp.dates].sort();
+      const dateTags = sortedDates.map(d => {
+        const [, mm, dd] = d.split('-');
+        const dow      = ['日','月','火','水','木','金','土'][new Date(d).getDay()];
+        const dowColor = dow === '日' ? '#e88' : dow === '土' ? '#99c' : 'var(--gray)';
         return `<span style="display:inline-block;background:rgba(26,58,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:2px 7px;font-size:11px;color:${dowColor};margin:2px;">${parseInt(mm)}/${parseInt(dd)}(${dow})</span>`;
       }).join('');
-      const empSalesInc=emp.salesEx>0?Math.round(emp.salesEx*(1+TAX_RATE)):0;
-      const empSalesStr=empSalesInc>0?`¥${empSalesInc.toLocaleString()}`:'';
-      const empRoundsStr=emp.rounds!==emp.dates.length?`${emp.rounds}R`:'';
+      const salesStr  = empTotalInc > 0 ? `¥${empTotalInc.toLocaleString()}` : '';
+      const roundsStr = emp.rounds > 0   ? `${emp.rounds}R` : '';
       return `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
           <span style="font-size:13px;font-weight:700;color:var(--cream);">${emp.name}</span>
           <span style="display:flex;gap:8px;align-items:center;">
-            ${empRoundsStr?`<span style="font-size:11px;color:var(--gray);">${empRoundsStr}</span>`:''}
-            ${empSalesStr?`<span style="font-size:12px;font-weight:700;color:#6dbf7e;">${empSalesStr}</span>`:''}
+            ${roundsStr ? `<span style="font-size:11px;color:var(--gray);">${roundsStr}</span>` : ''}
+            ${salesStr  ? `<span style="font-size:12px;font-weight:700;color:#6dbf7e;">${salesStr}<span style="font-size:9px;color:var(--gray);margin-left:2px;">税込</span></span>` : ''}
             <span style="font-size:12px;color:var(--goldl);">${emp.dates.length}日</span>
           </span>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:2px;">${dateTags}</div>
+        ${empTotalInc > 0 ? `<div style="font-size:10px;color:var(--gray);margin-top:3px;">税抜 ¥${emp.totalEx.toLocaleString()} ＋ 消費税 ¥${empTax.toLocaleString()}</div>` : ''}
       </div>`;
     }).join('');
-    const cSalesEx=c.salesEx;const cTax=Math.round(cSalesEx*TAX_RATE);const cSalesInc=cSalesEx+cTax;
+
     return `<div style="background:rgba(26,58,42,0.4);border:1px solid rgba(201,168,76,0.2);border-radius:14px;padding:16px;margin-bottom:14px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
         <div style="font-size:15px;font-weight:900;color:var(--goldl);">⛳ ${c.courseName}</div>
-        ${cSalesInc>0?`<div style="text-align:right;">
-          <div style="font-size:15px;font-weight:900;color:#6dbf7e;">¥${cSalesInc.toLocaleString()}<span style="font-size:10px;color:var(--gray);margin-left:3px;">税込</span></div>
-          <div style="font-size:10px;color:var(--gray);">税抜 ¥${cSalesEx.toLocaleString()} ＋ 消費税 ¥${cTax.toLocaleString()}</div>
-        </div>`:''}
+        ${cTotalInc > 0 ? `<div style="text-align:right;">
+          <div style="font-size:15px;font-weight:900;color:#6dbf7e;">¥${cTotalInc.toLocaleString()}<span style="font-size:10px;color:var(--gray);margin-left:3px;">税込</span></div>
+          <div style="font-size:10px;color:var(--gray);">税抜 ¥${c.totalEx.toLocaleString()} ＋ 消費税 ¥${cTax.toLocaleString()}</div>
+        </div>` : ''}
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
         <div style="background:rgba(26,58,42,0.6);border-radius:10px;padding:10px;text-align:center;">
           <div style="font-size:11px;color:var(--gray);margin-bottom:4px;">出勤日数</div>
-          <div style="font-size:20px;font-weight:900;color:var(--cream);">${c.days}<span style="font-size:12px;">日</span></div>
+          <div style="font-size:20px;font-weight:900;color:var(--cream);">${Object.values(c.emps).reduce((a,e)=>a+e.dates.length,0)}<span style="font-size:12px;">日</span></div>
         </div>
         <div style="background:rgba(26,58,42,0.6);border-radius:10px;padding:10px;text-align:center;">
           <div style="font-size:11px;color:var(--gray);margin-bottom:4px;">ラウンド数</div>
-          <div style="font-size:20px;font-weight:900;color:var(--cream);">${c.rounds}<span style="font-size:12px;">R</span></div>
+          <div style="font-size:20px;font-weight:900;color:var(--cream);">${Object.values(c.emps).reduce((a,e)=>a+e.rounds,0)}<span style="font-size:12px;">R</span></div>
         </div>
         <div style="background:rgba(26,58,42,0.6);border-radius:10px;padding:10px;text-align:center;">
           <div style="font-size:11px;color:var(--gray);margin-bottom:4px;">人数</div>
@@ -3471,21 +3780,64 @@ function renderSalesTable(){
       <div>${empRows}</div>
     </div>`;
   }).join('');
-  updateSalesStats();
 }
 
-// =====================================================
-// 追加実装: 欠けていた関数群
-// =====================================================
-function updateSalesStats(){
-  const msel=document.getElementById('salesMonth');
-  const now=new Date();
-  const month=msel&&msel.value?msel.value:`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const salesRecs=(state.sales||[]).filter(s=>s.date&&s.date.startsWith(month));
-  const totalEx=salesRecs.reduce((a,s)=>a+Number(s.total||s.totalAmount||s.amount||0),0);
-  const totalInc=Math.round(totalEx*(1+TAX_RATE));
-  const el=document.getElementById('monthSalesTotal');
-  if(el)el.innerHTML=`¥${totalInc.toLocaleString()}`;
+// サマリーカードをゼロクリア（月未選択時）
+function _clearSalesSummary() {
+  const ids = ['monthSalesTotal','monthSalesTaxBreak','monthRounds','monthAttDays'];
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = id === 'monthSalesTotal' ? '¥0' : ''; });
+}
+
+// ダッシュボード用売上合計更新（選択月の税込み合計）
+function updateSalesStats() {
+  const msel  = document.getElementById('salesMonth');
+  const now   = new Date();
+  const month = msel && msel.value
+    ? msel.value
+    : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const recs   = (state.sales || []).filter(s => s.date && s.date.startsWith(month));
+  const totalEx  = recs.reduce((acc, s) => acc + Number(s.total || 0), 0);
+  const totalInc = Math.round(totalEx * (1 + TAX_RATE));
+  const el = document.getElementById('monthSalesTotal');
+  if (el) el.innerHTML = `¥${totalInc.toLocaleString()}`;
+}
+
+// -------------------------------------------------------
+// 売上一括補完（出勤レコードに対応する売上がない場合に自動作成）
+// 設定 → 「売上を補完」ボタン or コンソールから repairSales() で実行
+// -------------------------------------------------------
+async function repairSales() {
+  const attRecs = state.attendance.filter(a => !a.pending && a.courseId);
+  let added = 0, skipped = 0;
+  attRecs.forEach(a => {
+    const exists = (state.sales || []).some(s =>
+      String(s.empId)    === String(a.empId) &&
+      s.date             === a.date &&
+      String(s.courseId) === String(a.courseId)
+    );
+    if (exists) { skipped++; return; }
+    const rate = getRate(a.empId, a.courseId, a.date);
+    if (!rate) return; // 契約金未設定のコースはスキップ
+    state.sales = (state.sales || []).filter(s =>
+      !(String(s.empId) === String(a.empId) && s.date === a.date && String(s.courseId) === String(a.courseId))
+    );
+    state.sales.push({
+      id:        Date.now() + Math.random(),
+      date:      a.date,
+      courseId:  a.courseId,
+      courseName: a.courseName || '',
+      empId:     String(a.empId),
+      empName:   a.empName || '',
+      rounds:    Number(a.rounds || 1),
+      rate,
+      total:     Number(a.rounds || 1) * rate
+    });
+    added++;
+  });
+  await saveState();
+  renderSalesTable();
+  showToast(`✅ 売上補完完了 — ${added}件追加（${skipped}件は既存）`);
+  console.log(`repairSales: ${added}件追加, ${skipped}件スキップ`);
 }
 
 // --- 状態変数 ---
