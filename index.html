@@ -1883,7 +1883,10 @@ function showEmpWithholdingScreen(){
 
 function calcTax(base,taxMode){
   if(taxMode==='tax10')return Math.round(base*0.1);
-  if(taxMode==='tax8to10')return Math.round(base/1.08*1.1)-base;
+  if(taxMode==='tax8to10'){
+    const taxEx=Math.round(base/1.08);      // 税抜き（旧8%込み→税抜き換算）
+    return Math.round(taxEx*1.1)-taxEx;     // 新10%の消費税額
+  }
   return 0;
 }
 
