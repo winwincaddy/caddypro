@@ -3403,31 +3403,9 @@ function getRate(empId, courseId, dateStr) {
 // 既存レコードは上書き（重複防止）。
 // total は税抜き金額で保存し、表示時に×1.1して税込み換算。
 // -------------------------------------------------------
-function autoAddSales(empId, empName, courseId, courseName, date, rounds) {
-  if (!courseId) return;
-  // 経費コース（isExpense:true）は売上に含めない
-  const courseObj = state.courses.find(c => String(c.id) === String(courseId));
-  if (courseObj && courseObj.isExpense) return;
-  const rate = getRate(empId, courseId, date);
-  if (!rate) return;
-  // 重複削除
-  state.sales = state.sales.filter(s =>
-    !(s.date === date &&
-      String(s.empId) === String(empId) &&
-      String(s.courseId) === String(courseId))
-  );
-  state.sales.push({
-    id:         Date.now() + Math.random(),
-    date,
-    courseId,
-    courseName,
-    empId:      String(empId),
-    empName,
-    rounds:     rounds || 1,
-    rate,
-    total:      (rounds || 1) * rate   // 税抜き
-  });
-}
+// autoAddSales は廃止済み（表示・帳票・CSV はすべて attendance + getRate() で動的計算するため不要）
+// 呼び出し元は残っているが何も書き込まないことで安全に無効化
+function autoAddSales() {}
 
 // -------------------------------------------------------
 // 出勤レコードに紐づく売上を削除
@@ -3527,6 +3505,7 @@ async function saveSales() {
     );
     state.sales.push({
       id:        Date.now() + Math.random(),
+      source:    'manual',
       date,
       courseId:  cid,
       courseName: course.name,
@@ -3534,7 +3513,7 @@ async function saveSales() {
       empName:   emp ? emp.name : '不明',
       rounds,
       rate,
-      total:     rounds * rate   // 税抜き
+      total:     rounds * rate   // 税抜き（参考値）
     });
     added++;
   });
@@ -3597,26 +3576,30 @@ function salesYearNavNext() {
 function initSalesYearSelect() {
   const sel = document.getElementById('salesYear');
   if (!sel) return;
-  const now    = String(new Date().getFullYear());
-  const years  = new Set((state.sales || []).map(s => s.date ? s.date.slice(0, 4) : null).filter(Boolean));
-  years.add(now);
+  const now = String(new Date().getFullYear());
+  // attendance と sales の両方から年を収集
+  const years = new Set([
+    ...(state.attendance || []).map(a => a.date ? a.date.slice(0, 4) : null),
+    ...(state.sales     || []).map(s => s.date ? s.date.slice(0, 4) : null),
+    now
+  ].filter(Boolean));
   const sorted = [...years].sort((a, b) => b - a);
-  const cur    = sel.value || now;
+  const cur = sel.value || now;
   sel.innerHTML = sorted.map(y => `<option value="${y}"${y === cur ? ' selected' : ''}>${y}年</option>`).join('');
 }
 
 // -------------------------------------------------------
 // 売上表示メイン（ゴルフ場別・従業員別）
-// ・state.sales[].total は税抜きで保存
-// ・表示時のみ ×(1+TAX_RATE) して税込み換算
+// ・state.attendance から getRate() で毎回動的計算（保存値不使用）
+// ・手動入力 (source:'manual') は state.sales から読む（対応出勤なしの場合のみ）
+// ・表示時に ×(1+TAX_RATE) して税込み換算
 // -------------------------------------------------------
 function renderSalesTable() {
   const container = document.getElementById('salesByCourseArea');
   if (!container) return;
 
-  // 表示対象の売上レコードを取得
-  let salesRecs = [];
-  let periodLabel = '';
+  // 表示期間を決定
+  let periodFilter = null;
   if (salesViewMode === 'month') {
     const monthEl = document.getElementById('salesMonth');
     const month   = monthEl ? monthEl.value : '';
@@ -3625,65 +3608,73 @@ function renderSalesTable() {
       _clearSalesSummary();
       return;
     }
-    salesRecs  = (state.sales || []).filter(s => s.date && s.date.startsWith(month));
-    const [y, m] = month.split('-');
-    periodLabel = `${y}年${parseInt(m)}月`;
+    periodFilter = month;
   } else if (salesViewMode === 'year') {
     const yearEl = document.getElementById('salesYear');
     const year   = yearEl ? yearEl.value : '';
-    if (!year) { container.innerHTML = '<div class="empty-state">年を選択してください</div>'; _clearSalesSummary(); return; }
-    salesRecs  = (state.sales || []).filter(s => s.date && s.date.startsWith(year));
-    periodLabel = `${year}年`;
-  } else {
-    salesRecs  = [...(state.sales || [])];
-    periodLabel = '全期間';
+    if (!year) {
+      container.innerHTML = '<div class="empty-state">年を選択してください</div>';
+      _clearSalesSummary();
+      return;
+    }
+    periodFilter = year;
   }
 
-  // 出勤レコードから補助情報（出勤日数・ラウンド数）を集計
-  const attMonth = salesViewMode === 'month'
-    ? (document.getElementById('salesMonth') ? document.getElementById('salesMonth').value : '')
-    : salesViewMode === 'year'
-      ? (document.getElementById('salesYear') ? document.getElementById('salesYear').value : '')
-      : '';
-  const attRecs = state.attendance.filter(a =>
-    !a.pending && a.date && (attMonth ? a.date.startsWith(attMonth) : true)
+  // 対象出勤レコード（pending・経費コース除外）
+  const attRecs = (state.attendance || []).filter(a =>
+    !a.pending && a.date && a.courseId &&
+    (periodFilter ? a.date.startsWith(periodFilter) : true)
   );
 
-  // ゴルフ場別に集計
+  // ゴルフ場別・従業員別に集計するヘルパー
   const byCourse = {};
-  salesRecs.forEach(s => {
-    const cid = String(s.courseId || '');
-    if (!byCourse[cid]) byCourse[cid] = {
-      courseId:   cid,
-      courseName: s.courseName || '不明',
-      totalEx:    0,
-      emps:       {}
-    };
-    const ex = Number(s.total || 0);
+  const _add = (cid, courseName, eid, empName, ex, rounds, date) => {
+    if (!byCourse[cid]) byCourse[cid] = { courseId: cid, courseName, totalEx: 0, emps: {} };
     byCourse[cid].totalEx += ex;
-    if (!byCourse[cid].emps[s.empId]) byCourse[cid].emps[s.empId] = {
-      name:    s.empName,
-      totalEx: 0,
-      rounds:  0,
-      dates:   []
-    };
-    byCourse[cid].emps[s.empId].totalEx += ex;
-    byCourse[cid].emps[s.empId].rounds  += Number(s.rounds || 1);
-    if (s.date && !byCourse[cid].emps[s.empId].dates.includes(s.date))
-      byCourse[cid].emps[s.empId].dates.push(s.date);
-  });
+    if (!byCourse[cid].emps[eid]) byCourse[cid].emps[eid] = { name: empName, totalEx: 0, rounds: 0, dates: [] };
+    byCourse[cid].emps[eid].totalEx += ex;
+    byCourse[cid].emps[eid].rounds  += rounds;
+    if (date && !byCourse[cid].emps[eid].dates.includes(date))
+      byCourse[cid].emps[eid].dates.push(date);
+  };
 
-  // 出勤データから日数を補完
+  // 出勤レコードから売上を動的計算（getRate()で常に最新単価を使用）
+  // ─ これにより保存された total の古い値に依存しない
+  const attCoveredKeys = new Set();
   attRecs.forEach(a => {
-    const cid = String(a.courseId || '');
-    if (!byCourse[cid]) return;
-    if (!byCourse[cid].emps[a.empId]) return;
-    const emp = byCourse[cid].emps[a.empId];
-    if (a.date && !emp.dates.includes(a.date)) emp.dates.push(a.date);
+    const course = state.courses.find(c => String(c.id) === String(a.courseId));
+    if (course && course.isExpense) return; // 経費コースは売上に含めない
+    const rate = getRate(a.empId, a.courseId, a.date);
+    if (!rate) return; // 単価未設定はスキップ
+    const rounds = Number(a.rounds || 1);
+    const cid  = String(a.courseId);
+    const eid  = String(a.empId);
+    const cName = (course && course.name) || '不明';
+    const emp  = state.employees.find(e => String(e.id) === eid);
+    const eName = emp ? emp.name : (a.empName || '不明');
+    _add(cid, cName, eid, eName, rate * rounds, rounds, a.date);
+    attCoveredKeys.add(`${a.date}|${eid}|${cid}`);
   });
 
-  // 全体合計（税抜き合算 → 最後に一括で消費税計算）
-  const grandTotalEx  = salesRecs.reduce((acc, s) => acc + Number(s.total || 0), 0);
+  // 手動入力売上（出勤レコードと重複しないものだけ追加）
+  (state.sales || []).filter(s =>
+    s.date && (periodFilter ? s.date.startsWith(periodFilter) : true) &&
+    !attCoveredKeys.has(`${s.date}|${String(s.empId)}|${String(s.courseId)}`)
+  ).forEach(s => {
+    const course = state.courses.find(c => String(c.id) === String(s.courseId));
+    if (course && course.isExpense) return;
+    const ex = Number(s.rounds || 1) * Number(s.rate || 0);
+    if (!ex) return;
+    const cid  = String(s.courseId);
+    const eid  = String(s.empId);
+    const cName = (course && course.name) || s.courseName || '不明';
+    const emp  = state.employees.find(e => String(e.id) === eid);
+    const eName = emp ? emp.name : (s.empName || '不明');
+    _add(cid, cName, eid, eName, ex, Number(s.rounds || 1), s.date);
+  });
+
+  // 全体合計（税抜き合算 → 一括で消費税計算）
+  const grandTotalEx  = Object.values(byCourse).reduce((acc, c) => acc + c.totalEx, 0);
   const grandTax      = Math.round(grandTotalEx * TAX_RATE);
   const grandTotalInc = grandTotalEx + grandTax;
 
@@ -3798,56 +3789,24 @@ function _clearSalesSummary() {
 }
 
 // ダッシュボード用売上合計更新（選択月の税込み合計）
+// ─ renderSalesTable と同じ attendance ベースで計算
 function updateSalesStats() {
   const msel  = document.getElementById('salesMonth');
   const now   = new Date();
   const month = msel && msel.value
     ? msel.value
     : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const recs   = (state.sales || []).filter(s => s.date && s.date.startsWith(month));
-  const totalEx  = recs.reduce((acc, s) => acc + Number(s.total || 0), 0);
-  const totalInc = Math.round(totalEx * (1 + TAX_RATE));
+  let totalEx = 0;
+  (state.attendance || []).forEach(a => {
+    if (a.pending || !a.date || !a.courseId || !a.date.startsWith(month)) return;
+    const course = state.courses.find(c => String(c.id) === String(a.courseId));
+    if (course && course.isExpense) return;
+    totalEx += getRate(a.empId, a.courseId, a.date) * Number(a.rounds || 1);
+  });
   const el = document.getElementById('monthSalesTotal');
-  if (el) el.innerHTML = `¥${totalInc.toLocaleString()}`;
+  if (el) el.innerHTML = `¥${Math.round(totalEx * (1 + TAX_RATE)).toLocaleString()}`;
 }
 
-// -------------------------------------------------------
-// 売上一括補完（出勤レコードに対応する売上がない場合に自動作成）
-// 設定 → 「売上を補完」ボタン or コンソールから repairSales() で実行
-// -------------------------------------------------------
-async function repairSales() {
-  const attRecs = state.attendance.filter(a => !a.pending && a.courseId);
-  let added = 0, skipped = 0;
-  attRecs.forEach(a => {
-    const exists = (state.sales || []).some(s =>
-      String(s.empId)    === String(a.empId) &&
-      s.date             === a.date &&
-      String(s.courseId) === String(a.courseId)
-    );
-    if (exists) { skipped++; return; }
-    const rate = getRate(a.empId, a.courseId, a.date);
-    if (!rate) return; // 契約金未設定のコースはスキップ
-    state.sales = (state.sales || []).filter(s =>
-      !(String(s.empId) === String(a.empId) && s.date === a.date && String(s.courseId) === String(a.courseId))
-    );
-    state.sales.push({
-      id:        Date.now() + Math.random(),
-      date:      a.date,
-      courseId:  a.courseId,
-      courseName: a.courseName || '',
-      empId:     String(a.empId),
-      empName:   a.empName || '',
-      rounds:    Number(a.rounds || 1),
-      rate,
-      total:     Number(a.rounds || 1) * rate
-    });
-    added++;
-  });
-  await saveState();
-  renderSalesTable();
-  showToast(`✅ 売上補完完了 — ${added}件追加（${skipped}件は既存）`);
-  console.log(`repairSales: ${added}件追加, ${skipped}件スキップ`);
-}
 
 // --- 状態変数 ---
 let manualCalYear=new Date().getFullYear(), manualCalMonth=new Date().getMonth();
@@ -4511,15 +4470,14 @@ function showAssignCalModal(dateStr, courseId){
 function _buildInvoiceHtml(course, month, dueDate, note){
   const s=state.settings||{};
   const atts=(state.attendance||[]).filter(a=>a.date&&a.date.startsWith(month)&&String(a.courseId)===String(course.id)&&!a.pending);
-  const sales=(state.sales||[]).filter(x=>x.date&&x.date.startsWith(month)&&String(x.courseId)===String(course.id));
   if(!atts.length)return '<div style="color:#aaa;text-align:center;padding:20px;">この月のデータなし</div>';
   const byEmp={};
   atts.forEach(a=>{
     if(!byEmp[a.empId])byEmp[a.empId]={empName:a.empName,days:0,rounds:0,total:0};
     byEmp[a.empId].days++;
     byEmp[a.empId].rounds+=Number(a.rounds||1);
-    const sale=sales.find(x=>String(x.empId)===String(a.empId)&&x.date===a.date);
-    byEmp[a.empId].total+=sale?Number(sale.total||0):0;
+    // getRate() で常に最新単価を使用（state.sales の保存値に依存しない）
+    byEmp[a.empId].total+=getRate(a.empId,a.courseId,a.date)*Number(a.rounds||1);
   });
   const rows=Object.values(byEmp);
   const grandTotal=rows.reduce((s,r)=>s+r.total,0);
@@ -4572,13 +4530,12 @@ function updateEmpInvoicePreview(){
   if(!emp){prev.innerHTML='<div class="empty-state" style="color:#aaa;">従業員が見つかりません</div>';return;}
   const s=state.settings||{};
   const atts=(state.attendance||[]).filter(a=>a.date&&a.date.startsWith(month)&&String(a.empId)===String(empId)&&!a.pending).sort((a,b)=>a.date.localeCompare(b.date));
-  const sales=(state.sales||[]).filter(x=>x.date&&x.date.startsWith(month)&&String(x.empId)===String(empId));
   if(!atts.length){prev.innerHTML='<div style="color:#aaa;text-align:center;padding:20px;">この月のデータなし</div>';return;}
   const [y,m]=month.split('-');const reiwa=parseInt(y)-2018;
   let total=0;
   const rows=atts.map(a=>{
-    const sale=sales.find(x=>x.date===a.date&&String(x.courseId)===String(a.courseId)&&String(x.empId)===String(a.empId));
-    const amount=sale?Number(sale.total||0):0;total+=amount;
+    // getRate() で常に最新単価を使用（state.sales の保存値に依存しない）
+    const amount=getRate(a.empId,a.courseId,a.date)*Number(a.rounds||1);total+=amount;
     const [,mm,dd]=a.date.split('-');const dow=['日','月','火','水','木','金','土'][new Date(a.date).getDay()];
     return `<tr><td style="padding:6px;border:1px solid #ddd;">${parseInt(mm)}/${parseInt(dd)}(${dow})</td><td style="padding:6px;border:1px solid #ddd;">${a.courseName||'−'}</td><td style="padding:6px;text-align:right;border:1px solid #ddd;">${a.rounds||1}R</td><td style="padding:6px;text-align:right;border:1px solid #ddd;">¥${amount.toLocaleString()}</td></tr>`;
   }).join('');
@@ -4611,7 +4568,7 @@ function renderEmpMyInvoice(){
   const taxMode=isCommission?(emp.taxMode||s.consumptionTaxMode||'none'):'none';
   let baseTotal=0,taxTotal=0,cafTotal=0,shimeiTotal=0;
   const rows=atts.map(a=>{
-    const dailyRate=Number(a.wage||0)||getEmpDailyWage(emp.id,a.courseId);
+    const dailyRate=Number(a.wage||0)||getEmpDailyWage(emp.id,a.courseId,a.date);
     const rounds=Number(a.rounds||1);
     const baseWage=Math.round(dailyRate*rounds);
     const tax=calcTax(baseWage,taxMode);
@@ -4655,8 +4612,14 @@ function renderEmpWithholding(){
   const emp=state.employees.find(e=>String(e.id)===String(currentEmpId));
   if(!emp||!year){prev.innerHTML='<div style="color:#aaa;text-align:center;padding:20px;">年を選択してください</div>';return;}
   const s=state.settings||{};
-  const sales=(state.sales||[]).filter(x=>x.date&&x.date.startsWith(year)&&String(x.empId)===String(emp.id));
-  const totalIncome=sales.reduce((a,x)=>a+Number(x.total||0),0);
+  // attendance から動的計算（state.sales の保存値に依存しない）
+  const attsYear=(state.attendance||[]).filter(a=>!a.pending&&a.date&&a.date.startsWith(year)&&String(a.empId)===String(emp.id)&&a.courseId);
+  let totalIncome=0;
+  attsYear.forEach(a=>{
+    const course=state.courses.find(c=>String(c.id)===String(a.courseId));
+    if(course&&course.isExpense)return;
+    totalIncome+=getRate(a.empId,a.courseId,a.date)*Number(a.rounds||1);
+  });
   const withholding=Math.floor(totalIncome*0.1021);
   const netIncome=totalIncome-withholding;
   const reiwa=parseInt(year)-2018;
@@ -4733,8 +4696,8 @@ function exportCSV(){
   if(!atts.length){showToast('⚠ エクスポートするデータがありません');return;}
   const header='日付,従業員名,ゴルフ場,ラウンド数,出勤時間,退勤時間,金額';
   const rows=atts.map(a=>{
-    const sale=(state.sales||[]).find(s=>s.date===a.date&&String(s.empId)===String(a.empId)&&String(s.courseId)===String(a.courseId));
-    const amount=sale?Number(sale.total||0):0;
+    const course=state.courses.find(c=>String(c.id)===String(a.courseId));
+    const amount=(course&&course.isExpense)?0:getRate(a.empId,a.courseId,a.date)*Number(a.rounds||1);
     return [a.date,a.empName||'',a.courseName||'',a.rounds||1,a.punchIn||'',a.punchOut||'',amount].join(',');
   });
   _download(`caddypro_${month||'all'}.csv`,[header,...rows].join('\n'),'text/csv;charset=utf-8');
@@ -4751,8 +4714,9 @@ async function exportToSheet(){
   try{
     const headers=['日付','従業員名','ゴルフ場','ラウンド数','出勤時間','退勤時間','金額'];
     const rows=atts.map(a=>{
-      const sale=(state.sales||[]).find(s=>s.date===a.date&&String(s.empId)===String(a.empId)&&String(s.courseId)===String(a.courseId));
-      return [a.date,a.empName||'',a.courseName||'',a.rounds||1,a.punchIn||'',a.punchOut||'',sale?Number(sale.total||0):0];
+      const course=state.courses.find(c=>String(c.id)===String(a.courseId));
+      const amount=(course&&course.isExpense)?0:getRate(a.empId,a.courseId,a.date)*Number(a.rounds||1);
+      return [a.date,a.empName||'',a.courseName||'',a.rounds||1,a.punchIn||'',a.punchOut||'',amount];
     });
     await fetch(url,{method:'POST',body:JSON.stringify({action:'export',sheet:'勤怠',headers,rows})});
     showToast('✅ スプレッドシートへ送信しました');
