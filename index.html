@@ -217,7 +217,7 @@ tr:hover td{background:rgba(201,168,76,0.05);}
 .round-entry select,.round-entry input{padding:7px 9px;font-size:13px;}
 .entry-subtotal{font-family:'DM Mono',monospace;font-size:11px;color:var(--goldl);grid-column:1/-1;text-align:right;min-height:14px;}
 .remove-btn{width:26px;height:26px;background:rgba(192,57,43,0.3);border:none;border-radius:6px;color:#e88;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:800;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:10000;align-items:center;justify-content:center;padding:16px;}
 .modal-overlay.open{display:flex;}
 .modal{background:var(--gd);border:1px solid rgba(201,168,76,0.4);border-radius:16px;padding:28px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;}
 .modal-title{font-size:17px;font-weight:700;margin-bottom:20px;color:var(--goldl);}
@@ -1829,7 +1829,7 @@ async function toggleEmpShiftRequest(dateStr){
   await saveState();renderEmpShiftApplyList();
 }
 function cancelEmpShiftRequest(id){
-  showConfirm('この申請を取り消しますか？',async()=>{state.shiftRequests=state.shiftRequests.filter(r=>r.id!==id);await saveState();renderEmpShiftApplyList();showToast('申請を取り消しました');});
+  showConfirm('この申請を取り消しますか？',async()=>{state.shiftRequests=state.shiftRequests.filter(r=>String(r.id)!==String(id));await saveState();renderEmpShiftApplyList();showToast('申請を取り消しました');});
 }
 function showEmpConfirmedShifts(){
   // 月セレクタを初期化
@@ -1839,7 +1839,7 @@ function showEmpConfirmedShifts(){
     for(let i=0;i<6;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');opts+=`<option value="${y}-${m}"${i===0?' selected':''}>${y}年${parseInt(m)}月</option>`;}
     msel.innerHTML=opts;
   }
-  renderEmpConfirmedShifts();showScreen('empConfirmedShiftScreen');
+  renderEmpConfirmedShifts();showScreen('empConfirmedShiftsScreen');
 }
 function renderEmpConfirmedShifts(){
   const list=document.getElementById('empConfirmedList');if(!list)return;  // ID修正: empConfirmedShiftList → empConfirmedList
