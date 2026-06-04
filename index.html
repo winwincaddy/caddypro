@@ -1,200 +1,932 @@
 <!DOCTYPE html>
-<!-- saved from url=(0055)file:///C:/Users/winst/Downloads/caddypro_v2_new_3.html -->
+<!-- saved from url=(0045)file:///C:/Users/winst/Downloads/index_3.html -->
 <html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>CaddyPro v2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CaddyPro v3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
 <link href="./index_files/css2" rel="stylesheet">
 <style>
-:root{
-  --gd:#0f2318;--gm:#1a3a2a;--gl:#2d5a3d;
-  --gold:#c9a84c;--goldl:#e8c96a;--cream:#f0e8d0;
-  --gray:#8a9e8a;--red:#c03a2b;--green:#4a8c5c;--blue:#3a6a8c;
+:root {
+  --gd: #0f2318;
+  --gm: #1a3a2a;
+  --gl: #2d5a3d;
+  --gold: #c9a84c;
+  --goldl: #e8c96a;
+  --cream: #f0e8d0;
+  --gray: #8a9e8a;
+  --red: #c03a2b;
+  --green: #4a8c5c;
+  --fb-h: 28px;
 }
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--cream);min-height:100vh;overflow-x:hidden;}
-.screen{display:none;position:fixed;inset:0;z-index:100;background:var(--gd);flex-direction:column;align-items:center;justify-content:center;overflow-y:auto;}
+.mono{font-family:'DM Mono',monospace;}
+
+/* Firebase Banner */
+.fb-bar{position:sticky;top:0;z-index:999;height:var(--fb-h);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;background:rgba(10,40,20,0.98);border-bottom:1px solid rgba(74,140,92,0.4);color:#4a8c5c;transition:all 0.3s;}
+.fb-bar.offline{color:var(--red);border-bottom-color:rgba(192,58,43,0.4);}
+
+/* Screens */
+.screen{position:fixed;inset:0;z-index:100;overflow-y:auto;display:none;flex-direction:column;background:var(--gd);}
 .screen.active{display:flex;}
-.subscreen{display:none;position:fixed;inset:0;z-index:200;background:var(--gd);flex-direction:column;overflow-y:auto;}
+.subscreen{position:fixed;inset:0;z-index:200;overflow-y:auto;display:none;flex-direction:column;background:var(--gd);}
 .subscreen.active{display:flex;}
-.modal{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.75);align-items:flex-end;justify-content:center;}
-.modal.open{display:flex;}
-.modal-box{background:var(--gm);border-radius:24px 24px 0 0;padding:24px;width:100%;max-width:500px;max-height:88vh;overflow-y:auto;}
-.modal-title{font-size:16px;font-weight:700;color:var(--cream);margin-bottom:18px;}
-.modal-close{float:right;background:none;border:none;color:var(--gray);font-size:22px;cursor:pointer;line-height:1;}
+.modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.7);display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.active{display:flex;}
+.modal{background:var(--gm);border-radius:24px 24px 0 0;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;padding:24px;border-top:1px solid rgba(201,168,76,0.2);}
+.modal-title{font-size:16px;font-weight:700;color:var(--gold);margin-bottom:20px;}
 
-/* TOP */
-#topScreen{background:linear-gradient(160deg,#071210 0%,#1a3a2a 60%,#0f2318 100%);}
-.logo-wrap{text-align:center;margin-bottom:48px;}
-.logo-icon{font-size:72px;display:block;margin-bottom:4px;}
-.logo-title{font-size:34px;font-weight:900;letter-spacing:3px;}
-.logo-sub{font-size:11px;color:var(--gold);letter-spacing:5px;margin-top:6px;}
-.login-wrap{width:100%;max-width:340px;padding:0 24px;}
-.login-p{text-align:center;font-size:13px;color:var(--gray);margin-bottom:18px;}
-.btn-login{width:100%;padding:18px;border-radius:16px;border:none;font-size:16px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-bottom:12px;transition:all .2s;}
-.btn-login.emp{background:linear-gradient(135deg,var(--gl),var(--gm));border:1px solid rgba(201,168,76,.4);color:var(--cream);}
-.btn-login.adm{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:var(--goldl);}
+/* Top Screen */
+#topScreen{background:linear-gradient(160deg,#071210,#1a3a2a,#0f2318);}
+.top-logo{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:8px;padding:40px 24px;}
+.top-golf{font-size:48px;}
+.top-title{font-size:28px;font-weight:900;color:var(--gold);letter-spacing:2px;}
+.top-sub{font-size:10px;font-weight:300;color:var(--gray);letter-spacing:4px;}
+.top-btns{display:flex;flex-direction:column;gap:12px;padding:0 24px 48px;}
 
-/* PIN */
-#pinScreen{background:var(--gd);}
-.pin-wrap{text-align:center;margin-bottom:28px;}
-.pin-title{font-size:18px;font-weight:700;}
-.pin-dots{display:flex;gap:14px;justify-content:center;margin:18px 0 8px;}
-.dot{width:16px;height:16px;border-radius:50%;background:rgba(201,168,76,.15);border:2px solid rgba(201,168,76,.3);transition:all .15s;}
-.dot.on{background:var(--gold);border-color:var(--gold);}
-.pin-err{color:#e88;font-size:12px;min-height:18px;}
-.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:280px;width:100%;padding:0 24px;}
-.pk{padding:20px;border-radius:14px;border:1px solid rgba(201,168,76,.2);background:rgba(26,58,42,.6);color:var(--cream);font-size:22px;font-weight:700;font-family:'DM Mono',monospace;cursor:pointer;transition:all .15s;}
-.pk:active{background:rgba(201,168,76,.2);transform:scale(.95);}
+/* Buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border-radius:14px;border:none;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-size:15px;font-weight:700;transition:all 0.2s;padding:12px 20px;}
+.btn:active{transform:scale(.97);}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--goldl));color:var(--gd);}
+.btn-outline{background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.3);}
+.btn-green{background:linear-gradient(135deg,#2d6e42,var(--green));color:white;}
+.btn-red{background:rgba(192,58,43,0.15);color:var(--red);border:1px solid rgba(192,58,43,0.3);}
+.btn-ghost{background:rgba(255,255,255,0.05);color:var(--gray);border:1px solid rgba(255,255,255,0.1);}
+.btn-sm{min-height:36px;font-size:12px;padding:6px 14px;border-radius:10px;}
+.btn-xs{min-height:30px;font-size:11px;padding:4px 10px;border-radius:8px;}
 
-/* HEADER */
-.hdr{width:100%;background:var(--gm);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(201,168,76,.15);position:sticky;top:0;z-index:50;}
-.hdr-title{font-size:15px;font-weight:700;color:var(--goldl);}
-.hdr-name{font-size:15px;font-weight:700;color:var(--cream);}
-.hdr-role{font-size:10px;color:var(--gold);background:rgba(201,168,76,.1);padding:2px 7px;border-radius:5px;margin-top:1px;}
-.btn-logout{background:none;border:1px solid rgba(201,168,76,.3);color:var(--goldl);font-size:11px;padding:6px 11px;border-radius:8px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;}
-.sub-hdr{background:var(--gm);padding:13px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(201,168,76,.15);position:sticky;top:0;z-index:10;}
-.btn-back{background:none;border:none;color:var(--goldl);font-size:13px;cursor:pointer;padding:4px 8px;font-family:'Noto Sans JP',sans-serif;}
+/* PIN Screen */
+#pinScreen .pin-header{padding:calc(var(--fb-h) + 20px) 24px 20px;text-align:center;}
+.pin-dots{display:flex;justify-content:center;gap:16px;margin:20px 0;}
+.pin-dot{width:16px;height:16px;border-radius:50%;background:rgba(201,168,76,0.2);border:2px solid rgba(201,168,76,0.4);transition:all 0.2s;}
+.pin-dot.filled{background:var(--gold);border-color:var(--gold);}
+.pin-error{color:var(--red);font-size:13px;text-align:center;min-height:20px;margin-bottom:12px;}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 32px 32px;}
+.pin-key{height:64px;border-radius:16px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.15);color:var(--cream);font-size:22px;font-weight:500;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.pin-key:active{transform:scale(.95);background:rgba(201,168,76,0.2);}
+.pin-back{padding:0 24px 24px;}
+
+/* Emp Screen */
+.emp-header{position:sticky;top:var(--fb-h);z-index:90;background:var(--gm);display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(201,168,76,0.15);}
+.emp-name-h{font-size:15px;font-weight:700;color:var(--gold);}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px;}
+.menu-full{grid-column:1/-1;}
+.menu-card{background:var(--gm);border:1px solid rgba(201,168,76,0.15);border-radius:15px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:all 0.2s;position:relative;min-height:100px;}
+.menu-card:active{transform:scale(.97);}
+.menu-card .icon{font-size:28px;}
+.menu-card .label{font-size:13px;font-weight:500;text-align:center;}
+.badge{position:absolute;top:10px;right:10px;background:var(--red);color:white;font-size:11px;font-weight:700;border-radius:10px;padding:2px 7px;min-width:20px;text-align:center;}
+
+/* Sub screen header */
+.sub-header{position:sticky;top:var(--fb-h);z-index:90;background:var(--gm);display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(201,168,76,0.15);}
+.sub-back{background:none;border:none;color:var(--gray);font-size:20px;cursor:pointer;padding:4px;display:flex;align-items:center;}
 .sub-title{font-size:15px;font-weight:700;color:var(--cream);}
-.body{width:100%;max-width:500px;padding:18px;flex:1;}
+.sub-content{padding:16px;flex:1;}
 
-/* EMP MENU */
-.emp-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
-.emp-btn{padding:18px 12px;border-radius:15px;border:1px solid rgba(201,168,76,.2);background:linear-gradient(135deg,rgba(26,58,42,.8),rgba(15,35,24,.8));color:var(--cream);font-size:13px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;text-align:center;transition:all .2s;position:relative;}
-.emp-btn .ico{font-size:26px;display:block;margin-bottom:5px;}
-.emp-btn:hover{border-color:rgba(201,168,76,.45);}
-.emp-btn.wide{grid-column:1/-1;background:linear-gradient(135deg,rgba(74,140,92,.35),rgba(45,90,61,.35));border-color:rgba(109,191,126,.3);}
-.badge-cnt{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;}
-
-/* ADMIN TABS */
-.tab-bar{width:100%;background:var(--gm);display:flex;border-bottom:1px solid rgba(201,168,76,.12);overflow-x:auto;position:sticky;top:53px;z-index:49;}
+/* Admin Screen */
+.admin-header{position:sticky;top:var(--fb-h);z-index:90;background:var(--gm);display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(201,168,76,0.15);}
+.admin-logo{font-size:14px;font-weight:900;color:var(--gold);}
+.tab-bar{position:sticky;top:calc(var(--fb-h) + 49px);z-index:89;background:rgba(15,35,24,0.97);display:flex;border-bottom:1px solid rgba(201,168,76,0.15);overflow-x:auto;}
 .tab-bar::-webkit-scrollbar{display:none;}
-.tab{padding:12px 15px;font-size:12px;font-weight:700;color:var(--gray);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s;font-family:'Noto Sans JP',sans-serif;}
-.tab.on{color:var(--goldl);border-bottom-color:var(--gold);}
-.sub-tabs{display:flex;gap:7px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;}
-.sub-tabs::-webkit-scrollbar{display:none;}
-.stab{padding:7px 13px;border-radius:8px;border:1px solid rgba(201,168,76,.2);background:rgba(26,58,42,.4);color:var(--goldl);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Noto Sans JP',sans-serif;transition:all .2s;}
-.stab.on{background:rgba(74,140,92,.3);border-color:rgba(74,140,92,.4);color:#6dbf7e;}
+.tab-btn{flex-shrink:0;padding:12px 16px;font-size:12px;font-weight:500;color:var(--gray);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all 0.2s;}
+.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold);}
+.sub-tab-bar{display:flex;gap:0;padding:0;overflow-x:auto;background:rgba(26,58,42,0.5);}
+.sub-tab-bar::-webkit-scrollbar{display:none;}
+.stab-btn{flex-shrink:0;padding:10px 14px;font-size:11px;font-weight:500;color:var(--gray);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all 0.2s;}
+.stab-btn.active{color:var(--goldl);border-bottom-color:var(--goldl);}
+.tab-content{display:none;padding:16px;max-width:600px;margin:0 auto;}
+.tab-content.active{display:block;}
+.stab-content{display:none;padding:16px;}
+.stab-content.active{display:block;}
 
-/* CARDS */
-.card{background:linear-gradient(135deg,rgba(45,90,61,.3),rgba(26,58,42,.5));border:1px solid rgba(201,168,76,.2);border-radius:15px;padding:18px;margin-bottom:11px;}
-.card-lbl{font-size:12px;color:var(--gold);font-weight:700;margin-bottom:6px;}
-.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px;}
-.stat{background:rgba(26,58,42,.6);border:1px solid rgba(201,168,76,.12);border-radius:11px;padding:13px;text-align:center;}
-.stat-n{font-size:22px;font-weight:900;font-family:'DM Mono',monospace;}
-.stat-l{font-size:10px;color:var(--gray);margin-top:2px;}
-.sales-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;}
-.sc{background:rgba(26,58,42,.6);border:1px solid rgba(201,168,76,.18);border-radius:13px;padding:14px;}
-.sc-l{font-size:11px;color:var(--gold);font-weight:700;margin-bottom:3px;}
-.sc-v{font-size:20px;font-weight:900;font-family:'DM Mono',monospace;}
-.sc-s{font-size:10px;color:var(--gray);margin-top:2px;}
+/* Cards */
+.card{background:var(--gm);border:1px solid rgba(201,168,76,0.15);border-radius:15px;padding:16px;margin-bottom:12px;}
+.card-title{font-size:12px;color:var(--gray);margin-bottom:8px;font-weight:500;}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.stat-card{background:var(--gm);border:1px solid rgba(201,168,76,0.15);border-radius:12px;padding:12px;text-align:center;}
+.stat-num{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;color:var(--gold);}
+.stat-label{font-size:10px;color:var(--gray);margin-top:4px;}
+.stats-2{grid-template-columns:repeat(2,1fr);}
+.stats-4{grid-template-columns:repeat(2,1fr);}
 
-/* LIST */
-.li{background:rgba(26,58,42,.5);border:1px solid rgba(201,168,76,.13);border-radius:11px;padding:13px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
-.li-main{flex:1;min-width:0;}
-.li-t{font-size:14px;font-weight:700;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.li-s{font-size:11px;color:var(--gray);margin-top:2px;}
-.badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 7px;border-radius:5px;white-space:nowrap;}
-.bg{background:rgba(201,168,76,.18);color:var(--goldl);}
-.bgn{background:rgba(74,140,92,.2);color:#6dbf7e;}
-.bgr{background:rgba(192,57,43,.2);color:#e88;}
-.bgb{background:rgba(58,122,156,.2);color:#7bc;}
+/* List items */
+.list-item{background:var(--gm);border:1px solid rgba(201,168,76,0.12);border-radius:12px;padding:14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.list-item.pending{border-color:rgba(201,168,76,0.3);}
+.list-item.notice-unread{border-color:rgba(192,58,43,0.4);}
+.list-info{flex:1;min-width:0;}
+.list-name{font-size:14px;font-weight:600;color:var(--cream);}
+.list-sub{font-size:11px;color:var(--gray);margin-top:3px;}
+.list-actions{display:flex;gap:6px;flex-shrink:0;}
 
-/* FORM */
-.fg{margin-bottom:13px;}
-.fl{font-size:12px;color:var(--gold);font-weight:700;margin-bottom:5px;display:block;}
-.fi{width:100%;padding:11px 13px;background:rgba(26,58,42,.8);border:1px solid rgba(201,168,76,.28);border-radius:9px;color:var(--cream);font-size:14px;font-family:'Noto Sans JP',sans-serif;}
-.fi:focus{outline:none;border-color:var(--gold);}
-select.fi option{background:var(--gm);}
-.fb{width:100%;padding:13px;border-radius:11px;border:none;background:linear-gradient(135deg,var(--gold),#a88830);color:var(--gd);font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:all .2s;margin-top:4px;}
-.fb:active{transform:scale(.98);}
-.fb.sec{background:rgba(74,140,92,.3);border:1px solid rgba(74,140,92,.4);color:#6dbf7e;}
-.fb.dan{background:rgba(192,57,43,.2);border:1px solid rgba(192,57,43,.3);color:#e88;}
-.btn-sm{padding:5px 9px;border-radius:6px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;}
-.btn-ok{background:rgba(74,140,92,.3);border:1px solid rgba(74,140,92,.4);color:#6dbf7e;}
-.btn-ng{background:rgba(192,57,43,.2);border:1px solid rgba(192,57,43,.3);color:#e88;}
-.btn-ed{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:var(--goldl);}
+/* Status badges */
+.status{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;}
+.status-pending{background:rgba(201,168,76,0.15);color:var(--gold);}
+.status-approved{background:rgba(74,140,92,0.15);color:#6bc98a;}
+.status-rejected{background:rgba(192,58,43,0.15);color:var(--red);}
+.status-confirmed{background:rgba(74,140,92,0.15);color:#6bc98a;}
 
-/* PUNCH BTN */
-.punch-btn{width:100%;padding:22px;border-radius:18px;border:none;font-size:18px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:all .2s;margin-bottom:11px;}
-.punch-in{background:linear-gradient(135deg,#4a8c5c,#2d5a3d);color:var(--cream);}
-.punch-done{background:rgba(74,140,92,.2);border:1px solid rgba(74,140,92,.4);color:#6dbf7e;}
+/* Form elements */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:12px;color:var(--gray);margin-bottom:6px;display:block;font-weight:500;}
+.form-input{width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:12px 14px;color:var(--cream);font-size:14px;font-family:'Noto Sans JP',sans-serif;outline:none;transition:border-color 0.2s;}
+.form-input:focus{border-color:rgba(201,168,76,0.5);}
+.form-input option{background:var(--gm);color:var(--cream);}
+.form-section{font-size:12px;font-weight:700;color:var(--gold);margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid rgba(201,168,76,0.15);}
+.checkbox-row{display:flex;align-items:center;gap:10px;padding:10px 0;}
+.checkbox-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--gold);}
+.checkbox-row label{font-size:13px;color:var(--cream);}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.toggle-label{font-size:13px;color:var(--cream);}
+.toggle{position:relative;width:44px;height:24px;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:rgba(255,255,255,0.15);border-radius:12px;cursor:pointer;transition:0.3s;}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:white;border-radius:50%;transition:0.3s;}
+.toggle input:checked+.toggle-slider{background:var(--gold);}
+.toggle input:checked+.toggle-slider:before{transform:translateX(20px);}
 
-/* NOTICE */
-.nc{border-radius:13px;padding:14px;margin-bottom:9px;border:1px solid;}
-.nc.unread{background:rgba(192,57,43,.08);border-color:rgba(192,57,43,.28);}
-.nc.read{background:rgba(26,58,42,.4);border-color:rgba(201,168,76,.1);}
-.nc-date{font-size:14px;font-weight:700;}
-.nc-info{font-size:12px;color:var(--gray);margin-top:3px;}
-.nc-time{font-size:13px;color:var(--goldl);margin-top:3px;font-family:'DM Mono',monospace;}
-.nc-memo{font-size:12px;color:var(--cream);margin-top:5px;}
-.btn-confirm{width:100%;margin-top:9px;padding:9px;border-radius:9px;border:1px solid rgba(74,140,92,.4);background:rgba(74,140,92,.2);color:#6dbf7e;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;}
+/* Calendar */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 0;margin-bottom:8px;}
+.cal-month{font-size:15px;font-weight:700;}
+.cal-nav-btn{background:rgba(201,168,76,0.1);border:none;color:var(--gold);font-size:18px;width:36px;height:36px;border-radius:10px;cursor:pointer;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-dow{text-align:center;font-size:10px;color:var(--gray);padding:6px 0;font-weight:600;}
+.cal-dow:first-child{color:#e57373;}
+.cal-dow:last-child{color:#7986cb;}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;position:relative;gap:2px;}
+.cal-day:active{transform:scale(.92);}
+.cal-day.today{background:rgba(201,168,76,0.15);font-weight:700;}
+.cal-day.sun{color:#e57373;}
+.cal-day.sat{color:#7986cb;}
+.cal-day.other-month{color:rgba(255,255,255,0.2);}
+.cal-day.has-shift{background:rgba(201,168,76,0.12);}
+.cal-day.selected{background:rgba(74,140,92,0.3);}
+.cal-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);}
+.cal-day.selected .cal-dot{background:var(--green);}
+.cal-num{font-size:11px;}
 
-/* CAL */
-.cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
-.cal-nav{background:none;border:1px solid rgba(201,168,76,.28);color:var(--goldl);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;}
-.cal-m{font-size:15px;font-weight:700;}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:14px;}
-.cd{text-align:center;font-size:10px;font-weight:700;color:var(--gray);padding:4px 0;}
-.cc{min-height:38px;border-radius:7px;padding:3px;cursor:pointer;background:rgba(26,58,42,.3);border:1px solid rgba(201,168,76,.07);transition:all .15s;}
-.cc:hover{background:rgba(45,90,61,.5);}
-.cc.today{border-color:var(--gold);}
-.cc.sel{background:rgba(74,140,92,.4);border-color:rgba(74,140,92,.5);}
-.cc.has{background:rgba(201,168,76,.08);}
-.cc.confirmed{background:rgba(74,140,92,.2);}
-.cc-day{font-size:11px;font-weight:700;text-align:center;}
-.cc.sun .cc-day{color:#e88;}
-.cc.sat .cc-day{color:#99c;}
-.cc-dot{width:5px;height:5px;border-radius:50%;margin:1px auto 0;}
+/* Rate table */
+.rate-table{width:100%;border-collapse:collapse;font-size:12px;}
+.rate-table th{text-align:left;padding:8px 6px;color:var(--gray);font-weight:500;border-bottom:1px solid rgba(201,168,76,0.15);}
+.rate-table td{padding:6px;border-bottom:1px solid rgba(255,255,255,0.05);}
+.rate-table .rate-emp-name{font-size:12px;color:var(--cream);white-space:nowrap;}
+.rate-input{width:70px;background:rgba(255,255,255,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:6px 8px;color:var(--cream);font-size:12px;font-family:'DM Mono',monospace;text-align:right;}
 
-/* SHIFT */
-.shift-panel{background:rgba(26,58,42,.5);border:1px solid rgba(201,168,76,.18);border-radius:14px;padding:15px;margin-bottom:11px;}
-.sp-title{font-size:14px;font-weight:700;margin-bottom:11px;}
-.req-row{display:flex;align-items:center;justify-content:space-between;padding:7px 9px;background:rgba(15,35,24,.5);border-radius:8px;margin-bottom:5px;gap:8px;}
-.req-name{font-size:13px;font-weight:700;}
-.req-cnt{font-size:11px;color:var(--gray);}
-.emp-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
-.chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:6px;cursor:pointer;}
-.chip.avail{background:rgba(74,140,92,.25);border:1px solid rgba(74,140,92,.4);color:#6dbf7e;}
-.chip.other{background:rgba(58,122,156,.2);border:1px solid rgba(58,122,156,.3);color:#7bc;}
+/* Invoice print */
+@media print{
+  body>*{display:none;}
+  #printArea{display:block!important;}
+}
+#printArea{display:none;}
 
-/* UPLOAD */
-.upload-area{border:2px dashed rgba(201,168,76,.28);border-radius:14px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px;}
-.upload-area:hover{border-color:var(--gold);background:rgba(201,168,76,.04);}
-.upload-ico{font-size:36px;margin-bottom:6px;}
-.upload-txt{font-size:13px;color:var(--gray);}
-
-/* TABLE */
-.tbl{width:100%;border-collapse:collapse;font-size:12px;}
-.tbl th{padding:7px 9px;text-align:left;color:var(--gold);font-size:11px;border-bottom:1px solid rgba(201,168,76,.18);}
-.tbl td{padding:7px 9px;color:var(--cream);border-bottom:1px solid rgba(255,255,255,.04);}
-.tbl tr:hover td{background:rgba(45,90,61,.18);}
-
-/* SECTION TITLE */
-.sec{font-size:12px;font-weight:700;color:var(--gold);margin:18px 0 9px;display:flex;align-items:center;gap:6px;}
-.sec::after{content:'';flex:1;height:1px;background:rgba(201,168,76,.18);}
-.empty{text-align:center;color:var(--gray);padding:36px 20px;font-size:13px;}
-
-/* INFO SECTION */
-.inf-sec{background:rgba(26,58,42,.4);border:1px solid rgba(201,168,76,.13);border-radius:13px;padding:14px;margin-bottom:11px;}
-.inf-sec-t{font-size:12px;color:var(--gold);font-weight:700;margin-bottom:11px;}
-
-/* TOAST */
-#toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(16px);background:rgba(45,90,61,.96);border:1px solid rgba(201,168,76,.35);color:var(--cream);padding:11px 18px;border-radius:11px;font-size:13px;font-weight:700;opacity:0;transition:all .28s;z-index:9999;white-space:nowrap;pointer-events:none;}
+/* Toast */
+#toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(26,58,42,0.97);border:1px solid rgba(201,168,76,0.3);color:var(--cream);padding:12px 24px;border-radius:20px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transition:all 0.3s;pointer-events:none;white-space:nowrap;}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-/* CONFIRM */
-#confirmModal .modal-box{padding:26px;}
-.confirm-msg{font-size:14px;color:var(--cream);margin-bottom:18px;line-height:1.6;}
-.confirm-btns{display:flex;gap:9px;}
-.confirm-ok{flex:1;padding:12px;border-radius:9px;border:none;background:var(--red);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;}
-.confirm-cancel{flex:1;padding:12px;border-radius:9px;border:1px solid rgba(201,168,76,.28);background:none;color:var(--goldl);font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;}
+/* Confirm modal */
+#confirmModal .modal{border-radius:24px;max-width:340px;margin:auto;}
+#confirmModal{align-items:center;}
+
+/* Empty state */
+.empty{text-align:center;padding:40px 20px;color:var(--gray);font-size:13px;}
+
+/* Notice card */
+.notice-card{border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid rgba(201,168,76,0.15);background:var(--gm);}
+.notice-card.unread{border-color:rgba(192,58,43,0.4);}
+.notice-date{font-size:13px;font-weight:700;color:var(--cream);margin-bottom:6px;}
+.notice-detail{font-size:12px;color:var(--gray);line-height:1.8;}
+.notice-memo{font-size:12px;color:var(--cream);margin-top:6px;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;}
+
+/* Shift day panel */
+#shiftDayPanel{background:var(--gm);border:1px solid rgba(201,168,76,0.2);border-radius:15px;padding:16px;margin-top:16px;}
+.day-panel-title{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:12px;}
+.emp-chip{display:inline-flex;align-items:center;gap:4px;background:rgba(74,140,92,0.15);border:1px solid rgba(74,140,92,0.3);border-radius:8px;padding:4px 10px;font-size:11px;color:#6bc98a;margin:3px;}
+.emp-chip.other{background:rgba(201,168,76,0.1);border-color:rgba(201,168,76,0.2);color:var(--gold);}
+
+/* Punch status */
+.punch-status{background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:14px;margin-bottom:16px;text-align:center;font-size:13px;color:var(--gray);}
+.punch-status.punched{border-color:rgba(74,140,92,0.3);color:#6bc98a;}
+
+/* Invoice preview */
+.inv-preview{background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);border-radius:12px;padding:16px;margin-bottom:16px;}
+.inv-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.inv-row.total{font-weight:700;font-size:15px;color:var(--gold);border-bottom:none;margin-top:6px;}
+.inv-amount{font-family:'DM Mono',monospace;}
+
+/* Extra items */
+.extra-item-row{display:flex;gap:6px;align-items:center;margin-bottom:8px;}
+.extra-item-row .form-input{flex:1;}
+.extra-item-row .extra-amt{width:80px;flex-shrink:0;}
+.extra-item-row .extra-type{width:80px;flex-shrink:0;}
+.extra-item-row .btn-del{flex-shrink:0;}
+
+/* Section header with add btn */
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.section-hdr-title{font-size:13px;font-weight:700;color:var(--cream);}
+
+/* Attendance table */
+.att-table{width:100%;border-collapse:collapse;font-size:12px;}
+.att-table th{text-align:left;padding:8px 6px;color:var(--gray);font-weight:500;border-bottom:1px solid rgba(201,168,76,0.15);}
+.att-table td{padding:7px 6px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--cream);}
+
+/* Scrollable */
+.scroll-x{overflow-x:auto;}
+
+/* Payroll print area */
+.print-doc{font-family:'Noto Sans JP',sans-serif;background:white;color:#111;padding:30px;max-width:600px;font-size:13px;}
+.print-doc table{width:100%;border-collapse:collapse;margin:12px 0;}
+.print-doc th{background:#f0f0f0;padding:6px 8px;text-align:left;font-size:12px;border:1px solid #ddd;}
+.print-doc td{padding:6px 8px;border:1px solid #ddd;font-size:12px;}
 </style>
-<!-- Firebase -->
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getDatabase, ref, onValue, set, push, update, remove } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+</head>
+<body>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Print Area -->
+<div id="printArea"></div>
+
+<!-- ===== TOP SCREEN ===== -->
+<div class="screen active" id="topScreen">
+  <div class="fb-bar " id="fbStatus1">🟢 Firebase接続中（リアルタイム同期）</div>
+  <div class="top-logo">
+    <div class="top-golf">⛳</div>
+    <div class="top-title">CaddyPro</div>
+    <div class="top-sub">CADDY DISPATCH SYSTEM</div>
+  </div>
+  <div class="top-btns">
+    <button class="btn btn-gold" onclick="showScreen(&#39;pinScreen&#39;)">👤 従業員ログイン（PIN番号）</button>
+    <button class="btn btn-outline" onclick="adminLogin()">🔒 管理者ログイン（Google）</button>
+  </div>
+</div>
+
+<!-- ===== PIN SCREEN ===== -->
+<div class="screen" id="pinScreen">
+  <div class="fb-bar " id="fbStatus2">🟢 Firebase接続中（リアルタイム同期）</div>
+  <div class="pin-header">
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px;">PIN番号を入力</div>
+    <div style="font-size:12px;color:var(--gray);">4桁のPINを入力してください</div>
+  </div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="dot0"></div>
+    <div class="pin-dot" id="dot1"></div>
+    <div class="pin-dot" id="dot2"></div>
+    <div class="pin-dot" id="dot3"></div>
+  </div>
+  <div class="pin-error" id="pinError"></div>
+  <div class="pin-pad">
+    <button class="pin-key" onclick="pk(&#39;1&#39;)">1</button>
+    <button class="pin-key" onclick="pk(&#39;2&#39;)">2</button>
+    <button class="pin-key" onclick="pk(&#39;3&#39;)">3</button>
+    <button class="pin-key" onclick="pk(&#39;4&#39;)">4</button>
+    <button class="pin-key" onclick="pk(&#39;5&#39;)">5</button>
+    <button class="pin-key" onclick="pk(&#39;6&#39;)">6</button>
+    <button class="pin-key" onclick="pk(&#39;7&#39;)">7</button>
+    <button class="pin-key" onclick="pk(&#39;8&#39;)">8</button>
+    <button class="pin-key" onclick="pk(&#39;9&#39;)">9</button>
+    <div></div>
+    <button class="pin-key" onclick="pk(&#39;0&#39;)">0</button>
+    <button class="pin-key" onclick="pd()">⌫</button>
+  </div>
+  <div class="pin-back">
+    <button class="btn btn-ghost" onclick="showScreen(&#39;topScreen&#39;);resetPin();">← 戻る</button>
+  </div>
+</div>
+
+<!-- ===== EMPLOYEE SCREEN ===== -->
+<div class="screen" id="empScreen">
+  <div class="fb-bar " id="fbStatus3">🟢 Firebase接続中（リアルタイム同期）</div>
+  <div class="emp-header">
+    <div class="emp-name-h" id="empNameHeader">---</div>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">ログアウト</button>
+  </div>
+  <div class="menu-grid">
+    <div class="menu-card menu-full" onclick="showSub(&#39;punchSub&#39;)">
+      <div class="icon">🕓</div>
+      <div class="label">出勤打刻</div>
+    </div>
+    <div class="menu-card" onclick="openNoticeSub()">
+      <div class="icon">🔔</div>
+      <div class="label">翌日出勤確認</div>
+      <div class="badge" id="noticeBadge" style="display:none;">0</div>
+    </div>
+    <div class="menu-card" onclick="showSub(&#39;shiftApplySub&#39;);renderApplyCal();">
+      <div class="icon">📅</div>
+      <div class="label">シフト希望申請</div>
+    </div>
+    <div class="menu-card" onclick="showSub(&#39;shiftConfSub&#39;);renderShiftConfirmed();">
+      <div class="icon">✅</div>
+      <div class="label">確定シフト確認</div>
+    </div>
+    <div class="menu-card" onclick="showSub(&#39;invoiceSub&#39;);renderInvoiceSub();">
+      <div class="icon">📄</div>
+      <div class="label">請求書作成</div>
+    </div>
+    <div class="menu-card" onclick="showSub(&#39;historySub&#39;);renderEmpHistory();">
+      <div class="icon">📋</div>
+      <div class="label">出勤記録</div>
+    </div>
+    <div class="menu-card menu-full" onclick="showSub(&#39;myInfoSub&#39;);renderMyInfo();">
+      <div class="icon">👤</div>
+      <div class="label">個人情報管理</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SUB: PUNCH ===== -->
+<div class="subscreen" id="punchSub">
+  <div class="fb-bar " id="fbStatus3b">🟢 Firebase接続中（リアルタイム同期）</div>
+  <div class="sub-header">
+    <button class="sub-back" onclick="hideSub(&#39;punchSub&#39;)">←</button>
+    <div class="sub-title">🕓 出勤打刻</div>
+  </div>
+  <div class="sub-content">
+    <div class="punch-status" id="punchStatus">まだ打刻していません</div>
+    <div class="form-group">
+      <label class="form-label">派遣先ゴルフ場</label>
+      <select class="form-input" id="punchCourse" onchange="onPunchCourseChange()"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ラウンド数</label>
+      <select class="form-input" id="punchRounds">
+        <option value="0.5">0.5R</option>
+        <option value="1" selected="">1R</option>
+        <option value="1.5">1.5R</option>
+        <option value="2">2R</option>
+        <option value="2.5">2.5R</option>
+      </select>
+    </div>
+    <div class="form-group" id="punchNomGroup" style="display:none;">
+      <label class="form-label">指名回数</label>
+      <select class="form-input" id="punchNom">
+        <option value="0">なし</option>
+        <option value="1">1回</option>
+        <option value="2">2回</option>
+        <option value="3">3回</option>
+      </select>
+    </div>
+    <div class="form-group" id="punchCafeGroup" style="display:none;">
+      <div class="checkbox-row">
+        <input type="checkbox" id="punchCafe">
+        <label for="punchCafe">食堂を利用する</label>
+      </div>
+    </div>
+    <button class="btn btn-gold" style="width:100%;" id="punchBtn" onclick="doPunch()">🕓 出勤する</button>
+  </div>
+</div>
+
+<!-- ===== SUB: NOTICE ===== -->
+<div class="subscreen" id="noticeSub">
+  <div class="fb-bar">🟡</div>
+  <div class="sub-header">
+    <button class="sub-back" onclick="hideSub(&#39;noticeSub&#39;)">←</button>
+    <div class="sub-title">🔔 翌日出勤確認</div>
+  </div>
+  <div class="sub-content" id="noticeList"></div>
+</div>
+
+<!-- ===== SUB: SHIFT APPLY ===== -->
+<div class="subscreen" id="shiftApplySub">
+  <div class="fb-bar">🟡</div>
+  <div class="sub-header">
+    <button class="sub-back" onclick="hideSub(&#39;shiftApplySub&#39;)">←</button>
+    <div class="sub-title">📅 シフト希望申請</div>
+  </div>
+  <div class="sub-content">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="calPrev()">‹</button>
+      <div class="cal-month" id="applyCalMonth"></div>
+      <button class="cal-nav-btn" onclick="calNext()">›</button>
+    </div>
+    <div style="font-size:11px;color:var(--gray);margin-bottom:8px;">日付をタップして希望を追加/削除</div>
+    <div class="cal-grid" id="applyCalGrid"></div>
+    <div style="margin-top:20px;">
+      <div class="form-section">申請済み一覧</div>
+      <div id="applyList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SUB: SHIFT CONFIRMED ===== -->
+<div class="subscreen" id="shiftConfSub">
+  <div class="fb-bar">🟡</div>
+  <div class="sub-header">
+    <button class="sub-back" onclick="hideSub(&#39;shiftConfSub&#39;)">←</button>
+    <div class="sub-title">✅ 確定シフト</div>
+  </div>
+  <div class="sub-content">
+    <div class="form-group">
+      <select class="form-input" id="shiftConfMonth" onchange="renderShiftConfirmed()"></select>
+    </div>
+    <div id="shiftConfList"></div>
+  </div>
+</div>
+
+<!-- ===== SUB: INVOICE ===== -->
+<div class="subscreen" id="invoiceSub">
+  <div class="fb-bar">🟡</div>
+  <div class="sub-header">
+    <button class="sub-back" onclick="hideSub(&#39;invoiceSub&#39;)">←</button>
+    <div class="sub-title">📄 請求書作成</div>
+  </div>
+  <div class="sub-content">
+    <div class="form-group">
+      <label class="form-label">対象月</label>
+      <select class="form-input" id="invoiceMonth" onchange="renderInvoiceSub()"></select>
+    </div>
+    <div id="invoiceSummary"></div>
+    <button class="btn btn-gold" style="width:100%;margin-top:8px;" onclick="printInvoice()">🖨️ 請求書を印刷</button>
+  </div>
+</div>
+
+<!-- ===== SUB: HISTORY ===== -->
+<div class="subscreen" id="historySub">
+  <div class="fb-bar">🟡</div>
+  <div class="sub-header">
+    <button class="sub-back" onclick="hideSub(&#39;historySub&#39;)">←</button>
+    <div class="sub-title">📋 出勤記録</div>
+  </div>
+  <div class="sub-content">
+    <div class="form-group">
+      <select class="form-input" id="historyMonth" onchange="renderEmpHistory()"></select>
+    </div>
+    <div id="historyList"></div>
+  </div>
+</div>
+
+<!-- ===== SUB: MY INFO ===== -->
+<div class="subscreen" id="myInfoSub">
+  <div class="fb-bar">🟡</div>
+  <div class="sub-header">
+    <button class="sub-back" onclick="hideSub(&#39;myInfoSub&#39;)">←</button>
+    <div class="sub-title">👤 個人情報管理</div>
+  </div>
+  <div class="sub-content">
+    <div class="form-section">基本情報</div>
+    <div class="form-group"><label class="form-label">氏名</label><input class="form-input" id="myName"></div>
+    <div class="form-group"><label class="form-label">住所</label><input class="form-input" id="myAddress"></div>
+    <div class="form-group"><label class="form-label">電話番号</label><input class="form-input" id="myPhone" type="tel"></div>
+    <div class="form-group"><label class="form-label">メールアドレス</label><input class="form-input" id="myEmail" type="email"></div>
+    <div class="form-section">雇用情報</div>
+    <div class="form-group">
+      <label class="form-label">雇用形態</label>
+      <select class="form-input" id="myContract">
+        <option value="baito">アルバイト</option>
+        <option value="invoice_yes">業務委託（インボイスあり）</option>
+        <option value="invoice_no">業務委託（インボイスなし）</option>
+        <option value="training">研修</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">インボイス登録番号</label><input class="form-input" id="myInvoice" placeholder="T000000000000"></div>
+    <div class="form-group"><label class="form-label">屋号</label><input class="form-input" id="myCompany"></div>
+    <div class="form-section">振込先</div>
+    <div class="form-group"><label class="form-label">銀行名</label><input class="form-input" id="myBankName"></div>
+    <div class="form-group"><label class="form-label">支店名</label><input class="form-input" id="myBankBranch"></div>
+    <div class="form-group"><label class="form-label">口座番号</label><input class="form-input" id="myBankAccount"></div>
+    <div class="form-group"><label class="form-label">口座名義</label><input class="form-input" id="myBankHolder"></div>
+    <div class="form-section">PINコード変更</div>
+    <div class="form-group"><label class="form-label">新しいPIN（4桁）</label><input class="form-input" id="myNewPin" type="password" maxlength="4" inputmode="numeric" placeholder="変更する場合のみ入力"></div>
+    <button class="btn btn-gold" style="width:100%;margin-top:8px;" onclick="saveMyInfo()">💾 保存する</button>
+  </div>
+</div>
+
+<!-- ===== ADMIN SCREEN ===== -->
+<div class="screen" id="adminScreen">
+  <div class="fb-bar " id="fbStatus4">🟢 Firebase接続中（リアルタイム同期）</div>
+  <div class="admin-header">
+    <div class="admin-logo">⛳ CaddyPro 管理者</div>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">ログアウト</button>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="setTab(&#39;dash&#39;,this)">ダッシュボード</button>
+    <button class="tab-btn" onclick="setTab(&#39;shift&#39;,this)">シフト管理</button>
+    <button class="tab-btn" onclick="setTab(&#39;attend&#39;,this)">勤怠管理</button>
+    <button class="tab-btn" onclick="setTab(&#39;sales&#39;,this)">売上・請求</button>
+    <button class="tab-btn" onclick="setTab(&#39;config&#39;,this)">設定</button>
+  </div>
+
+  <!-- DASH TAB -->
+  <div class="tab-content active" id="tab-dash">
+    <div class="stats-row" id="dashStats">
+      <div class="stat-card"><div class="stat-num mono" id="statToday">0</div><div class="stat-label">本日出勤</div></div>
+      <div class="stat-card"><div class="stat-num mono" id="statPending">0</div><div class="stat-label">承認待ち</div></div>
+      <div class="stat-card"><div class="stat-num mono" id="statNotice">0</div><div class="stat-label">未確認連絡</div></div>
+    </div>
+    <div class="form-section" style="margin-top:0;">今日の出勤状況</div>
+    <div id="dashTodayList"></div>
+    <div class="form-section">承認待ち打刻</div>
+    <div id="dashPendingList"></div>
+    <div class="form-section">今月の売上</div>
+    <div class="stats-row stats-4" id="dashSalesStats">
+      <div class="stat-card"><div class="stat-num mono" id="dsSales">¥0</div><div class="stat-label">総売上</div></div>
+      <div class="stat-card"><div class="stat-num mono" id="dsRounds">0R</div><div class="stat-label">総ラウンド</div></div>
+      <div class="stat-card"><div class="stat-num mono" id="dsWage">¥0</div><div class="stat-label">総給料</div></div>
+      <div class="stat-card"><div class="stat-num mono" id="dsProfit">0%</div><div class="stat-label">利益率</div></div>
+    </div>
+  </div>
+
+  <!-- SHIFT TAB -->
+  <div class="tab-content" id="tab-shift">
+    <div class="sub-tab-bar">
+      <button class="stab-btn active" onclick="setSTab(&#39;shift&#39;,&#39;cal&#39;,this)">カレンダー</button>
+      <button class="stab-btn" onclick="setSTab(&#39;shift&#39;,&#39;req&#39;,this)">ゴルフ場依頼</button>
+      <button class="stab-btn" onclick="setSTab(&#39;shift&#39;,&#39;empreq&#39;,this)">従業員申請</button>
+      <button class="stab-btn" onclick="setSTab(&#39;shift&#39;,&#39;notify&#39;,this)">翌日連絡</button>
+    </div>
+    <!-- Calendar -->
+    <div class="stab-content active" id="stab-shift-cal">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="adminCalPrev()">‹</button>
+        <div class="cal-month" id="adminCalMonth">2026年6月</div>
+        <button class="cal-nav-btn" onclick="adminCalNext()">›</button>
+      </div>
+      <div class="cal-grid" id="adminCalGrid"><div class="cal-dow">日</div><div class="cal-dow">月</div><div class="cal-dow">火</div><div class="cal-dow">水</div><div class="cal-dow">木</div><div class="cal-dow">金</div><div class="cal-dow">土</div><div class="cal-day other-month"></div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-01&#39;)">
+      <div class="cal-num">1</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-02&#39;)">
+      <div class="cal-num">2</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-03&#39;)">
+      <div class="cal-num">3</div>
+      
+    </div><div class="cal-day today" onclick="showDayPanel(&#39;2026-06-04&#39;)">
+      <div class="cal-num">4</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-05&#39;)">
+      <div class="cal-num">5</div>
+      
+    </div><div class="cal-day sat" onclick="showDayPanel(&#39;2026-06-06&#39;)">
+      <div class="cal-num">6</div>
+      
+    </div><div class="cal-day sun" onclick="showDayPanel(&#39;2026-06-07&#39;)">
+      <div class="cal-num">7</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-08&#39;)">
+      <div class="cal-num">8</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-09&#39;)">
+      <div class="cal-num">9</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-10&#39;)">
+      <div class="cal-num">10</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-11&#39;)">
+      <div class="cal-num">11</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-12&#39;)">
+      <div class="cal-num">12</div>
+      
+    </div><div class="cal-day sat" onclick="showDayPanel(&#39;2026-06-13&#39;)">
+      <div class="cal-num">13</div>
+      
+    </div><div class="cal-day sun" onclick="showDayPanel(&#39;2026-06-14&#39;)">
+      <div class="cal-num">14</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-15&#39;)">
+      <div class="cal-num">15</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-16&#39;)">
+      <div class="cal-num">16</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-17&#39;)">
+      <div class="cal-num">17</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-18&#39;)">
+      <div class="cal-num">18</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-19&#39;)">
+      <div class="cal-num">19</div>
+      
+    </div><div class="cal-day sat" onclick="showDayPanel(&#39;2026-06-20&#39;)">
+      <div class="cal-num">20</div>
+      
+    </div><div class="cal-day sun" onclick="showDayPanel(&#39;2026-06-21&#39;)">
+      <div class="cal-num">21</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-22&#39;)">
+      <div class="cal-num">22</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-23&#39;)">
+      <div class="cal-num">23</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-24&#39;)">
+      <div class="cal-num">24</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-25&#39;)">
+      <div class="cal-num">25</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-26&#39;)">
+      <div class="cal-num">26</div>
+      
+    </div><div class="cal-day sat" onclick="showDayPanel(&#39;2026-06-27&#39;)">
+      <div class="cal-num">27</div>
+      
+    </div><div class="cal-day sun" onclick="showDayPanel(&#39;2026-06-28&#39;)">
+      <div class="cal-num">28</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-29&#39;)">
+      <div class="cal-num">29</div>
+      
+    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-30&#39;)">
+      <div class="cal-num">30</div>
+      
+    </div></div>
+      <div id="shiftDayPanel" style="display:none;"></div>
+    </div>
+    <!-- Requests -->
+    <div class="stab-content" id="stab-shift-req">
+      <div class="section-hdr">
+        <div class="section-hdr-title">ゴルフ場からの依頼</div>
+        <button class="btn btn-outline btn-sm" onclick="showModal(&#39;newReqModal&#39;)">+ 追加</button>
+      </div>
+      <div id="reqList"></div>
+    </div>
+    <!-- Emp requests -->
+    <div class="stab-content" id="stab-shift-empreq">
+      <div class="form-section" style="margin-top:0;">シフト希望申請一覧</div>
+      <div id="empReqList"></div>
+    </div>
+    <!-- Notify -->
+    <div class="stab-content" id="stab-shift-notify">
+      <div class="section-hdr">
+        <div class="section-hdr-title">翌日出勤連絡</div>
+        <button class="btn btn-outline btn-sm" onclick="showModal(&#39;noticeModal&#39;)">+ 追加</button>
+      </div>
+      <div id="notifyList"></div>
+    </div>
+  </div>
+
+  <!-- ATTEND TAB -->
+  <div class="tab-content" id="tab-attend">
+    <div class="sub-tab-bar">
+      <button class="stab-btn active" onclick="setSTab(&#39;attend&#39;,&#39;pending&#39;,this)">承認待ち</button>
+      <button class="stab-btn" onclick="setSTab(&#39;attend&#39;,&#39;manual&#39;,this)">手動打刻</button>
+      <button class="stab-btn" onclick="setSTab(&#39;attend&#39;,&#39;list&#39;,this);renderAttList();">一覧</button>
+    </div>
+    <div class="stab-content active" id="stab-attend-pending">
+      <div id="attendPendingList"></div>
+    </div>
+    <div class="stab-content" id="stab-attend-manual">
+      <div class="form-group"><label class="form-label">従業員</label><select class="form-input" id="manualEmp"></select></div>
+      <div class="form-group"><label class="form-label">日付</label><input class="form-input" type="date" id="manualDate"></div>
+      <div class="form-group"><label class="form-label">ゴルフ場</label><select class="form-input" id="manualCourse" onchange="onManualCourseChange()"></select></div>
+      <div class="form-group"><label class="form-label">ラウンド数</label>
+        <select class="form-input" id="manualRounds">
+          <option value="0.5">0.5R</option><option value="1" selected="">1R</option><option value="1.5">1.5R</option><option value="2">2R</option><option value="2.5">2.5R</option>
+        </select>
+      </div>
+      <div class="form-group" id="manualNomGroup">
+        <label class="form-label">指名回数</label>
+        <select class="form-input" id="manualNom"><option value="0">なし</option><option value="1">1回</option><option value="2">2回</option><option value="3">3回</option></select>
+      </div>
+      <div class="form-group" id="manualCafeGroup">
+        <div class="checkbox-row"><input type="checkbox" id="manualCafe"><label for="manualCafe">食堂利用</label></div>
+      </div>
+      <button class="btn btn-gold" style="width:100%;" onclick="doManualPunch()">✅ 打刻を登録</button>
+    </div>
+    <div class="stab-content" id="stab-attend-list">
+      <div class="form-group"><select class="form-input" id="attListMonth" onchange="renderAttList()"><option value="2026-06">2026年6月</option><option value="2026-05">2026年5月</option><option value="2026-04">2026年4月</option><option value="2026-03">2026年3月</option><option value="2026-02">2026年2月</option><option value="2026-01">2026年1月</option></select></div>
+      <div class="scroll-x"><table class="att-table" id="attListTable">
+        <thead><tr><th>日付</th><th>氏名</th><th>ゴルフ場</th><th>R数</th><th>給料</th></tr></thead>
+        <tbody id="attListBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- SALES TAB -->
+  <div class="tab-content" id="tab-sales">
+    <div class="sub-tab-bar">
+      <button class="stab-btn active" onclick="setSTab(&#39;sales&#39;,&#39;summary&#39;,this);renderSalesSummary();">売上</button>
+      <button class="stab-btn" onclick="setSTab(&#39;sales&#39;,&#39;invoice&#39;,this);renderCourseInvoice();">ゴルフ場請求書</button>
+      <button class="stab-btn" onclick="setSTab(&#39;sales&#39;,&#39;payroll&#39;,this);">給与明細</button>
+    </div>
+    <div class="stab-content active" id="stab-sales-summary">
+      <div class="form-group"><select class="form-input" id="salesMonth" onchange="renderSalesSummary()"><option value="2026-06">2026年6月</option><option value="2026-05">2026年5月</option><option value="2026-04">2026年4月</option><option value="2026-03">2026年3月</option><option value="2026-02">2026年2月</option><option value="2026-01">2026年1月</option></select></div>
+      <div class="stats-row stats-4" style="margin-bottom:16px;">
+        <div class="stat-card"><div class="stat-num mono" id="salesTotal">¥0</div><div class="stat-label">総売上</div></div>
+        <div class="stat-card"><div class="stat-num mono" id="salesRounds">0R</div><div class="stat-label">ラウンド</div></div>
+        <div class="stat-card"><div class="stat-num mono" id="salesWage">¥0</div><div class="stat-label">総給料</div></div>
+        <div class="stat-card"><div class="stat-num mono" id="salesProfit">0%</div><div class="stat-label">利益率</div></div>
+      </div>
+      <div class="form-section">ゴルフ場別</div>
+      <div id="salesByCourse"></div>
+      <div class="form-section">従業員別</div>
+      <div id="salesByEmp"></div>
+    </div>
+    <div class="stab-content" id="stab-sales-invoice">
+      <div class="form-group"><label class="form-label">ゴルフ場</label><select class="form-input" id="invCourse" onchange="renderCourseInvoice()"></select></div>
+      <div class="form-group"><label class="form-label">対象月</label><select class="form-input" id="invMonth" onchange="renderCourseInvoice()"><option value="2026-06">2026年6月</option><option value="2026-05">2026年5月</option><option value="2026-04">2026年4月</option><option value="2026-03">2026年3月</option><option value="2026-02">2026年2月</option><option value="2026-01">2026年1月</option></select></div>
+      <div id="courseInvPreview"></div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-gold" style="flex:1;" onclick="printCourseInvoice()">🖨️ 印刷</button>
+      </div>
+    </div>
+    <div class="stab-content" id="stab-sales-payroll">
+      <div class="form-group"><label class="form-label">従業員</label><select class="form-input" id="payrollEmp" onchange="renderPayroll()"></select></div>
+      <div class="form-group"><label class="form-label">対象月</label><select class="form-input" id="payrollMonth" onchange="renderPayroll()"><option value="2026-06">2026年6月</option><option value="2026-05">2026年5月</option><option value="2026-04">2026年4月</option><option value="2026-03">2026年3月</option><option value="2026-02">2026年2月</option><option value="2026-01">2026年1月</option></select></div>
+      <div id="payrollPreview"></div>
+      <button class="btn btn-gold" style="width:100%;margin-top:8px;" onclick="printPayroll()">🖨️ 印刷</button>
+    </div>
+  </div>
+
+  <!-- CONFIG TAB -->
+  <div class="tab-content" id="tab-config">
+    <div class="sub-tab-bar">
+      <button class="stab-btn active" onclick="setSTab(&#39;config&#39;,&#39;emps&#39;,this);renderEmpList();">従業員</button>
+      <button class="stab-btn" onclick="setSTab(&#39;config&#39;,&#39;courses&#39;,this);renderCourseList();">ゴルフ場</button>
+      <button class="stab-btn" onclick="setSTab(&#39;config&#39;,&#39;rates&#39;,this);renderRateTab();">単価設定</button>
+    </div>
+    <div class="stab-content active" id="stab-config-emps">
+      <div class="section-hdr">
+        <div class="section-hdr-title">従業員一覧</div>
+        <button class="btn btn-outline btn-sm" onclick="openEmpModal(null)">+ 追加</button>
+      </div>
+      <div id="empListAdmin"></div>
+    </div>
+    <div class="stab-content" id="stab-config-courses">
+      <div class="section-hdr">
+        <div class="section-hdr-title">ゴルフ場一覧</div>
+        <button class="btn btn-outline btn-sm" onclick="openCourseModal(null)">+ 追加</button>
+      </div>
+      <div id="courseListAdmin"></div>
+    </div>
+    <div class="stab-content" id="stab-config-rates">
+      <div class="form-group">
+        <label class="form-label">ゴルフ場を選択</label>
+        <select class="form-input" id="rateCourseSel" onchange="updateRateTable()"></select>
+      </div>
+      <div id="rateTableWrap"></div>
+      <button class="btn btn-gold" style="width:100%;margin-top:12px;" onclick="saveRateTable()">💾 保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Assign Modal -->
+<div class="modal-overlay" id="assignModal">
+  <div class="modal">
+    <div class="modal-title" id="assignModalTitle">従業員割り振り</div>
+    <div class="form-group"><label class="form-label">集合時間</label><input class="form-input" type="time" id="assignStart"></div>
+    <div class="form-group"><label class="form-label">スタート時間</label><input class="form-input" type="time" id="assignGame"></div>
+    <div class="form-group"><label class="form-label">コメント</label><input class="form-input" id="assignMemo"></div>
+    <div class="form-group"><label class="form-label">従業員</label><div id="assignEmpList" style="display:flex;flex-direction:column;gap:8px;margin-top:6px;"></div></div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal(&#39;assignModal&#39;)">キャンセル</button>
+      <button class="btn btn-gold" style="flex:1;" onclick="doAssign()">確定する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Approve Modal -->
+<div class="modal-overlay" id="approveModal">
+  <div class="modal">
+    <div class="modal-title" id="approveModalTitle">シフト希望承認</div>
+    <div class="form-group"><label class="form-label">派遣先ゴルフ場</label><select class="form-input" id="approveCourseSel"></select></div>
+    <div class="form-group"><label class="form-label">集合時間</label><input class="form-input" type="time" id="approveStart"></div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal(&#39;approveModal&#39;)">キャンセル</button>
+      <button class="btn btn-gold" style="flex:1;" onclick="doApproveShiftReq()">承認する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notice Modal -->
+<div class="modal-overlay" id="noticeModal">
+  <div class="modal">
+    <div class="modal-title">翌日連絡を追加</div>
+    <div class="form-group"><label class="form-label">従業員</label><select class="form-input" id="noticeEmpSel"></select></div>
+    <div class="form-group"><label class="form-label">日付</label><input class="form-input" type="date" id="noticeDate"></div>
+    <div class="form-group"><label class="form-label">ゴルフ場</label><select class="form-input" id="noticeCourseSel"></select></div>
+    <div class="form-group"><label class="form-label">集合時間</label><input class="form-input" type="time" id="noticeStart"></div>
+    <div class="form-group"><label class="form-label">スタート時間</label><input class="form-input" type="time" id="noticeGame"></div>
+    <div class="form-group"><label class="form-label">コメント</label><input class="form-input" id="noticeMemo"></div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal(&#39;noticeModal&#39;)">キャンセル</button>
+      <button class="btn btn-gold" style="flex:1;" onclick="doAddNotice()">送信する</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Request Modal -->
+<div class="modal-overlay" id="newReqModal">
+  <div class="modal">
+    <div class="modal-title">出勤依頼を追加</div>
+    <div class="form-group"><label class="form-label">ゴルフ場</label><select class="form-input" id="reqCourseSel"></select></div>
+    <div class="form-group"><label class="form-label">日付</label><input class="form-input" type="date" id="reqDate"></div>
+    <div class="form-group"><label class="form-label">必要人数</label>
+      <select class="form-input" id="reqCount">
+        <option value="1">1名</option><option value="2">2名</option><option value="3">3名</option><option value="4">4名</option><option value="5">5名</option><option value="6">6名</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">備考</label><input class="form-input" id="reqMemo"></div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal(&#39;newReqModal&#39;)">キャンセル</button>
+      <button class="btn btn-gold" style="flex:1;" onclick="doAddRequest()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Emp Modal -->
+<div class="modal-overlay" id="empModal">
+  <div class="modal">
+    <div class="modal-title" id="empModalTitle">従業員を追加</div>
+    <input type="hidden" id="empModalId">
+    <div class="form-group"><label class="form-label">氏名</label><input class="form-input" id="empModalName"></div>
+    <div class="form-group"><label class="form-label">PIN（4桁）</label><input class="form-input" id="empModalPin" type="password" maxlength="4" inputmode="numeric"></div>
+    <div class="form-group"><label class="form-label">雇用形態</label>
+      <select class="form-input" id="empModalContract">
+        <option value="baito">アルバイト</option>
+        <option value="invoice_yes">業務委託（インボイスあり）</option>
+        <option value="invoice_no">業務委託（インボイスなし）</option>
+        <option value="training">研修</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">インボイス登録番号</label><input class="form-input" id="empModalInvoice" placeholder="T000000000000"></div>
+    <div class="form-group"><label class="form-label">メールアドレス</label><input class="form-input" id="empModalEmail" type="email"></div>
+    <div class="form-group"><label class="form-label">電話番号</label><input class="form-input" id="empModalPhone" type="tel"></div>
+    <div class="form-group"><label class="form-label">住所</label><input class="form-input" id="empModalAddress"></div>
+    <div class="form-group"><label class="form-label">屋号</label><input class="form-input" id="empModalCompany"></div>
+    <div class="form-group"><label class="form-label">銀行名</label><input class="form-input" id="empModalBankName"></div>
+    <div class="form-group"><label class="form-label">支店名</label><input class="form-input" id="empModalBankBranch"></div>
+    <div class="form-group"><label class="form-label">口座番号</label><input class="form-input" id="empModalBankAccount"></div>
+    <div class="form-group"><label class="form-label">口座名義</label><input class="form-input" id="empModalBankHolder"></div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal(&#39;empModal&#39;)">キャンセル</button>
+      <button class="btn btn-gold" style="flex:1;" onclick="saveEmp()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Course Modal -->
+<div class="modal-overlay" id="courseModal">
+  <div class="modal">
+    <div class="modal-title" id="courseModalTitle">ゴルフ場を追加</div>
+    <input type="hidden" id="courseModalId">
+    <div class="form-group"><label class="form-label">ゴルフ場名</label><input class="form-input" id="cmName"></div>
+    <div class="form-group"><label class="form-label">住所</label><input class="form-input" id="cmAddress"></div>
+    <div class="form-group"><label class="form-label">電話番号</label><input class="form-input" id="cmPhone" type="tel"></div>
+    <div class="form-group"><label class="form-label">担当者名</label><input class="form-input" id="cmManager"></div>
+    <div class="form-group"><label class="form-label">担当者メール</label><input class="form-input" id="cmManagerEmail" type="email"></div>
+    <div class="form-group"><label class="form-label">締め日</label>
+      <select class="form-input" id="cmClosing">
+        <option value="末日">末日</option><option value="10">10日</option><option value="15">15日</option><option value="20">20日</option><option value="25">25日</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">請求書発行（締め日の〇日後）</label><input class="form-input" id="cmInvoiceDay" type="number" min="0" max="30" value="5"></div>
+    <div class="form-group"><label class="form-label">支払期限</label><input class="form-input" id="cmPayment" placeholder="例：翌月末日"></div>
+    <div class="toggle-row">
+      <div class="toggle-label">平日/土日祝 単価区別</div>
+      <label class="toggle"><input type="checkbox" id="cmWeekdayWe"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">食堂あり</div>
+      <label class="toggle"><input type="checkbox" id="cmCafeteria" onchange="toggleCmCafe()"><span class="toggle-slider"></span></label>
+    </div>
+    <div id="cmCafeDetails" style="display:none;">
+      <div class="form-group"><label class="form-label">食堂利用料（税込）</label><input class="form-input" id="cmCafeFee" type="number" value="0"></div>
+      <div class="form-group"><label class="form-label">負担区分</label>
+        <select class="form-input" id="cmCafeBurden">
+          <option value="company">全員会社負担</option>
+          <option value="employee">全員従業員負担</option>
+          <option value="individual">個別設定</option>
+        </select>
+      </div>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">指名料あり</div>
+      <label class="toggle"><input type="checkbox" id="cmNomination" onchange="toggleCmNom()"><span class="toggle-slider"></span></label>
+    </div>
+    <div id="cmNomDetails" style="display:none;">
+      <div class="form-group"><label class="form-label">指名料（税別）</label><input class="form-input" id="cmNomFee" type="number" value="0"></div>
+    </div>
+    <div class="form-section">追加項目</div>
+    <div id="cmExtraItems"></div>
+    <button class="btn btn-outline btn-sm" onclick="addExtraItem()" style="margin-bottom:12px;">+ 追加項目を追加</button>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal(&#39;courseModal&#39;)">キャンセル</button>
+      <button class="btn btn-gold" style="flex:1;" onclick="saveCourse()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirmModal" style="align-items:center;">
+  <div class="modal" style="border-radius:24px;max-width:320px;margin:auto;">
+    <div class="modal-title" id="confirmMsg">確認</div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal(&#39;confirmModal&#39;);if(window._confirmNo)window._confirmNo();">キャンセル</button>
+      <button class="btn btn-gold" style="flex:1;" onclick="closeModal(&#39;confirmModal&#39;);if(window._confirmYes)window._confirmYes();">OK</button>
+    </div>
+  </div>
+</div>
+
+<script src="./index_files/firebase-app-compat.js.ダウンロード"></script>
+<script src="./index_files/firebase-database-compat.js.ダウンロード"></script>
+<script src="./index_files/firebase-auth-compat.js.ダウンロード"></script>
+<script>
 
 const firebaseConfig = {
   apiKey: "AIzaSyDFWQLDjXqYaJ7QbtZlcsmNR3TywV6HGlU",
@@ -207,1020 +939,1412 @@ const firebaseConfig = {
   measurementId: "G-G3XPXY8BRQ"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const auth = firebase.auth();
 
-// グローバルに公開
-window._db = db;
-window._auth = auth;
-window._ref = ref;
-window._onValue = onValue;
-window._set = set;
-window._push = push;
-window._update = update;
-window._remove = remove;
-window._GoogleAuthProvider = GoogleAuthProvider;
-window._signInWithPopup = signInWithPopup;
-window._signOut = signOut;
+// State
+window._state = { employees:{}, courses:{}, attendance:{}, shifts:{}, notices:{}, requests:{}, sales:{}, rates:{}, shiftRequests:{} };
+window._currentEmp = null;
+window._isAdmin = false;
+window._pinInput = '';
+window._applyCalYear = new Date().getFullYear();
+window._applyCalMonth = new Date().getMonth();
+window._adminCalYear = new Date().getFullYear();
+window._adminCalMonth = new Date().getMonth();
+window._assignContext = null;
+window._approveReqId = null;
 
-// 匿名認証でFirebase接続
-signInAnonymously(auth).then(() => {
+// --- Firebase ---
+function updateFbStatus(ok) {
+  const txt = ok ? '🟢 Firebase接続中（リアルタイム同期）' : '🔴 オフラインモード';
+  const cls = ok ? '' : 'offline';
+  ['fbStatus1','fbStatus2','fbStatus3','fbStatus4','fbStatus3b'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = txt; el.className = 'fb-bar ' + cls; }
+  });
+}
+window.saveToFirebase = async (path, data) => {
+  try { await db.ref(path).set(data); return true; } catch(e) { showToast('保存失敗: ' + e.message); return false; }
+};
+
+function loadAllData() {
+  const paths = ['employees','courses','attendance','shifts','notices','requests','sales','rates','shiftRequests'];
+  paths.forEach(p => {
+    db.ref('caddypro/' + p).on('value', snap => {
+      window._state[p] = snap.val() || {};
+      onDataUpdate(p);
+    });
+  });
+}
+
+function onDataUpdate(path) {
+  const cur = document.querySelector('.screen.active');
+  if (!cur) return;
+  const id = cur.id;
+  if (id === 'adminScreen') {
+    const activeTab = document.querySelector('.tab-content.active');
+    if (activeTab && activeTab.id === 'tab-dash') renderDashboard(window._state);
+    updateAdminSelects();
+    updateNotifyList();
+    updateEmpReqList();
+    updateReqList();
+    updateAttendPendingList();
+  }
+  updateNoticeBadge();
+  updatePunchStatus();
+}
+
+auth.signInAnonymously().then(() => {
   updateFbStatus(true);
   loadAllData();
-  document.dispatchEvent(new Event('firebase-ready'));
-}).catch(e => {
-  console.warn('Firebase接続エラー:', e);
-  updateFbStatus(false);
-});
+}).catch(() => updateFbStatus(false));
 
-// 認証状態の監視
-onAuthStateChanged(auth, user => {
-  window._currentUser = user;
-});
-
-function updateFbStatus(ok) {
-  const el = document.getElementById('fbStatus');
-  if (el) {
-    el.textContent = ok ? '🟢 Firebase接続中（リアルタイム同期）' : '🔴 オフラインモード';
-    el.style.background = ok ? 'rgba(74,140,92,0.3)' : 'rgba(192,57,43,0.3)';
+auth.onAuthStateChanged(user => {
+  if (!user) {
+    updateFbStatus(false);
   }
+});
+
+// ========== UTILITY ==========
+window.todayStr = function() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+function isWeekend(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.getDay() === 0 || d.getDay() === 6;
+}
+function fmtDate(ds) {
+  const d = new Date(ds + 'T00:00:00');
+  const days = ['日','月','火','水','木','金','土'];
+  return `${d.getMonth()+1}/${d.getDate()}（${days[d.getDay()]}）`;
+}
+function fmtMoney(n) { return '¥' + Math.round(n||0).toLocaleString(); }
+function genId() { return Date.now().toString() + Math.random().toString(36).slice(2,6); }
+
+function calcWage(wageBase, contract, rounds) {
+  const base = (wageBase||0) * (rounds||1);
+  if (contract === 'invoice_yes') return Math.round(base / 1.08 * 1.1);
+  if (contract === 'invoice_no') return Math.round(base * 1.1);
+  return base;
+}
+function calcNomination(nomFee, contract, count) {
+  const n = (nomFee||0) * (count||0);
+  if (contract === 'invoice_yes') return Math.round(n / 1.08 * 1.1);
+  if (contract === 'invoice_no') return Math.round(n * 1.1);
+  return n;
+}
+function getRate(empId, courseId) {
+  return (window._state.rates[empId] || {})[courseId] || {};
+}
+function computeAttendance(empId, courseId, dateStr, rounds, nomCount, cafeUsed) {
+  const emp = window._state.employees[empId] || {};
+  const course = window._state.courses[courseId] || {};
+  const rate = getRate(empId, courseId);
+  const we = isWeekend(dateStr);
+  const contractAmt = we ? (rate.contractWe || rate.contract || 0) : (rate.contractWd || rate.contract || 0);
+  const wageBase = we ? (rate.wageWe || rate.wage || 0) : (rate.wageWd || rate.wage || 0);
+  const contract = contractAmt * rounds;
+  const wage = calcWage(wageBase, emp.contract, rounds);
+  const nomWage = calcNomination(course.nominationFee, emp.contract, nomCount);
+  const cafeFee = (cafeUsed && course.cafeteriaFee) ? (course.cafeteriaFee||0) : 0;
+  const cafeDeduct = course.cafeteriaBurden === 'employee' ? cafeFee : 0;
+  return { contract, wage: wage + nomWage - cafeDeduct, contractAmount: contract };
 }
 
-// データ読み込み
-function loadAllData() {
-  const dbRef = ref(db, 'caddypro');
-  onValue(dbRef, snap => {
-    const data = snap.val() || {};
-    window._state = {
-      employees: data.employees ? Object.values(data.employees) : [],
-      courses: data.courses ? Object.values(data.courses) : [],
-      attendance: data.attendance ? Object.values(data.attendance) : [],
-      shifts: data.shifts ? Object.values(data.shifts) : [],
-      notices: data.notices ? Object.values(data.notices) : [],
-      requests: data.requests ? Object.values(data.requests) : [],
-      sales: data.sales ? Object.values(data.sales) : [],
-      rates: data.rates || {},
-      settings: data.settings || {},
-      shiftRequests: data.shiftRequests ? Object.values(data.shiftRequests) : [],
-    };
-    console.log('データ読み込み完了:', window._state);
-    document.dispatchEvent(new CustomEvent('data-updated', { detail: window._state }));
-  });
+window.showToast = function(msg, dur=2400) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+};
+function showConfirm(msg, yes, no) {
+  document.getElementById('confirmMsg').textContent = msg;
+  window._confirmYes = yes;
+  window._confirmNo = no || null;
+  showModal('confirmModal');
 }
 
-// データ保存
-window.saveToFirebase = async function(path, data) {
-  await set(ref(db, 'caddypro/' + path), data);
+// ========== SCREENS ==========
+window.showScreen = function(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+};
+window.showSub = function(id) { document.getElementById(id).classList.add('active'); };
+window.hideSub = function(id) { document.getElementById(id).classList.remove('active'); };
+window.showModal = function(id) {
+  const m = document.getElementById(id);
+  if (!m) return;
+  if (id === 'noticeModal') populateNoticeModal();
+  if (id === 'newReqModal') populateReqModal();
+  m.classList.add('active');
+};
+window.closeModal = function(id) { document.getElementById(id).classList.remove('active'); };
+
+window.setTab = function(name, el) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'dash') renderDashboard(window._state);
+  if (name === 'shift') { renderAdminCal(); updateReqList(); updateEmpReqList(); updateNotifyList(); }
+  if (name === 'attend') { updateAttendPendingList(); populateManualSelects(); initMonthSelects(); }
+  if (name === 'sales') { initMonthSelects(); updateSalesSelects(); }
+  if (name === 'config') { renderEmpList(); updateAdminSelects(); }
+};
+window.setSTab = function(group, name, el) {
+  const bar = el.closest('.sub-tab-bar');
+  bar.querySelectorAll('.stab-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const parent = bar.closest('.tab-content') || bar.closest('.stab-content') || bar.parentElement;
+  parent.querySelectorAll('.stab-content').forEach(c => c.classList.remove('active'));
+  const tc = document.getElementById('stab-' + group + '-' + name);
+  if (tc) tc.classList.add('active');
 };
 
-// Googleログイン
-window.googleSignIn = async function() {
-  const provider = new GoogleAuthProvider();
+// ========== AUTH ==========
+window.adminLogin = async function() {
   try {
-    const result = await signInWithPopup(auth, provider);
-    return result.user;
-  } catch(e) {
-    console.error('Googleログインエラー:', e);
-    return null;
-  }
-};
-
-// Googleログアウト
-window.googleSignOut = async function() {
-  await signOut(auth);
-};
-</script>
-</head>
-<body>
-
-<!-- TOP -->
-<div id="fbStatus" style="position: fixed; top: 0px; left: 0px; right: 0px; z-index: 9998; padding: 5px 12px; font-size: 11px; font-weight: 700; background: rgba(74, 140, 92, 0.3); color: var(--cream); text-align: left;">🟢 Firebase接続中（リアルタイム同期）</div>
-<div class="screen active" id="topScreen" style="padding-top:28px;">
-  <div class="logo-wrap">
-    <span class="logo-icon">⛳</span>
-    <div class="logo-title">CaddyPro</div>
-    <div class="logo-sub">CADDY DISPATCH SYSTEM</div>
-  </div>
-  <div class="login-wrap">
-    <p class="login-p">ログイン方法を選んでください</p>
-    <button class="btn-login emp" onclick="showScreen(&#39;pinScreen&#39;)">👤 従業員ログイン（PIN番号）</button>
-    <button class="btn-login adm" onclick="adminLogin()">🔒 管理者ログイン（Google）</button>
-  </div>
-</div>
-
-<!-- PIN -->
-<div class="screen" id="pinScreen">
-  <div class="pin-wrap">
-    <div class="pin-title">🔑 PIN番号を入力</div>
-    <div class="pin-dots">
-      <div class="dot" id="d0"></div><div class="dot" id="d1"></div>
-      <div class="dot" id="d2"></div><div class="dot" id="d3"></div>
-    </div>
-    <div class="pin-err" id="pinErr"></div>
-  </div>
-  <div class="pin-grid">
-    <button class="pk" onclick="pk(&#39;1&#39;)">1</button><button class="pk" onclick="pk(&#39;2&#39;)">2</button><button class="pk" onclick="pk(&#39;3&#39;)">3</button>
-    <button class="pk" onclick="pk(&#39;4&#39;)">4</button><button class="pk" onclick="pk(&#39;5&#39;)">5</button><button class="pk" onclick="pk(&#39;6&#39;)">6</button>
-    <button class="pk" onclick="pk(&#39;7&#39;)">7</button><button class="pk" onclick="pk(&#39;8&#39;)">8</button><button class="pk" onclick="pk(&#39;9&#39;)">9</button>
-    <button class="pk" onclick="pk(&#39;0&#39;)" style="grid-column:2;">0</button>
-    <button class="pk" onclick="pd()">⌫</button>
-  </div>
-  <button onclick="showScreen(&#39;topScreen&#39;)" style="margin-top:18px;background:none;border:none;color:var(--gray);font-size:13px;cursor:pointer;font-family:&#39;Noto Sans JP&#39;,sans-serif;">← 戻る</button>
-</div>
-
-<!-- EMP SCREEN -->
-<div class="screen" id="empScreen">
-  <div class="hdr">
-    <div>
-      <div class="hdr-name" id="empNameDisp">田中 花子</div>
-      <div class="hdr-role">キャディー</div>
-    </div>
-    <button class="btn-logout" onclick="logout()">ログアウト</button>
-  </div>
-  <div class="body">
-    <div class="emp-grid">
-      <button class="emp-btn wide" onclick="showSub(&#39;punchSub&#39;)">
-        <span class="ico">🕓</span>出勤打刻
-      </button>
-      <button class="emp-btn" onclick="showSub(&#39;noticeSub&#39;)">
-        <span class="ico">🔔</span>翌日出勤確認
-        <span class="badge-cnt" id="noticeCnt" style="display:none;">1</span>
-      </button>
-      <button class="emp-btn" onclick="showSub(&#39;shiftApplySub&#39;)">
-        <span class="ico">📅</span>シフト希望申請
-      </button>
-      <button class="emp-btn" onclick="showSub(&#39;shiftConfSub&#39;)">
-        <span class="ico">✅</span>確定シフト確認
-      </button>
-      <button class="emp-btn" onclick="showSub(&#39;invoiceSub&#39;)">
-        <span class="ico">📄</span>請求書作成
-      </button>
-      <button class="emp-btn" onclick="showSub(&#39;historySub&#39;)">
-        <span class="ico">📋</span>出勤記録
-      </button>
-      <button class="emp-btn wide" onclick="showSub(&#39;myInfoSub&#39;)">
-        <span class="ico">👤</span>個人情報管理
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- EMP: 打刻 -->
-<div class="subscreen" id="punchSub">
-  <div class="sub-hdr"><button class="btn-back" onclick="hideSub(&#39;punchSub&#39;)">← 戻る</button><div class="sub-title">🕓 出勤打刻</div></div>
-  <div class="body">
-    <div class="card" id="punchStatus">
-      <div class="card-lbl">本日の状況</div>
-      <div style="font-size:13px;color:var(--gray);">まだ打刻していません</div>
-    </div>
-    <div class="fg"><label class="fl">派遣先ゴルフ場</label>
-      <select class="fi" id="punchCourse" onchange="updatePunchOptions()">
-        <option value="">-- 選択してください --</option>
-        <option value="1" data-cafe="1" data-nom="0">成田ゴルフ倶楽部</option>
-        <option value="2" data-cafe="1" data-nom="1">グリッサンドゴルフクラブ</option>
-        <option value="3" data-cafe="1" data-nom="0">千葉バーディークラブ</option>
-        <option value="4" data-cafe="0" data-nom="0">南総カントリークラブ</option>
-        <option value="5" data-cafe="1" data-nom="1">キングフィールズGC</option>
-      </select>
-    </div>
-    <div class="fg"><label class="fl">ラウンド数</label>
-      <select class="fi" id="punchRounds">
-        <option value="1">1ラウンド</option>
-        <option value="2">2ラウンド</option>
-        <option value="1.5">1.5ラウンド</option>
-        <option value="0.5">0.5ラウンド</option>
-        <option value="2.5">2.5ラウンド</option>
-      </select>
-    </div>
-    <div class="fg" id="nomArea" style="display:none;"><label class="fl">指名回数</label>
-      <select class="fi" id="punchNom">
-        <option value="0">なし</option><option value="1">1回</option><option value="2">2回</option><option value="3">3回</option>
-      </select>
-    </div>
-    <div class="fg" id="cafeArea" style="display:none;">
-      <label class="fl" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-        <input type="checkbox" id="punchCafe" style="width:16px;height:16px;accent-color:var(--gold);">
-        食堂を利用した
-      </label>
-    </div>
-    <button class="punch-btn punch-in" id="punchBtn" onclick="doPunch()">🕓 出勤する</button>
-  </div>
-</div>
-
-<!-- EMP: 翌日出勤確認 -->
-<div class="subscreen" id="noticeSub">
-  <div class="sub-hdr"><button class="btn-back" onclick="hideSub(&#39;noticeSub&#39;)">← 戻る</button><div class="sub-title">🔔 翌日出勤確認</div></div>
-  <div class="body">
-    <div class="nc unread">
-      <div class="nc-date">5月28日（木）</div>
-      <div class="nc-info">⛳ 成田ゴルフ倶楽部</div>
-      <div class="nc-time">🕖 集合 07:00　🏌️ スタート 08:00</div>
-      <div class="nc-memo">早朝スタートのため6:45集合でお願いします</div>
-      <button class="btn-confirm" onclick="confirmNotice(this)">✅ 確認しました</button>
-    </div>
-    <div class="nc read">
-      <div class="nc-date">5月26日（火）</div>
-      <div class="nc-info">⛳ グリッサンドゴルフクラブ</div>
-      <div class="nc-time">🕗 集合 08:00　🏌️ スタート 09:00</div>
-      <div style="font-size:12px;color:#6dbf7e;margin-top:7px;">✅ 確認済み</div>
-    </div>
-    <div class="empty" id="noticeEmpty" style="display:none;">出勤連絡はありません</div>
-  </div>
-</div>
-
-<!-- EMP: シフト希望申請 -->
-<div class="subscreen" id="shiftApplySub">
-  <div class="sub-hdr"><button class="btn-back" onclick="hideSub(&#39;shiftApplySub&#39;)">← 戻る</button><div class="sub-title">📅 シフト希望申請</div></div>
-  <div class="body">
-    <div class="cal-hdr">
-      <button class="cal-nav" onclick="calPrev()">‹</button>
-      <div class="cal-m" id="calMonth">2026年5月</div>
-      <button class="cal-nav" onclick="calNext()">›</button>
-    </div>
-    <p style="font-size:12px;color:var(--gray);margin-bottom:9px;">日付をタップして希望を追加/削除</p>
-    <div class="cal-grid" id="shiftApplyCal"><div class="cd">日</div><div class="cd">月</div><div class="cd">火</div><div class="cd">水</div><div class="cd">木</div><div class="cd">金</div><div class="cd">土</div><div></div><div></div><div></div><div></div><div></div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-01&#39;,this)">
-      <div class="cc-day">1</div>
-      
-    </div><div class="cc sat" style="" onclick="toggleDate(&#39;2026-05-02&#39;,this)">
-      <div class="cc-day">2</div>
-      
-    </div><div class="cc sun" style="" onclick="toggleDate(&#39;2026-05-03&#39;,this)">
-      <div class="cc-day">3</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-04&#39;,this)">
-      <div class="cc-day">4</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-05&#39;,this)">
-      <div class="cc-day">5</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-06&#39;,this)">
-      <div class="cc-day">6</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-07&#39;,this)">
-      <div class="cc-day">7</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-08&#39;,this)">
-      <div class="cc-day">8</div>
-      
-    </div><div class="cc sat" style="" onclick="toggleDate(&#39;2026-05-09&#39;,this)">
-      <div class="cc-day">9</div>
-      
-    </div><div class="cc sun" style="" onclick="toggleDate(&#39;2026-05-10&#39;,this)">
-      <div class="cc-day">10</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-11&#39;,this)">
-      <div class="cc-day">11</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-12&#39;,this)">
-      <div class="cc-day">12</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-13&#39;,this)">
-      <div class="cc-day">13</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-14&#39;,this)">
-      <div class="cc-day">14</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-15&#39;,this)">
-      <div class="cc-day">15</div>
-      
-    </div><div class="cc sat" style="" onclick="toggleDate(&#39;2026-05-16&#39;,this)">
-      <div class="cc-day">16</div>
-      
-    </div><div class="cc sun" style="" onclick="toggleDate(&#39;2026-05-17&#39;,this)">
-      <div class="cc-day">17</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-18&#39;,this)">
-      <div class="cc-day">18</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-19&#39;,this)">
-      <div class="cc-day">19</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-20&#39;,this)">
-      <div class="cc-day">20</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-21&#39;,this)">
-      <div class="cc-day">21</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-22&#39;,this)">
-      <div class="cc-day">22</div>
-      
-    </div><div class="cc sat" style="" onclick="toggleDate(&#39;2026-05-23&#39;,this)">
-      <div class="cc-day">23</div>
-      
-    </div><div class="cc sun" style="" onclick="toggleDate(&#39;2026-05-24&#39;,this)">
-      <div class="cc-day">24</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-25&#39;,this)">
-      <div class="cc-day">25</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-26&#39;,this)">
-      <div class="cc-day">26</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-27&#39;,this)">
-      <div class="cc-day">27</div>
-      
-    </div><div class="cc " style="" onclick="toggleDate(&#39;2026-05-28&#39;,this)">
-      <div class="cc-day">28</div>
-      
-    </div><div class="cc " style="background:rgba(74,140,92,.4);border-color:rgba(74,140,92,.5);" onclick="toggleDate(&#39;2026-05-29&#39;,this)">
-      <div class="cc-day">29</div>
-      <div class="cc-dot" style="background:#6dbf7e;"></div>
-    </div><div class="cc sat" style="background:rgba(74,140,92,.4);border-color:rgba(74,140,92,.5);" onclick="toggleDate(&#39;2026-05-30&#39;,this)">
-      <div class="cc-day">30</div>
-      <div class="cc-dot" style="background:#6dbf7e;"></div>
-    </div><div class="cc sun" style="" onclick="toggleDate(&#39;2026-05-31&#39;,this)">
-      <div class="cc-day">31</div>
-      
-    </div></div>
-    <div class="sec">申請済み一覧</div>
-    <div id="shiftApplyList">
-      <div class="li"><div class="li-main"><div class="li-t">5月30日（土）</div></div><span class="badge bg">⏳ 審査中</span></div>
-      <div class="li"><div class="li-main"><div class="li-t">5月29日（金）</div></div><span class="badge bgn">✅ 承認済み</span></div>
-    </div>
-  </div>
-</div>
-
-<!-- EMP: 確定シフト -->
-<div class="subscreen" id="shiftConfSub">
-  <div class="sub-hdr"><button class="btn-back" onclick="hideSub(&#39;shiftConfSub&#39;)">← 戻る</button><div class="sub-title">✅ 確定シフト</div></div>
-  <div class="body">
-    <select class="fi" style="margin-bottom:14px;"><option>2026年5月</option><option>2026年4月</option></select>
-    <div class="li"><div class="li-main"><div class="li-t">5月28日（木）</div><div class="li-s">⛳ 成田GC　集合 07:00</div></div><span class="badge bgn">確定</span></div>
-    <div class="li"><div class="li-main"><div class="li-t">5月30日（土）</div><div class="li-s">⛳ グリッサンド　集合 08:00</div></div><span class="badge bgn">確定</span></div>
-  </div>
-</div>
-
-<!-- EMP: 請求書 -->
-<div class="subscreen" id="invoiceSub">
-  <div class="sub-hdr"><button class="btn-back" onclick="hideSub(&#39;invoiceSub&#39;)">← 戻る</button><div class="sub-title">📄 請求書作成</div></div>
-  <div class="body">
-    <div class="fg"><label class="fl">対象月</label>
-      <select class="fi" onchange="updateInvoicePreview()">
-        <option>2026年4月</option><option>2026年3月</option>
-      </select>
-    </div>
-    <div class="card">
-      <div class="card-lbl">2026年4月 集計</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:7px;">
-        <div><div style="font-size:10px;color:var(--gray);">出勤日数</div><div style="font-size:18px;font-weight:900;font-family:&#39;DM Mono&#39;,monospace;">8日</div></div>
-        <div><div style="font-size:10px;color:var(--gray);">ラウンド数</div><div style="font-size:18px;font-weight:900;font-family:&#39;DM Mono&#39;,monospace;">14R</div></div>
-        <div><div style="font-size:10px;color:var(--gray);">請求金額（税込）</div><div style="font-size:18px;font-weight:900;font-family:&#39;DM Mono&#39;,monospace;">¥142,590</div></div>
-        <div><div style="font-size:10px;color:var(--gray);">消費税</div><div style="font-size:18px;font-weight:900;font-family:&#39;DM Mono&#39;,monospace;">¥12,962</div></div>
-      </div>
-    </div>
-    <button class="fb" onclick="printInvoice()">🖨️ 請求書を印刷</button>
-  </div>
-</div>
-
-<!-- EMP: 出勤記録 -->
-<div class="subscreen" id="historySub">
-  <div class="sub-hdr"><button class="btn-back" onclick="hideSub(&#39;historySub&#39;)">← 戻る</button><div class="sub-title">📋 出勤記録</div></div>
-  <div class="body">
-    <select class="fi" style="margin-bottom:14px;"><option>2026年4月</option><option>2026年3月</option></select>
-    <div class="li"><div class="li-main"><div class="li-t">4月25日（土）</div><div class="li-s">⛳ 成田GC　2R　¥18,500</div></div></div>
-    <div class="li"><div class="li-main"><div class="li-t">4月22日（水）</div><div class="li-s">⛳ グリッサンド　1R　¥9,000</div></div></div>
-    <div class="li"><div class="li-main"><div class="li-t">4月18日（土）</div><div class="li-s">⛳ 千葉バーディ　2R　¥17,000</div></div></div>
-  </div>
-</div>
-
-<!-- EMP: 個人情報 -->
-<div class="subscreen" id="myInfoSub">
-  <div class="sub-hdr"><button class="btn-back" onclick="hideSub(&#39;myInfoSub&#39;)">← 戻る</button><div class="sub-title">👤 個人情報管理</div></div>
-  <div class="body">
-    <div class="inf-sec"><div class="inf-sec-t">基本情報</div>
-      <div class="fg"><label class="fl">氏名</label><input class="fi" value="田中 花子"></div>
-      <div class="fg"><label class="fl">住所</label><input class="fi" value="千葉県香取市..."></div>
-      <div class="fg"><label class="fl">電話番号</label><input class="fi" value="090-0000-0000"></div>
-      <div class="fg"><label class="fl">メール</label><input class="fi" value="hanako@example.com"></div>
-    </div>
-    <div class="inf-sec"><div class="inf-sec-t">雇用情報</div>
-      <div class="fg"><label class="fl">雇用形態</label>
-        <select class="fi"><option>業務委託（インボイス登録あり）</option><option>業務委託（インボイス登録なし）</option><option>アルバイト</option><option>研修</option></select>
-      </div>
-      <div class="fg"><label class="fl">インボイス番号</label><input class="fi" value="T1234567890123"></div>
-      <div class="fg"><label class="fl">屋号</label><input class="fi" placeholder="屋号（任意）"></div>
-    </div>
-    <div class="inf-sec"><div class="inf-sec-t">振込先</div>
-      <div class="fg"><label class="fl">銀行名</label><input class="fi" value="〇〇銀行"></div>
-      <div class="fg"><label class="fl">支店名</label><input class="fi" value="香取支店"></div>
-      <div class="fg"><label class="fl">口座番号</label><input class="fi" value="1234567"></div>
-      <div class="fg"><label class="fl">口座名義</label><input class="fi" value="タナカ ハナコ"></div>
-    </div>
-    <div class="inf-sec"><div class="inf-sec-t">PINコード変更</div>
-      <div class="fg"><label class="fl">新しいPIN（4桁）</label><input class="fi" type="password" placeholder="新しいPIN" maxlength="4"></div>
-    </div>
-    <button class="fb" onclick="showToast(&#39;✅ 保存しました&#39;)">保存する</button>
-  </div>
-</div>
-
-<!-- ADMIN SCREEN -->
-<div class="screen" id="adminScreen">
-  <div class="hdr">
-    <div class="hdr-title">⛳ CaddyPro 管理者</div>
-    <button class="btn-logout" onclick="logout()">ログアウト</button>
-  </div>
-  <div class="tab-bar">
-    <div class="tab on" onclick="setTab(&#39;dash&#39;,this)">ダッシュボード</div>
-    <div class="tab" onclick="setTab(&#39;shift&#39;,this)">シフト管理</div>
-    <div class="tab" onclick="setTab(&#39;attend&#39;,this)">勤怠管理</div>
-    <div class="tab" onclick="setTab(&#39;sales&#39;,this)">売上・請求</div>
-    <div class="tab" onclick="setTab(&#39;settings&#39;,this)">設定</div>
-  </div>
-  <div class="body" style="max-width:600px;">
-
-    <!-- DASHBOARD -->
-    <div id="tab-dash">
-      <div class="stats-row">
-        <div class="stat"><div class="stat-n">8</div><div class="stat-l">本日出勤</div></div>
-        <div class="stat"><div class="stat-n" style="color:#e8c96a;">2</div><div class="stat-l">承認待ち</div></div>
-        <div class="stat"><div class="stat-n" style="color:#e88;">5</div><div class="stat-l">未確認連絡</div></div>
-      </div>
-      <div class="sec">今日の出勤状況</div>
-      <div class="li"><div class="li-main"><div class="li-t">田中 花子</div><div class="li-s">⛳ 成田GC　07:30打刻</div></div><span class="badge bgn">出勤中</span></div>
-      <div class="li"><div class="li-main"><div class="li-t">鈴木 一郎</div><div class="li-s">⛳ グリッサンド　08:00打刻</div></div><span class="badge bgn">出勤中</span></div>
-      <div class="sec">承認待ち打刻</div>
-      <div class="li">
-        <div class="li-main"><div class="li-t">山田 太郎</div><div class="li-s">5/27 ⛳ 千葉バーディ　1R　07:45</div></div>
-        <div style="display:flex;gap:5px;"><button class="btn-sm btn-ok" onclick="showToast(&#39;✅ 承認しました&#39;)">承認</button><button class="btn-sm btn-ng">却下</button></div>
-      </div>
-      <div class="sec">今月の売上</div>
-      <div class="sales-grid">
-        <div class="sc"><div class="sc-l">総売上</div><div class="sc-v">¥1,240K</div><div class="sc-s">先月比 +8.3%</div></div>
-        <div class="sc"><div class="sc-l">総ラウンド</div><div class="sc-v">138R</div><div class="sc-s">5月実績</div></div>
-        <div class="sc"><div class="sc-l">総給料</div><div class="sc-v">¥892K</div></div>
-        <div class="sc"><div class="sc-l">利益率</div><div class="sc-v">28%</div></div>
-      </div>
-    </div>
-
-    <!-- SHIFT -->
-    <div id="tab-shift" style="display:none;">
-      <div class="sub-tabs">
-        <button class="stab on" onclick="setSTab(&#39;shift&#39;,&#39;cal&#39;,this)">カレンダー</button>
-        <button class="stab" onclick="setSTab(&#39;shift&#39;,&#39;req&#39;,this)">ゴルフ場依頼</button>
-        <button class="stab" onclick="setSTab(&#39;shift&#39;,&#39;empreq&#39;,this)">従業員申請</button>
-        <button class="stab" onclick="setSTab(&#39;shift&#39;,&#39;notify&#39;,this)">翌日連絡</button>
-      </div>
-      <div id="shift-cal">
-        <div class="cal-hdr"><button class="cal-nav" onclick="adminCalPrev()">‹</button><div class="cal-m" id="adminCalMonth">2026年5月</div><button class="cal-nav" onclick="adminCalNext()">›</button></div>
-        <div class="cal-grid" id="adminCal"></div>
-        <div class="shift-panel">
-          <div class="sp-title">5月28日（木）の割り振り</div>
-          <div class="sec" style="margin-top:0;">ゴルフ場依頼</div>
-          <div class="req-row"><div><div class="req-name">成田ゴルフ倶楽部</div><div class="req-cnt">2名希望</div></div><div style="display:flex;gap:5px;"><button class="btn-sm btn-ok" onclick="showModal(&#39;assignModal&#39;)">割り振り</button><button class="btn-sm btn-ng">断る</button></div></div>
-          <div class="req-row"><div><div class="req-name">グリッサンドGC</div><div class="req-cnt">1名希望</div></div><div style="display:flex;gap:5px;"><button class="btn-sm btn-ok" onclick="showModal(&#39;assignModal&#39;)">割り振り</button><button class="btn-sm btn-ng">断る</button></div></div>
-          <div class="sec">出勤希望の従業員</div>
-          <div class="emp-chips">
-            <span class="chip avail">田中花子 🟢</span>
-            <span class="chip avail">鈴木一郎 🟢</span>
-            <span class="chip avail">山田太郎</span>
-            <span class="chip other">佐藤美咲 ★</span>
-          </div>
-        </div>
-      </div>
-      <div id="shift-req" style="display:none;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;">
-          <div style="font-size:14px;font-weight:700;">ゴルフ場からの依頼</div>
-          <button class="btn-sm btn-ok" onclick="showModal(&#39;newReqModal&#39;)">+ 追加</button>
-        </div>
-        <div class="upload-area" onclick="showToast(&#39;📁 ファイルを選択&#39;)">
-          <div class="upload-ico">📎</div>
-          <div class="upload-txt">PDF・画像をアップロード<br>AIが自動で読み取ります</div>
-        </div>
-        <div class="li"><div class="li-main"><div class="li-t">成田GC　5/28</div><div class="li-s">2名希望</div></div><span class="badge bg">⏳ 検討中</span></div>
-        <div class="li"><div class="li-main"><div class="li-t">グリッサンド　5/30</div><div class="li-s">3名希望</div></div><span class="badge bgn">✅ 確定</span></div>
-        <div class="li"><div class="li-main"><div class="li-t">南総CC　5/29</div><div class="li-s">2名希望</div></div><span class="badge bgr">❌ 断る</span></div>
-      </div>
-      <div id="shift-empreq" style="display:none;">
-        <div class="li">
-          <div class="li-main"><div class="li-t">田中 花子　5/30</div><div class="li-s">シフト希望申請</div></div>
-          <div style="display:flex;gap:5px;"><button class="btn-sm btn-ok" onclick="showModal(&#39;approveModal&#39;)">承認</button><button class="btn-sm btn-ng">却下</button></div>
-        </div>
-        <div class="li">
-          <div class="li-main"><div class="li-t">鈴木 一郎　5/31</div><div class="li-s">シフト希望申請</div></div>
-          <div style="display:flex;gap:5px;"><button class="btn-sm btn-ok" onclick="showToast(&#39;✅ 承認しました&#39;)">承認</button><button class="btn-sm btn-ng">却下</button></div>
-        </div>
-      </div>
-      <div id="shift-notify" style="display:none;">
-        <div class="li"><div class="li-main"><div class="li-t">田中 花子</div><div class="li-s">⛳ 成田GC　07:00集合</div></div><span class="badge bgn">✅ 確認済み</span></div>
-        <div class="li"><div class="li-main"><div class="li-t">鈴木 一郎</div><div class="li-s">⛳ 成田GC　07:00集合</div></div><span class="badge bgr">未確認</span></div>
-        <button class="fb" style="margin-top:11px;" onclick="showModal(&#39;noticeModal&#39;)">+ 翌日連絡を追加</button>
-      </div>
-    </div>
-
-    <!-- ATTENDANCE -->
-    <div id="tab-attend" style="display:none;">
-      <div class="sub-tabs">
-        <button class="stab on" onclick="setSTab(&#39;attend&#39;,&#39;pending&#39;,this)">承認待ち</button>
-        <button class="stab" onclick="setSTab(&#39;attend&#39;,&#39;manual&#39;,this)">手動打刻</button>
-        <button class="stab" onclick="setSTab(&#39;attend&#39;,&#39;list&#39;,this)">一覧</button>
-      </div>
-      <div id="attend-pending">
-        <div class="li">
-          <div class="li-main"><div class="li-t">山田 太郎</div><div class="li-s">5/27 ⛳ 千葉バーディ　1R　07:45　指名0回</div></div>
-          <div style="display:flex;gap:5px;"><button class="btn-sm btn-ok" onclick="showToast(&#39;✅ 承認しました&#39;)">承認</button><button class="btn-sm btn-ng">却下</button></div>
-        </div>
-        <div class="li">
-          <div class="li-main"><div class="li-t">佐藤 美咲</div><div class="li-s">5/27 ⛳ 成田GC　2R　08:00　指名1回</div></div>
-          <div style="display:flex;gap:5px;"><button class="btn-sm btn-ok" onclick="showToast(&#39;✅ 承認しました&#39;)">承認</button><button class="btn-sm btn-ng">却下</button></div>
-        </div>
-      </div>
-      <div id="attend-manual" style="display:none;">
-        <div class="fg"><label class="fl">従業員</label><select class="fi"><option>田中 花子</option><option>鈴木 一郎</option><option>山田 太郎</option></select></div>
-        <div class="fg"><label class="fl">日付</label><input type="date" class="fi"></div>
-        <div class="fg"><label class="fl">ゴルフ場</label><select class="fi"><option>成田GC</option><option>グリッサンド</option><option>千葉バーディ</option></select></div>
-        <div class="fg"><label class="fl">ラウンド数</label><select class="fi"><option value="1">1R</option><option value="2">2R</option><option value="1.5">1.5R</option><option value="0.5">0.5R</option><option value="2.5">2.5R</option></select></div>
-        <div class="fg"><label class="fl">指名回数</label><select class="fi"><option>0回</option><option>1回</option><option>2回</option></select></div>
-        <button class="fb" onclick="showToast(&#39;✅ 打刻を登録しました&#39;)">打刻を登録</button>
-      </div>
-      <div id="attend-list" style="display:none;">
-        <select class="fi" style="margin-bottom:11px;"><option>2026年5月</option><option>2026年4月</option></select>
-        <div style="overflow-x:auto;">
-          <table class="tbl">
-            <thead><tr><th>日付</th><th>氏名</th><th>ゴルフ場</th><th>R数</th><th>給料</th></tr></thead>
-            <tbody>
-              <tr><td>5/27</td><td>田中花子</td><td>成田GC</td><td>2R</td><td>¥18,500</td></tr>
-              <tr><td>5/27</td><td>鈴木一郎</td><td>グリッサンド</td><td>1R</td><td>¥9,000</td></tr>
-              <tr><td>5/26</td><td>山田太郎</td><td>千葉バーディ</td><td>2R</td><td>¥16,000</td></tr>
-              <tr><td>5/25</td><td>佐藤美咲</td><td>成田GC</td><td>1.5R</td><td>¥14,000</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- SALES -->
-    <div id="tab-sales" style="display:none;">
-      <div class="sub-tabs">
-        <button class="stab on" onclick="setSTab(&#39;sales&#39;,&#39;summary&#39;,this)">売上</button>
-        <button class="stab" onclick="setSTab(&#39;sales&#39;,&#39;invoice&#39;,this)">ゴルフ場請求書</button>
-        <button class="stab" onclick="setSTab(&#39;sales&#39;,&#39;payroll&#39;,this)">給与明細</button>
-      </div>
-      <div id="sales-summary">
-        <select class="fi" style="margin-bottom:11px;"><option>2026年5月</option><option>2026年4月</option></select>
-        <div class="sales-grid">
-          <div class="sc"><div class="sc-l">総売上</div><div class="sc-v">¥1,240K</div></div>
-          <div class="sc"><div class="sc-l">総ラウンド</div><div class="sc-v">138R</div></div>
-          <div class="sc"><div class="sc-l">総給料</div><div class="sc-v">¥892K</div></div>
-          <div class="sc"><div class="sc-l">利益率</div><div class="sc-v">28%</div></div>
-        </div>
-        <div class="sec">ゴルフ場別売上</div>
-        <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>ゴルフ場</th><th>売上（税別）</th><th>R数</th><th>利益率</th></tr></thead>
-        <tbody>
-          <tr><td>成田GC</td><td>¥420,000</td><td>48R</td><td>29%</td></tr>
-          <tr><td>グリッサンド</td><td>¥380,000</td><td>42R</td><td>27%</td></tr>
-          <tr><td>千葉バーディ</td><td>¥280,000</td><td>32R</td><td>28%</td></tr>
-        </tbody></table></div>
-        <div class="sec">従業員別</div>
-        <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>氏名</th><th>売上</th><th>給料</th><th>利益率</th></tr></thead>
-        <tbody>
-          <tr><td>田中花子</td><td>¥148,000</td><td>¥102,000</td><td>31%</td></tr>
-          <tr><td>鈴木一郎</td><td>¥126,000</td><td>¥88,000</td><td>30%</td></tr>
-          <tr><td>山田太郎</td><td>¥112,000</td><td>¥80,000</td><td>29%</td></tr>
-        </tbody></table></div>
-      </div>
-      <div id="sales-invoice" style="display:none;">
-        <div class="fg"><label class="fl">ゴルフ場</label><select class="fi"><option>成田GC</option><option>グリッサンド</option><option>千葉バーディ</option></select></div>
-        <div class="fg"><label class="fl">対象月</label><select class="fi"><option>2026年4月</option><option>2026年3月</option></select></div>
-        <div class="card">
-          <div class="card-lbl">請求書プレビュー</div>
-          <div style="font-size:13px;line-height:1.9;margin-top:6px;">
-            <div style="font-weight:700;margin-bottom:4px;">千葉バーディークラブ 御中</div>
-            <div style="color:var(--gray);">2026年4月分 キャディー派遣</div>
-            <hr style="border-color:rgba(201,168,76,.2);margin:8px 0;">
-            <div>キャディ業務　14R × ¥19,000 = ¥266,000</div>
-            <div>指名料　3回 × ¥2,000 = ¥6,000</div>
-            <div>食堂利用料　△¥2,700</div>
-            <hr style="border-color:rgba(201,168,76,.2);margin:8px 0;">
-            <div>小計：¥269,300</div>
-            <div>消費税10%：¥26,930</div>
-            <div style="font-weight:700;font-size:15px;margin-top:4px;">合計：¥296,230</div>
-          </div>
-        </div>
-        <button class="fb" onclick="showToast(&#39;🖨️ 印刷します&#39;)">🖨️ 印刷する</button>
-        <button class="fb sec" style="margin-top:8px;" onclick="showToast(&#39;📧 メールで送付しました&#39;)">📧 メールで送付</button>
-      </div>
-      <div id="sales-payroll" style="display:none;">
-        <div class="fg"><label class="fl">従業員</label><select class="fi"><option>田中 花子</option><option>鈴木 一郎</option><option>山田 太郎</option></select></div>
-        <div class="fg"><label class="fl">対象月</label><select class="fi"><option>2026年4月</option><option>2026年3月</option></select></div>
-        <div class="card">
-          <div class="card-lbl">給与明細プレビュー</div>
-          <div style="font-size:13px;line-height:1.9;margin-top:6px;">
-            <div style="font-weight:700;margin-bottom:4px;">田中 花子 様</div>
-            <div style="color:var(--gray);">2026年4月分</div>
-            <hr style="border-color:rgba(201,168,76,.2);margin:8px 0;">
-            <div>キャディ業務　14R × ¥9,259 = ¥129,626</div>
-            <div>指名料　2回 × ¥2,037 = ¥4,074</div>
-            <div>食堂利用料　△¥1,800</div>
-            <hr style="border-color:rgba(201,168,76,.2);margin:8px 0;">
-            <div>小計：¥131,900</div>
-            <div>消費税10%：¥13,190</div>
-            <div style="font-weight:700;font-size:15px;margin-top:4px;">合計：¥145,090</div>
-          </div>
-        </div>
-        <button class="fb" onclick="showToast(&#39;🖨️ 印刷します&#39;)">🖨️ 印刷する</button>
-      </div>
-    </div>
-
-    <!-- SETTINGS -->
-    <div id="tab-settings" style="display:none;">
-      <div class="sub-tabs">
-        <button class="stab on" onclick="setSTab(&#39;settings&#39;,&#39;emps&#39;,this)">従業員</button>
-        <button class="stab" onclick="setSTab(&#39;settings&#39;,&#39;courses&#39;,this)">ゴルフ場</button>
-        <button class="stab" onclick="setSTab(&#39;settings&#39;,&#39;rates&#39;,this)">単価設定</button>
-      </div>
-      <div id="settings-emps">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;">
-          <div style="font-size:14px;font-weight:700;">従業員一覧（20名）</div>
-          <button class="btn-sm btn-ok" onclick="showModal(&#39;empModal&#39;)">+ 追加</button>
-        </div>
-        <div class="li"><div class="li-main"><div class="li-t">田中 花子</div><div class="li-s">業務委託（IN有）　PIN: ****</div></div><button class="btn-sm btn-ed" onclick="showModal(&#39;empModal&#39;)">編集</button></div>
-        <div class="li"><div class="li-main"><div class="li-t">鈴木 一郎</div><div class="li-s">アルバイト　PIN: ****</div></div><button class="btn-sm btn-ed" onclick="showModal(&#39;empModal&#39;)">編集</button></div>
-        <div class="li"><div class="li-main"><div class="li-t">山田 太郎</div><div class="li-s">業務委託（IN無）　PIN: ****</div></div><button class="btn-sm btn-ed" onclick="showModal(&#39;empModal&#39;)">編集</button></div>
-      </div>
-      <div id="settings-courses" style="display:none;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;">
-          <div style="font-size:14px;font-weight:700;">ゴルフ場一覧（9コース）</div>
-          <button class="btn-sm btn-ok" onclick="showModal(&#39;courseModal&#39;)">+ 追加</button>
-        </div>
-        <div class="li"><div class="li-main"><div class="li-t">成田ゴルフ倶楽部</div><div class="li-s">締め日：末日　食堂：あり　指名：なし</div></div><button class="btn-sm btn-ed" onclick="showModal(&#39;courseModal&#39;)">編集</button></div>
-        <div class="li"><div class="li-main"><div class="li-t">グリッサンドGC</div><div class="li-s">締め日：20日　食堂：あり　指名：あり</div></div><button class="btn-sm btn-ed" onclick="showModal(&#39;courseModal&#39;)">編集</button></div>
-        <div class="li"><div class="li-main"><div class="li-t">千葉バーディークラブ</div><div class="li-s">締め日：25日　食堂：あり　指名：あり</div></div><button class="btn-sm btn-ed" onclick="showModal(&#39;courseModal&#39;)">編集</button></div>
-      </div>
-      <div id="settings-rates" style="display:none;">
-        <p style="font-size:12px;color:var(--gray);margin-bottom:11px;">従業員×ゴルフ場×平日/土日祝の契約金と給料を設定</p>
-        <div class="fg"><label class="fl">ゴルフ場を選択</label>
-          <select class="fi" onchange="updateRateTable(this)">
-            <option value="1">成田ゴルフ倶楽部（平日/土日祝 区別あり）</option>
-            <option value="2">グリッサンドGC（区別なし）</option>
-          </select>
-        </div>
-        <div style="overflow-x:auto;" id="rateTableWrap">
-          <table class="tbl" style="min-width:380px;">
-            <thead><tr><th>従業員</th><th>契約金（平日）</th><th>契約金（土日）</th><th>給料（平日）</th><th>給料（土日）</th></tr></thead>
-            <tbody>
-              <tr><td>田中花子</td>
-                <td><input type="number" value="16000" style="width:70px;background:rgba(26,58,42,.6);border:1px solid rgba(201,168,76,.2);border-radius:5px;padding:4px;color:var(--cream);font-size:11px;"></td>
-                <td><input type="number" value="18000" style="width:70px;background:rgba(26,58,42,.6);border:1px solid rgba(201,168,76,.2);border-radius:5px;padding:4px;color:var(--cream);font-size:11px;"></td>
-                <td><input type="number" value="14000" style="width:70px;background:rgba(26,58,42,.6);border:1px solid rgba(201,168,76,.2);border-radius:5px;padding:4px;color:var(--cream);font-size:11px;"></td>
-                <td><input type="number" value="16000" style="width:70px;background:rgba(26,58,42,.6);border:1px solid rgba(201,168,76,.2);border-radius:5px;padding:4px;color:var(--cream);font-size:11px;"></td>
-              </tr>
-              <tr><td>鈴木一郎</td>
-                <td><input type="number" value="16000" style="width:70px;background:rgba(26,58,42,.6);border:1px solid rgba(201,168,76,.2);border-radius:5px;padding:4px;color:var(--cream);font-size:11px;"></td>
-                <td><input type="number" value="18000" style="width:70px;background:rgba(26,58,42,.6);border:1px solid rgba(201,168,76,.2);border-radius:5px;padding:4px;color:var(--cream);font-size:11px;"></td>
-                <td><input type="number" value="13000" style="width:70px;background:rgba(26,58,42,.6);border:1px solid rgba(201,168,76,.2);border-radius:5px;padding:4px;color:var(--cream);font-size:11px;"></td>
-                <td><input type="number" value="15000" style="width:70px;background:rgba(26,58,42,.6);border:1px solid rgba(201,168,76,.2);border-radius:5px;padding:4px;color:var(--cream);font-size:11px;"></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <button class="fb" style="margin-top:11px;" onclick="showToast(&#39;✅ 単価を保存しました&#39;)">保存する</button>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- MODALS -->
-<div class="modal" id="assignModal">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeModal(&#39;assignModal&#39;)">✕</button>
-    <div class="modal-title">👤 従業員を割り振る</div>
-    <p style="font-size:12px;color:var(--gray);margin-bottom:11px;">成田GC　5月28日　2名</p>
-    <div class="fg"><label class="fl">集合時間</label><input type="time" class="fi" value="07:00"></div>
-    <div class="fg"><label class="fl">スタート時間</label><input type="time" class="fi" value="08:00"></div>
-    <div class="fg"><label class="fl">コメント</label><input class="fi" placeholder="連絡事項があれば入力"></div>
-    <div class="fg"><label class="fl">派遣する従業員</label>
-      <div style="display:flex;flex-direction:column;gap:7px;margin-top:4px;">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" checked="" style="accent-color:var(--gold);"> 田中 花子</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" style="accent-color:var(--gold);"> 鈴木 一郎</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" style="accent-color:var(--gold);"> 山田 太郎</label>
-      </div>
-    </div>
-    <button class="fb" onclick="closeModal(&#39;assignModal&#39;);showToast(&#39;✅ シフトを確定しました&#39;)">確定する</button>
-  </div>
-</div>
-
-<div class="modal" id="approveModal">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeModal(&#39;approveModal&#39;)">✕</button>
-    <div class="modal-title">✅ シフト希望を承認</div>
-    <p style="font-size:12px;color:var(--gray);margin-bottom:11px;">田中 花子　5月30日</p>
-    <div class="fg"><label class="fl">派遣先ゴルフ場</label>
-      <select class="fi"><option>成田GC</option><option>グリッサンド</option><option>千葉バーディ</option></select>
-    </div>
-    <div class="fg"><label class="fl">集合時間</label><input type="time" class="fi" value="07:00"></div>
-    <button class="fb" onclick="closeModal(&#39;approveModal&#39;);showToast(&#39;✅ 承認・割り振り完了&#39;)">承認する</button>
-  </div>
-</div>
-
-<div class="modal" id="noticeModal">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeModal(&#39;noticeModal&#39;)">✕</button>
-    <div class="modal-title">🔔 翌日出勤連絡を追加</div>
-    <div class="fg"><label class="fl">従業員</label><select class="fi"><option>田中 花子</option><option>鈴木 一郎</option></select></div>
-    <div class="fg"><label class="fl">日付</label><input type="date" class="fi"></div>
-    <div class="fg"><label class="fl">ゴルフ場</label><select class="fi"><option>成田GC</option><option>グリッサンド</option></select></div>
-    <div class="fg"><label class="fl">集合時間</label><input type="time" class="fi" value="07:00"></div>
-    <div class="fg"><label class="fl">スタート時間</label><input type="time" class="fi" value="08:00"></div>
-    <div class="fg"><label class="fl">コメント</label><input class="fi" placeholder="連絡事項"></div>
-    <button class="fb" onclick="closeModal(&#39;noticeModal&#39;);showToast(&#39;📨 連絡を送りました&#39;)">送信する</button>
-  </div>
-</div>
-
-<div class="modal" id="newReqModal">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeModal(&#39;newReqModal&#39;)">✕</button>
-    <div class="modal-title">📋 出勤依頼を追加</div>
-    <div class="fg"><label class="fl">ゴルフ場</label><select class="fi"><option>成田GC</option><option>グリッサンド</option><option>千葉バーディ</option></select></div>
-    <div class="fg"><label class="fl">日付</label><input type="date" class="fi"></div>
-    <div class="fg"><label class="fl">必要人数</label><select class="fi"><option>1名</option><option>2名</option><option>3名</option><option>4名</option><option>5名</option><option>6名</option></select></div>
-    <div class="fg"><label class="fl">備考</label><input class="fi" placeholder="連絡事項"></div>
-    <button class="fb" onclick="closeModal(&#39;newReqModal&#39;);showToast(&#39;✅ 依頼を追加しました&#39;)">追加する</button>
-  </div>
-</div>
-
-<div class="modal" id="empModal">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeModal(&#39;empModal&#39;)">✕</button>
-    <div class="modal-title">👤 従業員追加・編集</div>
-    <div class="fg"><label class="fl">氏名</label><input class="fi" placeholder="氏名"></div>
-    <div class="fg"><label class="fl">PIN番号（4桁）</label><input class="fi" type="password" placeholder="0000" maxlength="4"></div>
-    <div class="fg"><label class="fl">雇用形態</label>
-      <select class="fi"><option>業務委託（IN有）</option><option>業務委託（IN無）</option><option>アルバイト</option><option>研修</option></select>
-    </div>
-    <div class="fg"><label class="fl">インボイス番号</label><input class="fi" placeholder="T0000000000000"></div>
-    <div class="fg"><label class="fl">メールアドレス</label><input class="fi" placeholder="email@example.com"></div>
-    <div class="fg"><label class="fl">銀行名</label><input class="fi" placeholder="〇〇銀行"></div>
-    <div class="fg"><label class="fl">支店名</label><input class="fi" placeholder="〇〇支店"></div>
-    <div class="fg"><label class="fl">口座番号</label><input class="fi" placeholder="1234567"></div>
-    <div class="fg"><label class="fl">口座名義</label><input class="fi" placeholder="タナカ ハナコ"></div>
-    <button class="fb" onclick="closeModal(&#39;empModal&#39;);showToast(&#39;✅ 保存しました&#39;)">保存する</button>
-  </div>
-</div>
-
-<div class="modal" id="courseModal">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeModal(&#39;courseModal&#39;)">✕</button>
-    <div class="modal-title">⛳ ゴルフ場追加・編集</div>
-    <div class="fg"><label class="fl">ゴルフ場名</label><input class="fi" placeholder="〇〇ゴルフクラブ"></div>
-    <div class="fg"><label class="fl">住所</label><input class="fi" placeholder="住所"></div>
-    <div class="fg"><label class="fl">電話番号</label><input class="fi" placeholder="000-0000-0000"></div>
-    <div class="fg"><label class="fl">担当者名</label><input class="fi" placeholder="担当者名"></div>
-    <div class="fg"><label class="fl">担当者メール</label><input class="fi" placeholder="email@golf.com"></div>
-    <div class="fg"><label class="fl">締め日</label>
-      <select class="fi"><option>末日</option><option>20日</option><option>25日</option><option>15日</option></select>
-    </div>
-    <div class="fg"><label class="fl">平日/土日祝 単価区別</label>
-      <select class="fi"><option>区別あり</option><option>区別なし</option></select>
-    </div>
-    <div class="fg"><label class="fl" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" style="accent-color:var(--gold);"> 食堂あり</label></div>
-    <div class="fg"><label class="fl">食堂利用料（税込）</label><input class="fi" type="number" placeholder="300"></div>
-    <div class="fg"><label class="fl">食堂負担区分</label>
-      <select class="fi"><option>全員会社負担</option><option>全員従業員負担</option><option>従業員ごとに設定</option></select>
-    </div>
-    <div class="fg"><label class="fl" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" style="accent-color:var(--gold);"> 指名料あり</label></div>
-    <div class="fg"><label class="fl">指名料（税別）</label><input class="fi" type="number" placeholder="2000"></div>
-    <div class="sec">追加項目</div>
-    <div id="extraItems"></div>
-    <button class="fb sec" onclick="addExtraItem()" style="margin-bottom:11px;">+ 追加項目を追加</button>
-    <button class="fb" onclick="closeModal(&#39;courseModal&#39;);showToast(&#39;✅ 保存しました&#39;)">保存する</button>
-  </div>
-</div>
-
-<div class="modal" id="confirmModal">
-  <div class="modal-box">
-    <div class="confirm-msg" id="confirmMsg">よろしいですか？</div>
-    <div class="confirm-btns">
-      <button class="confirm-ok" id="confirmOk">OK</button>
-      <button class="confirm-cancel" onclick="closeModal(&#39;confirmModal&#39;)">キャンセル</button>
-    </div>
-  </div>
-</div>
-
-<div id="toast"></div>
-
-<script>
-// ===== DATA =====
-const emps=[
-  {id:1,name:'田中 花子',pin:'1234',role:'キャディー',contract:'invoice_yes'},
-  {id:2,name:'鈴木 一郎',pin:'5678',role:'キャディー',contract:'baito'},
-  {id:3,name:'山田 太郎',pin:'1111',role:'キャディー',contract:'invoice_no'},
-];
-let curEmp=null;
-let pinBuf='';
-let calY=2026,calM=4;
-let adminCalY=2026,adminCalM=4;
-const selDates=new Set(['2026-05-30','2026-05-29']);
-
-// ===== SCREEN =====
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  const el=document.getElementById(id);if(el)el.classList.add('active');
-}
-function showSub(id){document.getElementById(id)?.classList.add('active');}
-function hideSub(id){document.getElementById(id)?.classList.remove('active');}
-function showModal(id){document.getElementById(id)?.classList.add('open');}
-function closeModal(id){document.getElementById(id)?.classList.remove('open');}
-
-// ===== PIN =====
-function pk(k){
-  if(pinBuf.length>=4)return;
-  pinBuf+=k;updateDots();
-  if(pinBuf.length===4)setTimeout(checkPin,150);
-}
-function pd(){pinBuf=pinBuf.slice(0,-1);updateDots();}
-function updateDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('on',i<pinBuf.length);}
-function checkPin(){
-  const e=emps.find(x=>x.pin===pinBuf);
-  if(e){curEmp=e;document.getElementById('empNameDisp').textContent=e.name;
-    showScreen('empScreen');pinBuf='';updateDots();
-    document.getElementById('noticeCnt').style.display='inline';}
-  else{document.getElementById('pinErr').textContent='PINが違います';
-    pinBuf='';updateDots();
-    setTimeout(()=>document.getElementById('pinErr').textContent='',2000);}
-}
-
-// ===== ADMIN =====
-async function adminLogin(){
-  if(window.googleSignIn){
-    showToast('⏳ Googleログイン中...');
-    const user = await window.googleSignIn();
-    if(user){
-      showToast('✅ ' + user.displayName + ' でログイン');
-      showScreen('adminScreen');
-      renderAdminCal();
-    } else {
-      // デモ用：Googleログイン失敗時もアクセス可能
-      showScreen('adminScreen');
-      renderAdminCal();
-    }
-  } else {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+    window._isAdmin = true;
+    updateFbStatus(true);
+    loadAllData();
+    initMonthSelects();
+    updateAdminSelects();
+    renderDashboard(window._state);
     showScreen('adminScreen');
-    renderAdminCal();
+  } catch(e) { showToast('ログイン失敗: ' + e.message); }
+};
+window.logout = function() {
+  window._isAdmin = false;
+  window._currentEmp = null;
+  auth.signOut().catch(()=>{});
+  auth.signInAnonymously().then(() => { updateFbStatus(true); loadAllData(); }).catch(() => updateFbStatus(false));
+  showScreen('topScreen');
+  resetPin();
+};
+
+// ========== PIN ==========
+window._pinInput = '';
+window.pk = function(key) {
+  if (window._pinInput.length >= 4) return;
+  window._pinInput += key;
+  updatePinDots();
+  if (window._pinInput.length === 4) setTimeout(checkPin, 200);
+};
+window.pd = function() {
+  window._pinInput = window._pinInput.slice(0,-1);
+  updatePinDots();
+};
+function updatePinDots() {
+  for (let i=0;i<4;i++) {
+    document.getElementById('dot'+i).classList.toggle('filled', i < window._pinInput.length);
   }
 }
-function logout(){curEmp=null;showScreen('topScreen');}
-
-// ===== TABS =====
-function setTab(name,el){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  el.classList.add('on');
-  ['dash','shift','attend','sales','settings'].forEach(t=>{
-    const e=document.getElementById('tab-'+t);
-    if(e)e.style.display=t===name?'block':'none';
-  });
+function resetPin() {
+  window._pinInput = '';
+  updatePinDots();
+  document.getElementById('pinError').textContent = '';
 }
-function setSTab(group,name,el){
-  el.closest('.sub-tabs').querySelectorAll('.stab').forEach(b=>b.classList.remove('on'));
-  el.classList.add('on');
-  const prefixes={shift:['cal','req','empreq','notify'],attend:['pending','manual','list'],sales:['summary','invoice','payroll'],settings:['emps','courses','rates']};
-  (prefixes[group]||[]).forEach(t=>{
-    const e=document.getElementById(group+'-'+t);
-    if(e)e.style.display=t===name?'block':'none';
-  });
-}
-
-// ===== PUNCH =====
-function updatePunchOptions(){
-  const sel=document.getElementById('punchCourse');
-  const opt=sel.options[sel.selectedIndex];
-  document.getElementById('nomArea').style.display=opt&&opt.dataset.nom==='1'?'block':'none';
-  document.getElementById('cafeArea').style.display=opt&&opt.dataset.cafe==='1'?'block':'none';
-}
-function doPunch(){
-  const c=document.getElementById('punchCourse').value;
-  if(!c){showToast('⚠️ ゴルフ場を選択してください');return;}
-  showToast('⏳ 打刻申請を送りました');
-  const btn=document.getElementById('punchBtn');
-  btn.className='punch-btn punch-done';btn.textContent='⏳ 承認待ち';btn.onclick=null;
-  document.getElementById('punchStatus').innerHTML='<div class="card-lbl">本日の状況</div><div style="color:#6dbf7e;font-weight:700;">⏳ 承認待ち</div>';
-}
-
-// ===== NOTICE =====
-function confirmNotice(btn){
-  const c=btn.closest('.nc');c.classList.remove('unread');c.classList.add('read');
-  btn.remove();
-  const d=document.createElement('div');d.style.cssText='font-size:12px;color:#6dbf7e;margin-top:7px;';
-  d.textContent='✅ 確認済み';c.appendChild(d);
-  showToast('✅ 出勤を確認しました');
-  document.getElementById('noticeCnt').style.display='none';
-}
-
-// ===== CALENDAR =====
-const MN=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-function calPrev(){calM--;if(calM<0){calM=11;calY--;}renderApplyCal();}
-function calNext(){calM++;if(calM>11){calM=0;calY++;}renderApplyCal();}
-function renderApplyCal(){
-  document.getElementById('calMonth').textContent=`${calY}年${MN[calM]}`;
-  const cal=document.getElementById('shiftApplyCal');if(!cal)return;
-  const fd=new Date(calY,calM,1).getDay();
-  const dim=new Date(calY,calM+1,0).getDate();
-  let h='<div class="cd">日</div><div class="cd">月</div><div class="cd">火</div><div class="cd">水</div><div class="cd">木</div><div class="cd">金</div><div class="cd">土</div>';
-  for(let i=0;i<fd;i++)h+='<div></div>';
-  for(let d=1;d<=dim;d++){
-    const dow=new Date(calY,calM,d).getDay();
-    const ds=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const sel=selDates.has(ds);
-    const dc=dow===0?'sun':dow===6?'sat':'';
-    const bg=sel?'background:rgba(74,140,92,.4);border-color:rgba(74,140,92,.5);':'';
-    h+=`<div class="cc ${dc}" style="${bg}" onclick="toggleDate('${ds}',this)">
-      <div class="cc-day">${d}</div>
-      ${sel?'<div class="cc-dot" style="background:#6dbf7e;"></div>':''}
-    </div>`;
-  }
-  cal.innerHTML=h;
-}
-function toggleDate(ds,el){
-  if(selDates.has(ds)){
-    selDates.delete(ds);el.style.background='';el.style.borderColor='';
-    const dot=el.querySelector('.cc-dot');if(dot)dot.remove();
-    showToast('📅 希望を削除しました');
+window.checkPin = function() {
+  const emps = window._state.employees;
+  const found = Object.values(emps).find(e => e.pin === window._pinInput);
+  if (found) {
+    window._currentEmp = found;
+    document.getElementById('empNameHeader').textContent = found.name + ' さん';
+    resetPin();
+    initEmpSelects();
+    updateNoticeBadge();
+    updatePunchStatus();
+    showScreen('empScreen');
   } else {
-    selDates.add(ds);el.style.background='rgba(74,140,92,.4)';el.style.borderColor='rgba(74,140,92,.5)';
-    const dot=document.createElement('div');dot.className='cc-dot';dot.style.background='#6dbf7e';
-    el.appendChild(dot);showToast('📅 希望を追加しました');
+    document.getElementById('pinError').textContent = 'PINが違います';
+    window._pinInput = '';
+    updatePinDots();
+    setTimeout(() => { document.getElementById('pinError').textContent = ''; }, 2000);
+  }
+};
+window.resetPin = resetPin;
+
+// ========== EMPLOYEE HELPERS ==========
+function initEmpSelects() {
+  populateMonthSel('shiftConfMonth');
+  populateMonthSel('invoiceMonth');
+  populateMonthSel('historyMonth');
+  const courses = window._state.courses;
+  const sel = document.getElementById('punchCourse');
+  sel.innerHTML = '<option value="">選択してください</option>';
+  Object.values(courses).forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.id; o.textContent = c.name;
+    o.dataset.cafe = c.cafeteria ? '1' : '0';
+    o.dataset.nom = c.nomination ? '1' : '0';
+    sel.appendChild(o);
+  });
+}
+function populateMonthSel(id, count=6) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = '';
+  const now = new Date();
+  for (let i=0;i<count;i++) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = `${d.getFullYear()}年${d.getMonth()+1}月`;
+    el.appendChild(opt);
   }
 }
-function adminCalPrev(){adminCalM--;if(adminCalM<0){adminCalM=11;adminCalY--;}renderAdminCal();}
-function adminCalNext(){adminCalM++;if(adminCalM>11){adminCalM=0;adminCalY++;}renderAdminCal();}
-function renderAdminCal(){
-  document.getElementById('adminCalMonth').textContent=`${adminCalY}年${MN[adminCalM]}`;
-  const cal=document.getElementById('adminCal');if(!cal)return;
-  const now=new Date();
-  const fd=new Date(adminCalY,adminCalM,1).getDay();
-  const dim=new Date(adminCalY,adminCalM+1,0).getDate();
-  const reqs={28:3,29:2,30:4,31:1,15:2,16:3};
-  let h='<div class="cd">日</div><div class="cd">月</div><div class="cd">火</div><div class="cd">水</div><div class="cd">木</div><div class="cd">金</div><div class="cd">土</div>';
-  for(let i=0;i<fd;i++)h+='<div></div>';
-  for(let d=1;d<=dim;d++){
-    const dow=new Date(adminCalY,adminCalM,d).getDay();
-    const isToday=d===now.getDate()&&adminCalM===now.getMonth()&&adminCalY===now.getFullYear();
-    const dc=dow===0?'sun':dow===6?'sat':'';
-    const r=reqs[d]||0;
-    h+=`<div class="cc ${dc} ${isToday?'today':''} ${r>0?'has':''}" onclick="showToast('${d}日の割り振りを開きます')">
-      <div class="cc-day">${d}</div>
-      ${r>0?`<div style="font-size:8px;color:var(--goldl);text-align:center;">${r}件</div>`:''}
+
+// ========== NOTICE BADGE ==========
+function updateNoticeBadge() {
+  if (!window._currentEmp) return;
+  const today = todayStr();
+  const notices = Object.values(window._state.notices).filter(n =>
+    n.empId === window._currentEmp.id && n.date >= today && !n.confirmed
+  );
+  const badge = document.getElementById('noticeBadge');
+  if (badge) { badge.style.display = notices.length ? '' : 'none'; badge.textContent = notices.length; }
+}
+window.openNoticeSub = function() {
+  showSub('noticeSub');
+  renderEmpNotices();
+};
+window.renderEmpNotices = function() {
+  if (!window._currentEmp) return;
+  const today = todayStr();
+  const list = document.getElementById('noticeList');
+  const notices = Object.values(window._state.notices)
+    .filter(n => n.empId === window._currentEmp.id && n.date >= today)
+    .sort((a,b) => a.date.localeCompare(b.date));
+  if (!notices.length) { list.innerHTML = '<div class="empty">翌日出勤の連絡はありません</div>'; return; }
+  list.innerHTML = notices.map(n => `
+    <div class="notice-card ${n.confirmed ? '' : 'unread'}" id="ncard-${n.id}">
+      <div class="notice-date">${fmtDate(n.date)}</div>
+      <div class="notice-detail">
+        ⛳ ${n.courseName}<br>
+        🕖 集合 ${n.startTime||'--:--'}　🏌️ スタート ${n.gameStartTime||'--:--'}
+      </div>
+      ${n.memo ? `<div class="notice-memo">${n.memo}</div>` : ''}
+      ${n.confirmed
+        ? '<div style="margin-top:8px;font-size:12px;color:var(--green);">✅ 確認済み</div>'
+        : `<button class="btn btn-green btn-sm" style="margin-top:10px;width:100%;" onclick="confirmNoticeById('${n.id}',this)">✅ 確認しました</button>`}
+    </div>
+  `).join('');
+};
+window.confirmNoticeById = async function(id, btn) {
+  const notice = window._state.notices[id];
+  if (!notice) return;
+  notice.confirmed = true;
+  await saveToFirebase('caddypro/notices/' + id, notice);
+  showToast('確認しました');
+  renderEmpNotices();
+  updateNoticeBadge();
+};
+
+// ========== PUNCH ==========
+function updatePunchStatus() {
+  if (!window._currentEmp) return;
+  const today = todayStr();
+  const atts = Object.values(window._state.attendance).filter(a =>
+    a.empId === window._currentEmp.id && a.date === today
+  );
+  const el = document.getElementById('punchStatus');
+  const btn = document.getElementById('punchBtn');
+  if (!el) return;
+  if (atts.length) {
+    const a = atts[atts.length-1];
+    el.className = 'punch-status punched';
+    el.textContent = `⏳ ${a.status === 'approved' ? '✅ 承認済み' : '承認待ち'} — ${a.courseName} ${a.rounds}R`;
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ 打刻済み'; }
+  } else {
+    el.className = 'punch-status';
+    el.textContent = 'まだ打刻していません';
+    if (btn) { btn.disabled = false; btn.textContent = '🕓 出勤する'; }
+  }
+}
+window.onPunchCourseChange = function() {
+  const sel = document.getElementById('punchCourse');
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById('punchNomGroup').style.display = opt.dataset.nom === '1' ? '' : 'none';
+  document.getElementById('punchCafeGroup').style.display = opt.dataset.cafe === '1' ? '' : 'none';
+};
+window.doPunch = async function() {
+  const empId = window._currentEmp?.id;
+  const sel = document.getElementById('punchCourse');
+  const courseId = sel.value;
+  if (!courseId) { showToast('ゴルフ場を選択してください'); return; }
+  const course = window._state.courses[courseId];
+  const rounds = parseFloat(document.getElementById('punchRounds').value);
+  const nomCount = parseInt(document.getElementById('punchNom').value || '0');
+  const cafeUsed = document.getElementById('punchCafe').checked;
+  const today = todayStr();
+  const now = new Date();
+  const punchTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const { wage, contractAmount } = computeAttendance(empId, courseId, today, rounds, nomCount, cafeUsed);
+  const id = genId();
+  const rec = {
+    id, empId, empName: window._currentEmp.name,
+    courseId, courseName: course.name, date: today,
+    punchTime, rounds, nominationCount: nomCount, cafeteriaUsed: cafeUsed,
+    status: 'pending', wage, contractAmount
+  };
+  await saveToFirebase('caddypro/attendance/' + id, rec);
+  showToast('出勤を記録しました');
+  updatePunchStatus();
+};
+
+// ========== SHIFT APPLY ==========
+window.renderApplyCal = function() {
+  const y = window._applyCalYear, m = window._applyCalMonth;
+  document.getElementById('applyCalMonth').textContent = `${y}年${m+1}月`;
+  const myRequests = Object.values(window._state.shiftRequests)
+    .filter(r => r.empId === window._currentEmp?.id);
+  const reqMap = {};
+  myRequests.forEach(r => { reqMap[r.date] = r; });
+  const grid = document.getElementById('applyCalGrid');
+  const dows = ['日','月','火','水','木','金','土'];
+  let html = dows.map(d => `<div class="cal-dow">${d}</div>`).join('');
+  const first = new Date(y, m, 1).getDay();
+  const last = new Date(y, m+1, 0).getDate();
+  const today = todayStr();
+  for (let i=0;i<first;i++) html += '<div class="cal-day other-month"></div>';
+  for (let d=1;d<=last;d++) {
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow = new Date(ds + 'T00:00:00').getDay();
+    const sel = reqMap[ds];
+    html += `<div class="cal-day${ds===today?' today':''}${dow===0?' sun':dow===6?' sat':''}${sel?' selected':''}" onclick="toggleDate('${ds}',this)">
+      <div class="cal-num">${d}</div>
+      ${sel ? '<div class="cal-dot"></div>' : ''}
     </div>`;
   }
-  cal.innerHTML=h;
-}
-
-// ===== EXTRA ITEMS =====
-function addExtraItem(){
-  const c=document.getElementById('extraItems');
-  const d=document.createElement('div');
-  d.style.cssText='display:flex;gap:6px;margin-bottom:7px;align-items:center;';
-  d.innerHTML=`<input class="fi" placeholder="項目名" style="flex:2;"><input class="fi" type="number" placeholder="金額" style="flex:1;"><select class="fi" style="flex:1;"><option value="add">加算</option><option value="sub">減算</option></select><button onclick="this.parentElement.remove()" style="background:none;border:none;color:#e88;font-size:18px;cursor:pointer;">✕</button>`;
-  c.appendChild(d);
-}
-
-// ===== OTHER =====
-function updateInvoicePreview(){}
-function updateRateTable(){}
-function printInvoice(){showToast('🖨️ 印刷画面を開きます');}
-function showToast(msg,dur=2400){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),dur);
-}
-
-// ===== INIT =====
-renderApplyCal();
-
-// Firebaseデータ更新時の処理
-document.addEventListener('data-updated', (e) => {
-  const state = e.detail;
-  // 従業員データをPINログインに反映
-  if(state.employees && state.employees.length > 0){
-    window._fbEmps = state.employees;
+  grid.innerHTML = html;
+  renderShiftApplyList();
+};
+window.calPrev = function() {
+  window._applyCalMonth--;
+  if (window._applyCalMonth < 0) { window._applyCalMonth = 11; window._applyCalYear--; }
+  renderApplyCal();
+};
+window.calNext = function() {
+  window._applyCalMonth++;
+  if (window._applyCalMonth > 11) { window._applyCalMonth = 0; window._applyCalYear++; }
+  renderApplyCal();
+};
+window.toggleDate = async function(ds) {
+  const empId = window._currentEmp?.id;
+  if (!empId) return;
+  const existing = Object.entries(window._state.shiftRequests)
+    .find(([,r]) => r.empId === empId && r.date === ds);
+  if (existing) {
+    delete window._state.shiftRequests[existing[0]];
+    await db.ref('caddypro/shiftRequests/' + existing[0]).remove();
+    showToast('申請を取り消しました');
+  } else {
+    const id = genId();
+    const rec = { id, empId, empName: window._currentEmp.name, date: ds, status: 'pending' };
+    window._state.shiftRequests[id] = rec;
+    await saveToFirebase('caddypro/shiftRequests/' + id, rec);
+    showToast('希望を追加しました');
   }
-  console.log('データ更新:', state);
-});
+  renderApplyCal();
+};
+function renderShiftApplyList() {
+  const el = document.getElementById('applyList');
+  if (!el) return;
+  const list = Object.values(window._state.shiftRequests)
+    .filter(r => r.empId === window._currentEmp?.id)
+    .sort((a,b) => a.date.localeCompare(b.date));
+  if (!list.length) { el.innerHTML = '<div class="empty">申請はありません</div>'; return; }
+  const badge = s => s === 'approved' ? '<span class="status status-approved">✅ 承認済み</span>'
+    : s === 'rejected' ? '<span class="status status-rejected">❌ 却下</span>'
+    : '<span class="status status-pending">⏳ 審査中</span>';
+  el.innerHTML = list.map(r => `
+    <div class="list-item">
+      <div class="list-info"><div class="list-name">${fmtDate(r.date)}</div></div>
+      ${badge(r.status)}
+    </div>
+  `).join('');
+}
 
-// Firebase認証情報を使ってPINチェック
-const _origCheckPin = checkPin;
-function checkPin(){
-  const fbEmps = window._fbEmps;
-  if(fbEmps && fbEmps.length > 0){
-    const e = fbEmps.find(x => String(x.pin).padStart(4,'0') === pinBuf);
-    if(e){
-      curEmp = e;
-      document.getElementById('empNameDisp').textContent = e.name;
-      showScreen('empScreen');
-      pinBuf = '';updateDots();
-      document.getElementById('noticeCnt').style.display = 'inline';
-      return;
+// ========== SHIFT CONFIRMED ==========
+window.renderShiftConfirmed = function() {
+  const month = document.getElementById('shiftConfMonth')?.value;
+  const el = document.getElementById('shiftConfList');
+  if (!el) return;
+  const list = Object.values(window._state.shifts)
+    .filter(s => (s.empId === window._currentEmp?.id || (s.employees||[]).includes(window._currentEmp?.id)) && s.date.startsWith(month||''))
+    .sort((a,b) => a.date.localeCompare(b.date));
+  if (!list.length) { el.innerHTML = '<div class="empty">確定シフトはありません</div>'; return; }
+  el.innerHTML = list.map(s => `
+    <div class="list-item">
+      <div class="list-info">
+        <div class="list-name">${fmtDate(s.date)}</div>
+        <div class="list-sub">⛳ ${s.courseName}　集合 ${s.startTime||'--:--'}</div>
+      </div>
+      <span class="status status-confirmed">確定</span>
+    </div>
+  `).join('');
+};
+
+// ========== INVOICE SUB ==========
+window.renderInvoiceSub = function() {
+  const month = document.getElementById('invoiceMonth')?.value;
+  const emp = window._currentEmp;
+  if (!emp || !month) return;
+  const atts = Object.values(window._state.attendance)
+    .filter(a => a.empId === emp.id && a.date.startsWith(month) && a.status === 'approved');
+  const totalRounds = atts.reduce((s,a) => s+a.rounds, 0);
+  const totalWage = atts.reduce((s,a) => s+a.wage, 0);
+  const tax = emp.contract !== 'baito' && emp.contract !== 'training'
+    ? Math.round(totalWage * 10 / 110) : 0;
+  const el = document.getElementById('invoiceSummary');
+  el.innerHTML = `
+    <div class="inv-preview">
+      <div class="inv-row"><span>出勤日数</span><span class="inv-amount">${atts.length}日</span></div>
+      <div class="inv-row"><span>総ラウンド数</span><span class="inv-amount">${totalRounds}R</span></div>
+      <div class="inv-row"><span>消費税</span><span class="inv-amount">${fmtMoney(tax)}</span></div>
+      <div class="inv-row total"><span>請求金額（税込）</span><span class="inv-amount">${fmtMoney(totalWage)}</span></div>
+    </div>
+  `;
+};
+window.printInvoice = function() {
+  const month = document.getElementById('invoiceMonth')?.value;
+  const emp = window._currentEmp;
+  if (!emp || !month) return;
+  const atts = Object.values(window._state.attendance)
+    .filter(a => a.empId === emp.id && a.date.startsWith(month) && a.status === 'approved')
+    .sort((a,b) => a.date.localeCompare(b.date));
+  const totalWage = atts.reduce((s,a) => s+a.wage, 0);
+  const [y,m] = month.split('-');
+  const isInvoice = emp.contract === 'invoice_yes' || emp.contract === 'invoice_no';
+  const rows = atts.map(a => `
+    <tr>
+      <td>${fmtDate(a.date)}</td>
+      <td>キャディー業務（${a.courseName}）</td>
+      <td style="text-align:center;">${a.rounds}R</td>
+      <td style="text-align:right;">${fmtMoney(a.wage)}</td>
+    </tr>
+  `).join('');
+  const tax = isInvoice ? Math.round(totalWage * 10 / 110) : 0;
+  const html = `
+    <div class="print-doc">
+      <h2 style="text-align:center;margin-bottom:20px;">${isInvoice ? '請求書' : '給与明細'}</h2>
+      <div style="text-align:right;margin-bottom:4px;">発行日：${y}年${parseInt(m)+1}月1日</div>
+      ${emp.invoiceNo ? `<div style="text-align:right;margin-bottom:4px;">登録番号：${emp.invoiceNo}</div>` : ''}
+      <div style="margin-bottom:4px;">${emp.address||''}</div>
+      <div style="margin-bottom:16px;">${emp.name}</div>
+      <div style="font-size:16px;font-weight:bold;margin-bottom:16px;">WIN STAR株式会社 御中</div>
+      <div style="font-size:18px;font-weight:bold;text-align:right;margin-bottom:20px;">合計金額 ${fmtMoney(totalWage)} 円（税込）</div>
+      <table>
+        <thead><tr><th>日付</th><th>概要</th><th>R数</th><th>金額</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="text-align:right;margin-top:8px;">合計ラウンド：${atts.reduce((s,a)=>s+a.rounds,0)}R</div>
+      ${isInvoice ? `<div style="text-align:right;">消費税10%：${fmtMoney(tax)}</div>` : ''}
+      <div style="text-align:right;font-weight:bold;">合計：${fmtMoney(totalWage)}</div>
+      <hr style="margin:20px 0;">
+      <div>振込先：${emp.bankName||''} ${emp.bankBranch||''} 普通 ${emp.bankAccount||''}</div>
+      <div>口座名義：${emp.bankHolder||''}</div>
+    </div>
+  `;
+  const w = window.open('','_blank','width=700,height=900');
+  w.document.write(`<html><head><style>body{margin:0;font-family:'Noto Sans JP',sans-serif;}</style></head><body>${html}</body></html>`);
+  w.document.close();
+  w.print();
+};
+
+// ========== HISTORY ==========
+window.renderEmpHistory = function() {
+  const month = document.getElementById('historyMonth')?.value;
+  const el = document.getElementById('historyList');
+  if (!el || !window._currentEmp) return;
+  const list = Object.values(window._state.attendance)
+    .filter(a => a.empId === window._currentEmp.id && a.status === 'approved' && a.date.startsWith(month||''))
+    .sort((a,b) => b.date.localeCompare(a.date));
+  if (!list.length) { el.innerHTML = '<div class="empty">出勤記録はありません</div>'; return; }
+  el.innerHTML = list.map(a => `
+    <div class="list-item">
+      <div class="list-info">
+        <div class="list-name">${fmtDate(a.date)}</div>
+        <div class="list-sub">⛳ ${a.courseName}　${a.rounds}R</div>
+      </div>
+      <div class="mono" style="font-size:14px;color:var(--gold);">${fmtMoney(a.wage)}</div>
+    </div>
+  `).join('');
+};
+
+// ========== MY INFO ==========
+window.renderMyInfo = function() {
+  const emp = window._currentEmp;
+  if (!emp) return;
+  const f = id => document.getElementById(id);
+  f('myName').value = emp.name||'';
+  f('myAddress').value = emp.address||'';
+  f('myPhone').value = emp.phone||'';
+  f('myEmail').value = emp.email||'';
+  f('myContract').value = emp.contract||'baito';
+  f('myInvoice').value = emp.invoiceNo||'';
+  f('myCompany').value = emp.companyName||'';
+  f('myBankName').value = emp.bankName||'';
+  f('myBankBranch').value = emp.bankBranch||'';
+  f('myBankAccount').value = emp.bankAccount||'';
+  f('myBankHolder').value = emp.bankHolder||'';
+};
+window.saveMyInfo = async function() {
+  const emp = window._currentEmp;
+  if (!emp) return;
+  const f = id => document.getElementById(id).value;
+  const pin = f('myNewPin') || emp.pin;
+  const updated = { ...emp, name:f('myName'), address:f('myAddress'), phone:f('myPhone'), email:f('myEmail'),
+    contract:f('myContract'), invoiceNo:f('myInvoice'), companyName:f('myCompany'),
+    bankName:f('myBankName'), bankBranch:f('myBankBranch'), bankAccount:f('myBankAccount'), bankHolder:f('myBankHolder'), pin };
+  await saveToFirebase('caddypro/employees/' + emp.id, updated);
+  window._currentEmp = updated;
+  window._state.employees[emp.id] = updated;
+  document.getElementById('empNameHeader').textContent = updated.name + ' さん';
+  showToast('保存しました');
+};
+
+// ========== ADMIN DASHBOARD ==========
+window.renderDashboard = function(state) {
+  const today = todayStr();
+  const atts = Object.values(state.attendance||{});
+  const todayAtts = atts.filter(a => a.date === today && a.status === 'approved');
+  const pending = atts.filter(a => a.status === 'pending');
+  const notices = Object.values(state.notices||{}).filter(n => !n.confirmed && n.date >= today);
+  document.getElementById('statToday').textContent = todayAtts.length;
+  document.getElementById('statPending').textContent = pending.length;
+  document.getElementById('statNotice').textContent = notices.length;
+
+  const tEl = document.getElementById('dashTodayList');
+  tEl.innerHTML = todayAtts.length ? todayAtts.map(a => `
+    <div class="list-item">
+      <div class="list-info">
+        <div class="list-name">${a.empName}</div>
+        <div class="list-sub">${a.courseName}　${a.punchTime}　${a.rounds}R</div>
+      </div>
+      <span class="status status-approved">出勤中</span>
+    </div>
+  `).join('') : '<div class="empty">本日の出勤はありません</div>';
+
+  const pEl = document.getElementById('dashPendingList');
+  pEl.innerHTML = pending.length ? pending.map(a => `
+    <div class="list-item pending">
+      <div class="list-info">
+        <div class="list-name">${a.empName}</div>
+        <div class="list-sub">${a.courseName}　${a.date}　${a.rounds}R　${a.punchTime}</div>
+      </div>
+      <div class="list-actions">
+        <button class="btn btn-green btn-xs" onclick="approveAtt('${a.id}')">承認</button>
+        <button class="btn btn-red btn-xs" onclick="rejectAtt('${a.id}')">却下</button>
+      </div>
+    </div>
+  `).join('') : '<div class="empty">承認待ちはありません</div>';
+
+  // Monthly sales
+  const thisMonth = today.slice(0,7);
+  const monthAtts = atts.filter(a => a.date.startsWith(thisMonth) && a.status === 'approved');
+  const totalSales = monthAtts.reduce((s,a) => s+(a.contractAmount||0), 0);
+  const totalWage = monthAtts.reduce((s,a) => s+(a.wage||0), 0);
+  const totalRounds = monthAtts.reduce((s,a) => s+a.rounds, 0);
+  const profit = totalSales > 0 ? Math.round((totalSales - totalWage) / totalSales * 100) : 0;
+  document.getElementById('dsSales').textContent = fmtMoney(totalSales);
+  document.getElementById('dsRounds').textContent = totalRounds + 'R';
+  document.getElementById('dsWage').textContent = fmtMoney(totalWage);
+  document.getElementById('dsProfit').textContent = profit + '%';
+};
+
+window.approveAtt = async function(id) {
+  const a = window._state.attendance[id];
+  if (!a) return;
+  a.status = 'approved';
+  await saveToFirebase('caddypro/attendance/' + id, a);
+  showToast('承認しました');
+  renderDashboard(window._state);
+  updateAttendPendingList();
+};
+window.rejectAtt = async function(id) {
+  const a = window._state.attendance[id];
+  if (!a) return;
+  a.status = 'rejected';
+  await saveToFirebase('caddypro/attendance/' + id, a);
+  showToast('却下しました');
+  renderDashboard(window._state);
+  updateAttendPendingList();
+};
+
+// ========== ADMIN CALENDAR ==========
+window.renderAdminCal = function() {
+  const y = window._adminCalYear, m = window._adminCalMonth;
+  document.getElementById('adminCalMonth').textContent = `${y}年${m+1}月`;
+  const reqs = Object.values(window._state.requests||{});
+  const shifts = Object.values(window._state.shifts||{});
+  const reqByDate = {};
+  reqs.forEach(r => { if(!reqByDate[r.date]) reqByDate[r.date]=[]; reqByDate[r.date].push(r); });
+  const shiftByDate = {};
+  shifts.forEach(s => { if(!shiftByDate[s.date]) shiftByDate[s.date]=0; shiftByDate[s.date]++; });
+  const grid = document.getElementById('adminCalGrid');
+  const dows = ['日','月','火','水','木','金','土'];
+  let html = dows.map(d => `<div class="cal-dow">${d}</div>`).join('');
+  const first = new Date(y, m, 1).getDay();
+  const last = new Date(y, m+1, 0).getDate();
+  const today = todayStr();
+  for (let i=0;i<first;i++) html += '<div class="cal-day other-month"></div>';
+  for (let d=1;d<=last;d++) {
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow = new Date(ds + 'T00:00:00').getDay();
+    const hasReq = reqByDate[ds]?.length;
+    html += `<div class="cal-day${ds===today?' today':''}${dow===0?' sun':dow===6?' sat':''}${hasReq?' has-shift':''}" onclick="showDayPanel('${ds}')">
+      <div class="cal-num">${d}</div>
+      ${hasReq ? `<div class="cal-dot"></div>` : ''}
+    </div>`;
+  }
+  grid.innerHTML = html;
+};
+window.adminCalPrev = function() {
+  window._adminCalMonth--;
+  if (window._adminCalMonth < 0) { window._adminCalMonth = 11; window._adminCalYear--; }
+  renderAdminCal();
+};
+window.adminCalNext = function() {
+  window._adminCalMonth++;
+  if (window._adminCalMonth > 11) { window._adminCalMonth = 0; window._adminCalYear++; }
+  renderAdminCal();
+};
+window.showDayPanel = function(ds) {
+  const panel = document.getElementById('shiftDayPanel');
+  panel.style.display = '';
+  const reqs = Object.values(window._state.requests||{}).filter(r => r.date === ds);
+  const empReqs = Object.values(window._state.shiftRequests||{}).filter(r => r.date === ds && r.status === 'approved');
+  const confirmedShifts = Object.values(window._state.shifts||{}).filter(s => s.date === ds);
+  const confirmedEmpIds = new Set();
+  confirmedShifts.forEach(s => {
+    if (s.empId) confirmedEmpIds.add(s.empId);
+    (s.employees||[]).forEach(id => confirmedEmpIds.add(id));
+  });
+  const days = ['日','月','火','水','木','金','土'];
+  const d = new Date(ds + 'T00:00:00');
+  panel.innerHTML = `
+    <div class="day-panel-title">${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）の割り振り</div>
+    <div class="form-section" style="margin-top:0;">ゴルフ場依頼</div>
+    ${reqs.length ? reqs.map(r => `
+      <div class="list-item">
+        <div class="list-info">
+          <div class="list-name">${r.courseName}</div>
+          <div class="list-sub">必要人数：${r.count}名</div>
+        </div>
+        <div class="list-actions">
+          <button class="btn btn-outline btn-xs" onclick="openAssignModal('${r.id}','${ds}','${r.courseId}','${r.courseName}')">割り振り</button>
+          <button class="btn btn-red btn-xs" onclick="rejectRequest('${r.id}')">断る</button>
+        </div>
+      </div>
+    `).join('') : '<div class="empty" style="padding:12px 0;">依頼はありません</div>'}
+    <div class="form-section">出勤希望の従業員</div>
+    <div style="flex-wrap:wrap;display:flex;">
+      ${empReqs.map(r => `<div class="emp-chip${confirmedEmpIds.has(r.empId)?'':''}">${confirmedEmpIds.has(r.empId)?'★ ':''} ${r.empName}</div>`).join('') || '<div style="font-size:12px;color:var(--gray);padding:8px 0;">希望者なし</div>'}
+    </div>
+  `;
+};
+window.openAssignModal = function(reqId, date, courseId, courseName) {
+  window._assignContext = { reqId, date, courseId, courseName };
+  document.getElementById('assignModalTitle').textContent = `${courseName} — 割り振り`;
+  const empList = document.getElementById('assignEmpList');
+  empList.innerHTML = Object.values(window._state.employees).map(e => `
+    <div class="checkbox-row">
+      <input type="checkbox" id="asgEmp-${e.id}" value="${e.id}">
+      <label for="asgEmp-${e.id}">${e.name}</label>
+    </div>
+  `).join('');
+  showModal('assignModal');
+};
+window.doAssign = async function() {
+  const ctx = window._assignContext;
+  if (!ctx) return;
+  const empIds = [...document.querySelectorAll('#assignEmpList input:checked')].map(i => i.value);
+  if (!empIds.length) { showToast('従業員を選択してください'); return; }
+  const start = document.getElementById('assignStart').value;
+  const game = document.getElementById('assignGame').value;
+  const memo = document.getElementById('assignMemo').value;
+  const id = genId();
+  const rec = {
+    id, date: ctx.date, courseId: ctx.courseId, courseName: ctx.courseName,
+    employees: empIds,
+    empId: empIds[0],
+    empName: empIds.map(eid => window._state.employees[eid]?.name||'').join('、'),
+    startTime: start, gameStartTime: game, memo
+  };
+  await saveToFirebase('caddypro/shifts/' + id, rec);
+  const req = window._state.requests[ctx.reqId];
+  if (req) { req.status = 'confirmed'; await saveToFirebase('caddypro/requests/' + ctx.reqId, req); }
+  closeModal('assignModal');
+  showToast('シフトを確定しました');
+  showDayPanel(ctx.date);
+};
+window.rejectRequest = async function(id) {
+  const r = window._state.requests[id];
+  if (!r) return;
+  r.status = 'rejected';
+  await saveToFirebase('caddypro/requests/' + id, r);
+  showToast('依頼を断りました');
+  showDayPanel(r.date);
+};
+
+// ========== REQUESTS ==========
+function updateReqList() {
+  const el = document.getElementById('reqList');
+  if (!el) return;
+  const list = Object.values(window._state.requests||{}).sort((a,b) => a.date.localeCompare(b.date));
+  el.innerHTML = list.length ? list.map(r => {
+    const badge = r.status === 'confirmed' ? '<span class="status status-approved">✅ 確定</span>'
+      : r.status === 'rejected' ? '<span class="status status-rejected">❌ 断る</span>'
+      : '<span class="status status-pending">⏳ 検討中</span>';
+    return `<div class="list-item">
+      <div class="list-info">
+        <div class="list-name">${r.courseName}</div>
+        <div class="list-sub">${r.date}　${r.count}名</div>
+      </div>${badge}
+    </div>`;
+  }).join('') : '<div class="empty">依頼はありません</div>';
+}
+function populateReqModal() {
+  const sel = document.getElementById('reqCourseSel');
+  sel.innerHTML = '';
+  Object.values(window._state.courses).forEach(c => {
+    const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; sel.appendChild(o);
+  });
+  document.getElementById('reqDate').value = todayStr();
+}
+window.doAddRequest = async function() {
+  const courseId = document.getElementById('reqCourseSel').value;
+  const course = window._state.courses[courseId];
+  if (!course) return;
+  const date = document.getElementById('reqDate').value;
+  const count = document.getElementById('reqCount').value;
+  const memo = document.getElementById('reqMemo').value;
+  const id = genId();
+  await saveToFirebase('caddypro/requests/' + id, { id, courseId, courseName: course.name, date, count: parseInt(count), memo, status: 'pending' });
+  closeModal('newReqModal');
+  showToast('依頼を追加しました');
+};
+
+// ========== EMP REQUESTS ==========
+function updateEmpReqList() {
+  const el = document.getElementById('empReqList');
+  if (!el) return;
+  const list = Object.values(window._state.shiftRequests||{})
+    .filter(r => r.status === 'pending').sort((a,b) => a.date.localeCompare(b.date));
+  el.innerHTML = list.length ? list.map(r => `
+    <div class="list-item">
+      <div class="list-info">
+        <div class="list-name">${r.empName}</div>
+        <div class="list-sub">${fmtDate(r.date)}</div>
+      </div>
+      <div class="list-actions">
+        <button class="btn btn-green btn-xs" onclick="openApproveModal('${r.id}')">承認</button>
+        <button class="btn btn-red btn-xs" onclick="rejectEmpReq('${r.id}')">却下</button>
+      </div>
+    </div>
+  `).join('') : '<div class="empty">申請はありません</div>';
+}
+window.openApproveModal = function(reqId) {
+  window._approveReqId = reqId;
+  const r = window._state.shiftRequests[reqId];
+  if (!r) return;
+  document.getElementById('approveModalTitle').textContent = `${r.empName} — ${fmtDate(r.date)}`;
+  const sel = document.getElementById('approveCourseSel');
+  sel.innerHTML = '';
+  Object.values(window._state.courses).forEach(c => {
+    const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; sel.appendChild(o);
+  });
+  showModal('approveModal');
+};
+window.doApproveShiftReq = async function() {
+  const reqId = window._approveReqId;
+  const r = window._state.shiftRequests[reqId];
+  if (!r) return;
+  const courseId = document.getElementById('approveCourseSel').value;
+  const course = window._state.courses[courseId];
+  const start = document.getElementById('approveStart').value;
+  r.status = 'approved';
+  await saveToFirebase('caddypro/shiftRequests/' + reqId, r);
+  const sid = genId();
+  await saveToFirebase('caddypro/shifts/' + sid, {
+    id: sid, date: r.date, courseId, courseName: course?.name||'', empId: r.empId, empName: r.empName, startTime: start
+  });
+  closeModal('approveModal');
+  showToast('承認しました');
+  updateEmpReqList();
+};
+window.rejectEmpReq = async function(id) {
+  const r = window._state.shiftRequests[id];
+  if (!r) return;
+  r.status = 'rejected';
+  await saveToFirebase('caddypro/shiftRequests/' + id, r);
+  showToast('却下しました');
+  updateEmpReqList();
+};
+
+// ========== NOTIFY LIST ==========
+function updateNotifyList() {
+  const el = document.getElementById('notifyList');
+  if (!el) return;
+  const today = todayStr();
+  const list = Object.values(window._state.notices||{})
+    .filter(n => n.date >= today).sort((a,b) => a.date.localeCompare(b.date));
+  el.innerHTML = list.length ? list.map(n => `
+    <div class="list-item ${n.confirmed ? '' : 'notice-unread'}">
+      <div class="list-info">
+        <div class="list-name">${n.empName}　${fmtDate(n.date)}</div>
+        <div class="list-sub">⛳ ${n.courseName}　集合 ${n.startTime||'--:--'}</div>
+      </div>
+      ${n.confirmed ? '<span class="status status-approved">✅ 確認済み</span>' : '<span class="status status-pending">未確認</span>'}
+    </div>
+  `).join('') : '<div class="empty">連絡はありません</div>';
+}
+function populateNoticeModal() {
+  const empSel = document.getElementById('noticeEmpSel');
+  empSel.innerHTML = '';
+  Object.values(window._state.employees).forEach(e => {
+    const o = document.createElement('option'); o.value = e.id; o.textContent = e.name; empSel.appendChild(o);
+  });
+  const cSel = document.getElementById('noticeCourseSel');
+  cSel.innerHTML = '';
+  Object.values(window._state.courses).forEach(c => {
+    const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; cSel.appendChild(o);
+  });
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+  document.getElementById('noticeDate').value = tomorrow.toISOString().slice(0,10);
+}
+window.doAddNotice = async function() {
+  const empId = document.getElementById('noticeEmpSel').value;
+  const courseId = document.getElementById('noticeCourseSel').value;
+  const emp = window._state.employees[empId];
+  const course = window._state.courses[courseId];
+  if (!emp || !course) return;
+  const id = genId();
+  const rec = {
+    id, empId, empName: emp.name, courseId, courseName: course.name,
+    date: document.getElementById('noticeDate').value,
+    startTime: document.getElementById('noticeStart').value,
+    gameStartTime: document.getElementById('noticeGame').value,
+    memo: document.getElementById('noticeMemo').value,
+    confirmed: false
+  };
+  await saveToFirebase('caddypro/notices/' + id, rec);
+  closeModal('noticeModal');
+  showToast('連絡を送信しました');
+};
+
+// ========== ATTEND PENDING ==========
+function updateAttendPendingList() {
+  const el = document.getElementById('attendPendingList');
+  if (!el) return;
+  const list = Object.values(window._state.attendance||{}).filter(a => a.status === 'pending')
+    .sort((a,b) => b.date.localeCompare(a.date));
+  el.innerHTML = list.length ? list.map(a => `
+    <div class="list-item pending">
+      <div class="list-info">
+        <div class="list-name">${a.empName}</div>
+        <div class="list-sub">${a.date}　${a.courseName}　${a.rounds}R　${a.punchTime}</div>
+      </div>
+      <div class="list-actions">
+        <button class="btn btn-green btn-xs" onclick="approveAtt('${a.id}')">承認</button>
+        <button class="btn btn-red btn-xs" onclick="rejectAtt('${a.id}')">却下</button>
+      </div>
+    </div>
+  `).join('') : '<div class="empty">承認待ちはありません</div>';
+}
+
+// ========== MANUAL PUNCH ==========
+function populateManualSelects() {
+  const empSel = document.getElementById('manualEmp');
+  if (!empSel) return;
+  empSel.innerHTML = '';
+  Object.values(window._state.employees).forEach(e => {
+    const o = document.createElement('option'); o.value = e.id; o.textContent = e.name; empSel.appendChild(o);
+  });
+  const cSel = document.getElementById('manualCourse');
+  cSel.innerHTML = '';
+  Object.values(window._state.courses).forEach(c => {
+    const o = document.createElement('option'); o.value = c.id; o.textContent = c.name;
+    o.dataset.cafe = c.cafeteria ? '1' : '0';
+    o.dataset.nom = c.nomination ? '1' : '0';
+    cSel.appendChild(o);
+  });
+  document.getElementById('manualDate').value = todayStr();
+  onManualCourseChange();
+}
+window.onManualCourseChange = function() {
+  const sel = document.getElementById('manualCourse');
+  if (!sel) return;
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt) return;
+  document.getElementById('manualNomGroup').style.display = opt.dataset.nom === '1' ? '' : 'none';
+  document.getElementById('manualCafeGroup').style.display = opt.dataset.cafe === '1' ? '' : 'none';
+};
+window.doManualPunch = async function() {
+  const empId = document.getElementById('manualEmp').value;
+  const courseId = document.getElementById('manualCourse').value;
+  const date = document.getElementById('manualDate').value;
+  const rounds = parseFloat(document.getElementById('manualRounds').value);
+  const nomCount = parseInt(document.getElementById('manualNom').value||'0');
+  const cafeUsed = document.getElementById('manualCafe').checked;
+  const emp = window._state.employees[empId];
+  const course = window._state.courses[courseId];
+  if (!emp || !course || !date) { showToast('入力を確認してください'); return; }
+  const { wage, contractAmount } = computeAttendance(empId, courseId, date, rounds, nomCount, cafeUsed);
+  const now = new Date();
+  const punchTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const id = genId();
+  await saveToFirebase('caddypro/attendance/' + id, {
+    id, empId, empName: emp.name, courseId, courseName: course.name,
+    date, punchTime, rounds, nominationCount: nomCount, cafeteriaUsed: cafeUsed,
+    status: 'approved', wage, contractAmount
+  });
+  showToast('打刻を登録しました');
+};
+
+// ========== ATT LIST ==========
+window.renderAttList = function() {
+  const month = document.getElementById('attListMonth')?.value;
+  const list = Object.values(window._state.attendance||{})
+    .filter(a => a.date.startsWith(month||'')).sort((a,b) => b.date.localeCompare(a.date)).slice(0,30);
+  const body = document.getElementById('attListBody');
+  if (!body) return;
+  body.innerHTML = list.map(a => `
+    <tr>
+      <td>${a.date.slice(5)}</td>
+      <td>${a.empName}</td>
+      <td style="font-size:11px;">${a.courseName}</td>
+      <td>${a.rounds}R</td>
+      <td>${fmtMoney(a.wage)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray);padding:16px;">データなし</td></tr>';
+};
+
+// ========== SALES SUMMARY ==========
+window.renderSalesSummary = function() {
+  const month = document.getElementById('salesMonth')?.value;
+  const atts = Object.values(window._state.attendance||{})
+    .filter(a => a.date.startsWith(month||'') && a.status === 'approved');
+  const totalSales = atts.reduce((s,a) => s+(a.contractAmount||0), 0);
+  const totalWage = atts.reduce((s,a) => s+(a.wage||0), 0);
+  const totalRounds = atts.reduce((s,a) => s+a.rounds, 0);
+  const profit = totalSales > 0 ? Math.round((totalSales-totalWage)/totalSales*100) : 0;
+  document.getElementById('salesTotal').textContent = fmtMoney(totalSales);
+  document.getElementById('salesRounds').textContent = totalRounds + 'R';
+  document.getElementById('salesWage').textContent = fmtMoney(totalWage);
+  document.getElementById('salesProfit').textContent = profit + '%';
+
+  // By course
+  const byCourse = {};
+  atts.forEach(a => {
+    if (!byCourse[a.courseId]) byCourse[a.courseId] = { name: a.courseName, sales:0, rounds:0 };
+    byCourse[a.courseId].sales += (a.contractAmount||0);
+    byCourse[a.courseId].rounds += a.rounds;
+  });
+  document.getElementById('salesByCourse').innerHTML = `<div class="scroll-x"><table class="att-table">
+    <thead><tr><th>ゴルフ場</th><th>売上</th><th>R数</th></tr></thead>
+    <tbody>${Object.values(byCourse).map(c=>`<tr><td>${c.name}</td><td>${fmtMoney(c.sales)}</td><td>${c.rounds}R</td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--gray);">なし</td></tr>'}</tbody>
+  </table></div>`;
+
+  // By emp
+  const byEmp = {};
+  atts.forEach(a => {
+    if (!byEmp[a.empId]) byEmp[a.empId] = { name: a.empName, sales:0, wage:0 };
+    byEmp[a.empId].sales += (a.contractAmount||0);
+    byEmp[a.empId].wage += (a.wage||0);
+  });
+  document.getElementById('salesByEmp').innerHTML = `<div class="scroll-x"><table class="att-table">
+    <thead><tr><th>氏名</th><th>売上</th><th>給料</th><th>利益率</th></tr></thead>
+    <tbody>${Object.values(byEmp).map(e=>{const p=e.sales>0?Math.round((e.sales-e.wage)/e.sales*100):0;return`<tr><td>${e.name}</td><td>${fmtMoney(e.sales)}</td><td>${fmtMoney(e.wage)}</td><td>${p}%</td></tr>`;}).join('')||'<tr><td colspan="4" style="color:var(--gray);">なし</td></tr>'}</tbody>
+  </table></div>`;
+};
+
+// ========== COURSE INVOICE ==========
+window.renderCourseInvoice = function() {
+  const courseId = document.getElementById('invCourse')?.value;
+  const month = document.getElementById('invMonth')?.value;
+  const el = document.getElementById('courseInvPreview');
+  if (!el || !courseId || !month) return;
+  const course = window._state.courses[courseId];
+  if (!course) return;
+  const atts = Object.values(window._state.attendance||{})
+    .filter(a => a.courseId === courseId && a.date.startsWith(month) && a.status === 'approved')
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  // Check if per-employee rates differ
+  const ratesByEmp = {};
+  atts.forEach(a => {
+    if (!ratesByEmp[a.empId]) ratesByEmp[a.empId] = new Set();
+    const r = getRate(a.empId, courseId);
+    ratesByEmp[a.empId].add(JSON.stringify(r));
+  });
+  const uniformRate = Object.keys(ratesByEmp).length <= 1 ||
+    new Set(Object.values(window._state.employees).map(e => JSON.stringify(getRate(e.id, courseId)))).size === 1;
+
+  const subtotal = atts.reduce((s,a) => s+(a.contractAmount||0), 0);
+  const tax = Math.round(subtotal * 0.1);
+  const cafeFees = atts.reduce((s,a) => s+(a.cafeteriaUsed?(course.cafeteriaFee||0):0), 0);
+  const total = subtotal + tax - cafeFees;
+  const [y,m] = month.split('-');
+
+  let rows = '';
+  if (uniformRate) {
+    const byDate = {};
+    atts.forEach(a => {
+      if (!byDate[a.date]) byDate[a.date] = { rounds:0, contract:0 };
+      byDate[a.date].rounds += a.rounds;
+      byDate[a.date].contract += (a.contractAmount||0);
+    });
+    rows = Object.entries(byDate).map(([date,v]) =>
+      `<div class="inv-row"><span>${fmtDate(date)}</span><span class="inv-amount">${v.rounds}R　${fmtMoney(v.contract)}</span></div>`
+    ).join('');
+  } else {
+    const byRate = {};
+    atts.forEach(a => {
+      const r = getRate(a.empId, courseId);
+      const key = JSON.stringify(r);
+      if (!byRate[key]) byRate[key] = { rate:r, rounds:0, contract:0 };
+      byRate[key].rounds += a.rounds;
+      byRate[key].contract += (a.contractAmount||0);
+    });
+    rows = Object.values(byRate).map(v =>
+      `<div class="inv-row"><span>キャディー業務（${v.rounds}R）</span><span class="inv-amount">${fmtMoney(v.contract)}</span></div>`
+    ).join('');
+  }
+
+  el.innerHTML = `
+    <div class="inv-preview">
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px;">${course.name} 御中</div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:14px;">${y}年${parseInt(m)}月分 キャディー派遣</div>
+      ${rows}
+      ${cafeFees ? `<div class="inv-row"><span>食堂利用料</span><span class="inv-amount">△${fmtMoney(cafeFees)}</span></div>` : ''}
+      <div style="height:1px;background:rgba(201,168,76,0.2);margin:8px 0;"></div>
+      <div class="inv-row"><span>小計（税別）</span><span class="inv-amount">${fmtMoney(subtotal)}</span></div>
+      <div class="inv-row"><span>消費税10%</span><span class="inv-amount">${fmtMoney(tax)}</span></div>
+      <div class="inv-row total"><span>合計（税込）</span><span class="inv-amount">${fmtMoney(total)}</span></div>
+    </div>
+  `;
+};
+window.printCourseInvoice = function() {
+  const courseId = document.getElementById('invCourse')?.value;
+  const month = document.getElementById('invMonth')?.value;
+  if (!courseId || !month) return;
+  const course = window._state.courses[courseId];
+  const atts = Object.values(window._state.attendance||{})
+    .filter(a => a.courseId === courseId && a.date.startsWith(month) && a.status === 'approved')
+    .sort((a,b) => a.date.localeCompare(b.date));
+  const subtotal = atts.reduce((s,a) => s+(a.contractAmount||0), 0);
+  const tax = Math.round(subtotal * 0.1);
+  const cafeFees = atts.reduce((s,a) => s+(a.cafeteriaUsed?(course.cafeteriaFee||0):0), 0);
+  const total = subtotal + tax - cafeFees;
+  const [y,m] = month.split('-');
+  const rows = atts.map(a => `<tr><td>${fmtDate(a.date)}</td><td>キャディー業務</td><td>${a.empName}</td><td>${a.rounds}R</td><td style="text-align:right;">${fmtMoney(a.contractAmount)}</td></tr>`).join('');
+  const html = `<div class="print-doc">
+    <h2 style="text-align:center;">請求書</h2>
+    <div style="text-align:right;">発行日：${y}年${parseInt(m)+1}月1日</div>
+    <div style="text-align:right;">登録番号：T9040001118011</div>
+    <div style="margin:16px 0;">〒287-0012 千葉県香取市大倉丁406番地2<br>WIN STAR株式会社　代表取締役 勝俣徳洋<br>TEL 090-9819-8238</div>
+    <div style="font-size:18px;font-weight:bold;margin-bottom:4px;">${course.name} 御中</div>
+    <div style="margin-bottom:16px;">${y}年${parseInt(m)}月分　キャディー派遣請求書</div>
+    <div style="font-size:20px;font-weight:bold;text-align:right;margin-bottom:16px;">合計金額 ${fmtMoney(total)} 円（税込）</div>
+    <table><thead><tr><th>日付</th><th>内容</th><th>氏名</th><th>R数</th><th>金額</th></tr></thead><tbody>${rows}</tbody></table>
+    <div style="text-align:right;margin-top:8px;">小計：${fmtMoney(subtotal)}</div>
+    <div style="text-align:right;">消費税10%：${fmtMoney(tax)}</div>
+    ${cafeFees ? `<div style="text-align:right;">食堂利用料：△${fmtMoney(cafeFees)}</div>` : ''}
+    <div style="text-align:right;font-weight:bold;">合計：${fmtMoney(total)}</div>
+    <hr style="margin:16px 0;">
+    <div>振込先：千葉銀行 富里支店 普通 3680646　WIN STAR株式会社</div>
+  </div>`;
+  const w = window.open('','_blank','width=700,height=900');
+  w.document.write(`<html><head><style>body{margin:0;font-family:'Noto Sans JP',sans-serif;}</style></head><body>${html}</body></html>`);
+  w.document.close(); w.print();
+};
+
+// ========== PAYROLL ==========
+window.renderPayroll = function() {
+  const empId = document.getElementById('payrollEmp')?.value;
+  const month = document.getElementById('payrollMonth')?.value;
+  const el = document.getElementById('payrollPreview');
+  if (!el || !empId || !month) return;
+  const emp = window._state.employees[empId];
+  const atts = Object.values(window._state.attendance||{})
+    .filter(a => a.empId === empId && a.date.startsWith(month) && a.status === 'approved')
+    .sort((a,b) => a.date.localeCompare(b.date));
+  const total = atts.reduce((s,a) => s+(a.wage||0), 0);
+  el.innerHTML = `
+    <div class="inv-preview">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px;">${emp?.name||''} 様</div>
+      ${atts.map(a => `<div class="inv-row"><span>${fmtDate(a.date)} ${a.courseName}</span><span class="inv-amount">${a.rounds}R　${fmtMoney(a.wage)}</span></div>`).join('')}
+      <div style="height:1px;background:rgba(201,168,76,0.2);margin:8px 0;"></div>
+      <div class="inv-row total"><span>合計</span><span class="inv-amount">${fmtMoney(total)}</span></div>
+    </div>
+  `;
+};
+window.printPayroll = function() {
+  const empId = document.getElementById('payrollEmp')?.value;
+  const month = document.getElementById('payrollMonth')?.value;
+  if (!empId || !month) return;
+  const emp = window._state.employees[empId];
+  const atts = Object.values(window._state.attendance||{})
+    .filter(a => a.empId === empId && a.date.startsWith(month) && a.status === 'approved')
+    .sort((a,b) => a.date.localeCompare(b.date));
+  const total = atts.reduce((s,a) => s+(a.wage||0), 0);
+  const [y,m] = month.split('-');
+  const rows = atts.map(a => `<tr><td>${fmtDate(a.date)}</td><td>${a.courseName}</td><td>${a.rounds}R</td><td style="text-align:right;">${fmtMoney(a.wage)}</td></tr>`).join('');
+  const html = `<div class="print-doc">
+    <h2 style="text-align:center;">${emp?.contract==='baito'?'給与明細':'業務委託報酬明細'}</h2>
+    <div style="text-align:right;">${y}年${parseInt(m)}月分</div>
+    <div style="font-size:16px;font-weight:bold;margin:12px 0;">${emp?.name||''} 様</div>
+    <table><thead><tr><th>日付</th><th>ゴルフ場</th><th>R数</th><th>金額</th></tr></thead><tbody>${rows}</tbody></table>
+    <div style="text-align:right;margin-top:8px;font-weight:bold;">合計：${fmtMoney(total)}</div>
+    <hr style="margin:16px 0;">
+    <div>WIN STAR株式会社　〒287-0012 千葉県香取市大倉丁406番地2</div>
+  </div>`;
+  const w = window.open('','_blank','width=700,height=900');
+  w.document.write(`<html><head><style>body{margin:0;font-family:'Noto Sans JP',sans-serif;}</style></head><body>${html}</body></html>`);
+  w.document.close(); w.print();
+};
+
+// ========== EMP LIST (ADMIN) ==========
+window.renderEmpList = function() {
+  const el = document.getElementById('empListAdmin');
+  if (!el) return;
+  const list = Object.values(window._state.employees);
+  const contractLabel = { baito:'アルバイト', invoice_yes:'業委（IN有）', invoice_no:'業委（IN無）', training:'研修' };
+  el.innerHTML = list.length ? list.map(e => `
+    <div class="list-item">
+      <div class="list-info">
+        <div class="list-name">${e.name}</div>
+        <div class="list-sub">${contractLabel[e.contract]||e.contract}　PIN: ****</div>
+      </div>
+      <button class="btn btn-outline btn-xs" onclick="openEmpModal('${e.id}')">編集</button>
+    </div>
+  `).join('') : '<div class="empty">従業員はいません</div>';
+};
+window.openEmpModal = function(id) {
+  const emp = id ? window._state.employees[id] : null;
+  document.getElementById('empModalTitle').textContent = emp ? '従業員を編集' : '従業員を追加';
+  document.getElementById('empModalId').value = id || '';
+  const f = (fid, val) => { document.getElementById(fid).value = val||''; };
+  f('empModalName', emp?.name); f('empModalPin', emp?.pin); f('empModalEmail', emp?.email);
+  f('empModalPhone', emp?.phone); f('empModalAddress', emp?.address);
+  f('empModalInvoice', emp?.invoiceNo); f('empModalCompany', emp?.companyName);
+  f('empModalBankName', emp?.bankName); f('empModalBankBranch', emp?.bankBranch);
+  f('empModalBankAccount', emp?.bankAccount); f('empModalBankHolder', emp?.bankHolder);
+  document.getElementById('empModalContract').value = emp?.contract || 'baito';
+  showModal('empModal');
+};
+window.saveEmp = async function() {
+  const existingId = document.getElementById('empModalId').value;
+  const id = existingId || genId();
+  const f = fid => document.getElementById(fid).value;
+  const rec = {
+    id, name:f('empModalName'), pin:f('empModalPin'), contract:f('empModalContract'),
+    email:f('empModalEmail'), phone:f('empModalPhone'), address:f('empModalAddress'),
+    invoiceNo:f('empModalInvoice'), companyName:f('empModalCompany'),
+    bankName:f('empModalBankName'), bankBranch:f('empModalBankBranch'),
+    bankAccount:f('empModalBankAccount'), bankHolder:f('empModalBankHolder')
+  };
+  await saveToFirebase('caddypro/employees/' + id, rec);
+  closeModal('empModal');
+  showToast('保存しました');
+  renderEmpList();
+};
+
+// ========== COURSE LIST (ADMIN) ==========
+window.renderCourseList = function() {
+  const el = document.getElementById('courseListAdmin');
+  if (!el) return;
+  const list = Object.values(window._state.courses);
+  el.innerHTML = list.length ? list.map(c => `
+    <div class="list-item">
+      <div class="list-info">
+        <div class="list-name">${c.name}</div>
+        <div class="list-sub">締め${c.closingDay}　${c.cafeteria?'食堂あり':''}${c.nomination?'　指名あり':''}</div>
+      </div>
+      <button class="btn btn-outline btn-xs" onclick="openCourseModal('${c.id}')">編集</button>
+    </div>
+  `).join('') : '<div class="empty">ゴルフ場はありません</div>';
+};
+window.toggleCmCafe = function() {
+  document.getElementById('cmCafeDetails').style.display = document.getElementById('cmCafeteria').checked ? '' : 'none';
+};
+window.toggleCmNom = function() {
+  document.getElementById('cmNomDetails').style.display = document.getElementById('cmNomination').checked ? '' : 'none';
+};
+window.addExtraItem = function() {
+  const container = document.getElementById('cmExtraItems');
+  const idx = Date.now();
+  const div = document.createElement('div');
+  div.className = 'extra-item-row';
+  div.innerHTML = `
+    <input class="form-input" placeholder="名称" data-extra="name">
+    <input class="form-input extra-amt" type="number" placeholder="金額" data-extra="amount">
+    <select class="form-input extra-type" data-extra="type">
+      <option value="add">加算</option><option value="subtract">減算</option>
+    </select>
+    <button class="btn btn-red btn-xs btn-del" onclick="this.closest('.extra-item-row').remove()">✕</button>
+  `;
+  container.appendChild(div);
+};
+window.openCourseModal = function(id) {
+  const c = id ? window._state.courses[id] : null;
+  document.getElementById('courseModalTitle').textContent = c ? 'ゴルフ場を編集' : 'ゴルフ場を追加';
+  document.getElementById('courseModalId').value = id || '';
+  const f = (fid, val) => { document.getElementById(fid).value = val||''; };
+  f('cmName', c?.name); f('cmAddress', c?.address); f('cmPhone', c?.phone);
+  f('cmManager', c?.manager); f('cmManagerEmail', c?.managerEmail);
+  f('cmClosing', c?.closingDay||'末日'); f('cmInvoiceDay', c?.invoiceDay||5);
+  f('cmPayment', c?.paymentDue); f('cmCafeFee', c?.cafeteriaFee||0); f('cmNomFee', c?.nominationFee||0);
+  document.getElementById('cmWeekdayWe').checked = !!c?.weekdayWeekend;
+  document.getElementById('cmCafeteria').checked = !!c?.cafeteria;
+  document.getElementById('cmNomination').checked = !!c?.nomination;
+  document.getElementById('cmCafeBurden').value = c?.cafeteriaBurden||'company';
+  document.getElementById('cmCafeDetails').style.display = c?.cafeteria ? '' : 'none';
+  document.getElementById('cmNomDetails').style.display = c?.nomination ? '' : 'none';
+  const extra = document.getElementById('cmExtraItems');
+  extra.innerHTML = '';
+  (c?.extraItems||[]).forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'extra-item-row';
+    div.innerHTML = `
+      <input class="form-input" placeholder="名称" data-extra="name" value="${item.name||''}">
+      <input class="form-input extra-amt" type="number" placeholder="金額" data-extra="amount" value="${item.amount||0}">
+      <select class="form-input extra-type" data-extra="type">
+        <option value="add"${item.type==='add'?' selected':''}>加算</option>
+        <option value="subtract"${item.type==='subtract'?' selected':''}>減算</option>
+      </select>
+      <button class="btn btn-red btn-xs btn-del" onclick="this.closest('.extra-item-row').remove()">✕</button>
+    `;
+    extra.appendChild(div);
+  });
+  showModal('courseModal');
+};
+window.saveCourse = async function() {
+  const existingId = document.getElementById('courseModalId').value;
+  const id = existingId || genId();
+  const f = fid => document.getElementById(fid).value;
+  const extraRows = document.querySelectorAll('#cmExtraItems .extra-item-row');
+  const extraItems = [...extraRows].map(row => ({
+    name: row.querySelector('[data-extra="name"]').value,
+    amount: parseFloat(row.querySelector('[data-extra="amount"]').value)||0,
+    type: row.querySelector('[data-extra="type"]').value
+  }));
+  const rec = {
+    id, name:f('cmName'), address:f('cmAddress'), phone:f('cmPhone'),
+    manager:f('cmManager'), managerEmail:f('cmManagerEmail'),
+    closingDay:f('cmClosing'), invoiceDay:parseInt(f('cmInvoiceDay')||5), paymentDue:f('cmPayment'),
+    weekdayWeekend: document.getElementById('cmWeekdayWe').checked,
+    cafeteria: document.getElementById('cmCafeteria').checked,
+    cafeteriaFee: parseFloat(f('cmCafeFee')||0),
+    cafeteriaBurden: f('cmCafeBurden'),
+    nomination: document.getElementById('cmNomination').checked,
+    nominationFee: parseFloat(f('cmNomFee')||0),
+    extraItems
+  };
+  await saveToFirebase('caddypro/courses/' + id, rec);
+  closeModal('courseModal');
+  showToast('保存しました');
+  renderCourseList();
+};
+
+// ========== RATES ==========
+window.renderRateTab = function() {
+  const sel = document.getElementById('rateCourseSel');
+  sel.innerHTML = '';
+  Object.values(window._state.courses).forEach(c => {
+    const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; sel.appendChild(o);
+  });
+  updateRateTable();
+};
+window.updateRateTable = function() {
+  const courseId = document.getElementById('rateCourseSel')?.value;
+  const course = window._state.courses[courseId];
+  if (!course) return;
+  const emps = Object.values(window._state.employees);
+  const we = course.weekdayWeekend;
+  const headers = we
+    ? '<th>氏名</th><th>契約金(平)</th><th>契約金(土)</th><th>給料(平)</th><th>給料(土)</th>'
+    : '<th>氏名</th><th>契約金</th><th>給料</th>';
+  const rows = emps.map(e => {
+    const r = (window._state.rates[e.id]||{})[courseId] || {};
+    if (we) {
+      return `<tr>
+        <td class="rate-emp-name">${e.name}</td>
+        <td><input class="rate-input" data-emp="${e.id}" data-field="contractWd" value="${r.contractWd||0}"></td>
+        <td><input class="rate-input" data-emp="${e.id}" data-field="contractWe" value="${r.contractWe||0}"></td>
+        <td><input class="rate-input" data-emp="${e.id}" data-field="wageWd" value="${r.wageWd||0}"></td>
+        <td><input class="rate-input" data-emp="${e.id}" data-field="wageWe" value="${r.wageWe||0}"></td>
+      </tr>`;
     } else {
-      document.getElementById('pinErr').textContent = 'PINが違います';
-      pinBuf = '';updateDots();
-      setTimeout(()=>document.getElementById('pinErr').textContent = '',2000);
-      return;
+      return `<tr>
+        <td class="rate-emp-name">${e.name}</td>
+        <td><input class="rate-input" data-emp="${e.id}" data-field="contract" value="${r.contract||0}"></td>
+        <td><input class="rate-input" data-emp="${e.id}" data-field="wage" value="${r.wage||0}"></td>
+      </tr>`;
     }
+  }).join('');
+  document.getElementById('rateTableWrap').innerHTML = `
+    <div class="scroll-x"><table class="rate-table">
+      <thead><tr>${headers}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+  `;
+};
+window.saveRateTable = async function() {
+  const courseId = document.getElementById('rateCourseSel')?.value;
+  if (!courseId) return;
+  const inputs = document.querySelectorAll('#rateTableWrap .rate-input');
+  const rates = window._state.rates;
+  inputs.forEach(input => {
+    const empId = input.dataset.emp;
+    const field = input.dataset.field;
+    if (!rates[empId]) rates[empId] = {};
+    if (!rates[empId][courseId]) rates[empId][courseId] = {};
+    rates[empId][courseId][field] = parseFloat(input.value)||0;
+  });
+  for (const empId of Object.keys(rates)) {
+    await saveToFirebase('caddypro/rates/' + empId, rates[empId]);
   }
-  // Firebaseデータがなければサンプルデータで動作
-  _origCheckPin();
+  showToast('単価を保存しました');
+};
+
+// ========== INIT SELECTS ==========
+function initMonthSelects() {
+  ['salesMonth','invMonth','payrollMonth','attListMonth'].forEach(id => populateMonthSel(id));
 }
+function updateAdminSelects() {
+  const courses = Object.values(window._state.courses);
+  const emps = Object.values(window._state.employees);
+  ['invCourse','rateCourseSel'].forEach(id => {
+    const sel = document.getElementById(id); if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = '';
+    courses.forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; sel.appendChild(o); });
+    if (prev) sel.value = prev;
+  });
+  ['payrollEmp'].forEach(id => {
+    const sel = document.getElementById(id); if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = '';
+    emps.forEach(e => { const o = document.createElement('option'); o.value = e.id; o.textContent = e.name; sel.appendChild(o); });
+    if (prev) sel.value = prev;
+  });
+}
+function updateSalesSelects() {
+  updateAdminSelects();
+  renderSalesSummary();
+  renderCourseInvoice();
+}
+
+// Init
+initMonthSelects();
+renderAdminCal();
 </script>
 
 
