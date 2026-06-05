@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<!-- saved from url=(0045)file:///C:/Users/winst/Downloads/index_6.html -->
-<html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>CaddyPro v3</title>
-<link rel="preconnect" href="https://fonts.googleapis.com/">
-<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
-<link href="./index_files/css2" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
   --gd: #0f2318;
@@ -250,21 +250,21 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
 
 <!-- ===== TOP SCREEN ===== -->
 <div class="screen active" id="topScreen">
-  <div class="fb-bar " id="fbStatus1">🟢 Firebase接続中（リアルタイム同期）</div>
+  <div class="fb-bar" id="fbStatus1">🟡 Firebase接続中...</div>
   <div class="top-logo">
     <div class="top-golf">⛳</div>
     <div class="top-title">CaddyPro</div>
     <div class="top-sub">CADDY DISPATCH SYSTEM</div>
   </div>
   <div class="top-btns">
-    <button class="btn btn-gold" onclick="showScreen(&#39;pinScreen&#39;)">👤 従業員ログイン（PIN番号）</button>
+    <button class="btn btn-gold" onclick="showScreen('pinScreen')">👤 従業員ログイン（PIN番号）</button>
     <button class="btn btn-outline" onclick="adminLogin()">🔒 管理者ログイン（Google）</button>
   </div>
 </div>
 
 <!-- ===== PIN SCREEN ===== -->
 <div class="screen" id="pinScreen">
-  <div class="fb-bar " id="fbStatus2">🟢 Firebase接続中（リアルタイム同期）</div>
+  <div class="fb-bar" id="fbStatus2">🟡 Firebase接続中...</div>
   <div class="pin-header">
     <div style="font-size:16px;font-weight:700;margin-bottom:4px;">PIN番号を入力</div>
     <div style="font-size:12px;color:var(--gray);">4桁のPINを入力してください</div>
@@ -277,33 +277,33 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
   </div>
   <div class="pin-error" id="pinError"></div>
   <div class="pin-pad">
-    <button class="pin-key" onclick="pk(&#39;1&#39;)">1</button>
-    <button class="pin-key" onclick="pk(&#39;2&#39;)">2</button>
-    <button class="pin-key" onclick="pk(&#39;3&#39;)">3</button>
-    <button class="pin-key" onclick="pk(&#39;4&#39;)">4</button>
-    <button class="pin-key" onclick="pk(&#39;5&#39;)">5</button>
-    <button class="pin-key" onclick="pk(&#39;6&#39;)">6</button>
-    <button class="pin-key" onclick="pk(&#39;7&#39;)">7</button>
-    <button class="pin-key" onclick="pk(&#39;8&#39;)">8</button>
-    <button class="pin-key" onclick="pk(&#39;9&#39;)">9</button>
+    <button class="pin-key" onclick="pk('1')">1</button>
+    <button class="pin-key" onclick="pk('2')">2</button>
+    <button class="pin-key" onclick="pk('3')">3</button>
+    <button class="pin-key" onclick="pk('4')">4</button>
+    <button class="pin-key" onclick="pk('5')">5</button>
+    <button class="pin-key" onclick="pk('6')">6</button>
+    <button class="pin-key" onclick="pk('7')">7</button>
+    <button class="pin-key" onclick="pk('8')">8</button>
+    <button class="pin-key" onclick="pk('9')">9</button>
     <div></div>
-    <button class="pin-key" onclick="pk(&#39;0&#39;)">0</button>
+    <button class="pin-key" onclick="pk('0')">0</button>
     <button class="pin-key" onclick="pd()">⌫</button>
   </div>
   <div class="pin-back">
-    <button class="btn btn-ghost" onclick="showScreen(&#39;topScreen&#39;);resetPin();">← 戻る</button>
+    <button class="btn btn-ghost" onclick="showScreen('topScreen');resetPin();">← 戻る</button>
   </div>
 </div>
 
 <!-- ===== EMPLOYEE SCREEN ===== -->
 <div class="screen" id="empScreen">
-  <div class="fb-bar " id="fbStatus3">🟢 Firebase接続中（リアルタイム同期）</div>
+  <div class="fb-bar" id="fbStatus3">🟡 Firebase接続中...</div>
   <div class="emp-header">
     <div class="emp-name-h" id="empNameHeader">---</div>
     <button class="btn btn-ghost btn-sm" onclick="logout()">ログアウト</button>
   </div>
   <div class="menu-grid">
-    <div class="menu-card menu-full" onclick="showSub(&#39;punchSub&#39;)">
+    <div class="menu-card menu-full" onclick="showSub('punchSub')">
       <div class="icon">🕓</div>
       <div class="label">出勤打刻</div>
     </div>
@@ -312,23 +312,23 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
       <div class="label">翌日出勤確認</div>
       <div class="badge" id="noticeBadge" style="display:none;">0</div>
     </div>
-    <div class="menu-card" onclick="showSub(&#39;shiftApplySub&#39;);renderApplyCal();">
+    <div class="menu-card" onclick="showSub('shiftApplySub');renderApplyCal();">
       <div class="icon">📅</div>
       <div class="label">シフト希望申請</div>
     </div>
-    <div class="menu-card" onclick="showSub(&#39;shiftConfSub&#39;);renderShiftConfirmed();">
+    <div class="menu-card" onclick="showSub('shiftConfSub');renderShiftConfirmed();">
       <div class="icon">✅</div>
       <div class="label">確定シフト確認</div>
     </div>
-    <div class="menu-card" onclick="showSub(&#39;invoiceSub&#39;);renderInvoiceSub();">
+    <div class="menu-card" onclick="showSub('invoiceSub');renderInvoiceSub();">
       <div class="icon">📄</div>
       <div class="label">請求書作成</div>
     </div>
-    <div class="menu-card" onclick="showSub(&#39;historySub&#39;);renderEmpHistory();">
+    <div class="menu-card" onclick="showSub('historySub');renderEmpHistory();">
       <div class="icon">📋</div>
       <div class="label">出勤記録</div>
     </div>
-    <div class="menu-card menu-full" onclick="showSub(&#39;myInfoSub&#39;);renderMyInfo();">
+    <div class="menu-card menu-full" onclick="showSub('myInfoSub');renderMyInfo();">
       <div class="icon">👤</div>
       <div class="label">個人情報管理</div>
     </div>
@@ -337,9 +337,9 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
 
 <!-- ===== SUB: PUNCH ===== -->
 <div class="subscreen" id="punchSub">
-  <div class="fb-bar " id="fbStatus3b">🟢 Firebase接続中（リアルタイム同期）</div>
+  <div class="fb-bar" id="fbStatus3b">🟡</div>
   <div class="sub-header">
-    <button class="sub-back" onclick="hideSub(&#39;punchSub&#39;)">←</button>
+    <button class="sub-back" onclick="hideSub('punchSub')">←</button>
     <div class="sub-title">🕓 出勤打刻</div>
   </div>
   <div class="sub-content">
@@ -352,7 +352,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
       <label class="form-label">ラウンド数</label>
       <select class="form-input" id="punchRounds">
         <option value="0.5">0.5R</option>
-        <option value="1" selected="">1R</option>
+        <option value="1" selected>1R</option>
         <option value="1.5">1.5R</option>
         <option value="2">2R</option>
         <option value="2.5">2.5R</option>
@@ -381,7 +381,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
 <div class="subscreen" id="noticeSub">
   <div class="fb-bar">🟡</div>
   <div class="sub-header">
-    <button class="sub-back" onclick="hideSub(&#39;noticeSub&#39;)">←</button>
+    <button class="sub-back" onclick="hideSub('noticeSub')">←</button>
     <div class="sub-title">🔔 翌日出勤確認</div>
   </div>
   <div class="sub-content" id="noticeList"></div>
@@ -391,7 +391,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
 <div class="subscreen" id="shiftApplySub">
   <div class="fb-bar">🟡</div>
   <div class="sub-header">
-    <button class="sub-back" onclick="hideSub(&#39;shiftApplySub&#39;)">←</button>
+    <button class="sub-back" onclick="hideSub('shiftApplySub')">←</button>
     <div class="sub-title">📅 シフト希望申請</div>
   </div>
   <div class="sub-content">
@@ -413,7 +413,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
 <div class="subscreen" id="shiftConfSub">
   <div class="fb-bar">🟡</div>
   <div class="sub-header">
-    <button class="sub-back" onclick="hideSub(&#39;shiftConfSub&#39;)">←</button>
+    <button class="sub-back" onclick="hideSub('shiftConfSub')">←</button>
     <div class="sub-title">✅ 確定シフト</div>
   </div>
   <div class="sub-content">
@@ -428,7 +428,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
 <div class="subscreen" id="invoiceSub">
   <div class="fb-bar">🟡</div>
   <div class="sub-header">
-    <button class="sub-back" onclick="hideSub(&#39;invoiceSub&#39;)">←</button>
+    <button class="sub-back" onclick="hideSub('invoiceSub')">←</button>
     <div class="sub-title">📄 請求書作成</div>
   </div>
   <div class="sub-content">
@@ -445,7 +445,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
 <div class="subscreen" id="historySub">
   <div class="fb-bar">🟡</div>
   <div class="sub-header">
-    <button class="sub-back" onclick="hideSub(&#39;historySub&#39;)">←</button>
+    <button class="sub-back" onclick="hideSub('historySub')">←</button>
     <div class="sub-title">📋 出勤記録</div>
   </div>
   <div class="sub-content">
@@ -460,7 +460,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
 <div class="subscreen" id="myInfoSub">
   <div class="fb-bar">🟡</div>
   <div class="sub-header">
-    <button class="sub-back" onclick="hideSub(&#39;myInfoSub&#39;)">←</button>
+    <button class="sub-back" onclick="hideSub('myInfoSub')">←</button>
     <div class="sub-title">👤 個人情報管理</div>
   </div>
   <div class="sub-content">
@@ -494,17 +494,17 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
 
 <!-- ===== ADMIN SCREEN ===== -->
 <div class="screen" id="adminScreen">
-  <div class="fb-bar " id="fbStatus4">🟢 Firebase接続中（リアルタイム同期）</div>
+  <div class="fb-bar" id="fbStatus4">🟡 Firebase接続中...</div>
   <div class="admin-header">
     <div class="admin-logo">⛳ CaddyPro 管理者</div>
     <button class="btn btn-ghost btn-sm" onclick="logout()">ログアウト</button>
   </div>
   <div class="tab-bar">
-    <button class="tab-btn active" onclick="setTab(&#39;dash&#39;,this)">ダッシュボード</button>
-    <button class="tab-btn" onclick="setTab(&#39;shift&#39;,this)">シフト管理</button>
-    <button class="tab-btn" onclick="setTab(&#39;attend&#39;,this)">勤怠管理</button>
-    <button class="tab-btn" onclick="setTab(&#39;sales&#39;,this)">売上・請求</button>
-    <button class="tab-btn" onclick="setTab(&#39;config&#39;,this)">設定</button>
+    <button class="tab-btn active" onclick="setTab('dash',this)">ダッシュボード</button>
+    <button class="tab-btn" onclick="setTab('shift',this)">シフト管理</button>
+    <button class="tab-btn" onclick="setTab('attend',this)">勤怠管理</button>
+    <button class="tab-btn" onclick="setTab('sales',this)">売上・請求</button>
+    <button class="tab-btn" onclick="setTab('config',this)">設定</button>
   </div>
 
   <!-- DASH TAB -->
@@ -530,116 +530,26 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
   <!-- SHIFT TAB -->
   <div class="tab-content" id="tab-shift">
     <div class="sub-tab-bar">
-      <button class="stab-btn active" onclick="setSTab(&#39;shift&#39;,&#39;cal&#39;,this)">カレンダー</button>
-      <button class="stab-btn" onclick="setSTab(&#39;shift&#39;,&#39;req&#39;,this)">ゴルフ場依頼</button>
-      <button class="stab-btn" onclick="setSTab(&#39;shift&#39;,&#39;empreq&#39;,this)">従業員申請</button>
-      <button class="stab-btn" onclick="setSTab(&#39;shift&#39;,&#39;notify&#39;,this)">翌日連絡</button>
+      <button class="stab-btn active" onclick="setSTab('shift','cal',this)">カレンダー</button>
+      <button class="stab-btn" onclick="setSTab('shift','req',this)">ゴルフ場依頼</button>
+      <button class="stab-btn" onclick="setSTab('shift','empreq',this)">従業員申請</button>
+      <button class="stab-btn" onclick="setSTab('shift','notify',this)">翌日連絡</button>
     </div>
     <!-- Calendar -->
     <div class="stab-content active" id="stab-shift-cal">
       <div class="cal-nav">
         <button class="cal-nav-btn" onclick="adminCalPrev()">‹</button>
-        <div class="cal-month" id="adminCalMonth">2026年6月</div>
+        <div class="cal-month" id="adminCalMonth"></div>
         <button class="cal-nav-btn" onclick="adminCalNext()">›</button>
       </div>
-      <div class="cal-grid" id="adminCalGrid"><div class="cal-dow">日</div><div class="cal-dow">月</div><div class="cal-dow">火</div><div class="cal-dow">水</div><div class="cal-dow">木</div><div class="cal-dow">金</div><div class="cal-dow">土</div><div class="cal-day other-month"></div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-01&#39;)">
-      <div class="cal-num">1</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-02&#39;)">
-      <div class="cal-num">2</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-03&#39;)">
-      <div class="cal-num">3</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-04&#39;)">
-      <div class="cal-num">4</div>
-      
-    </div><div class="cal-day today" onclick="showDayPanel(&#39;2026-06-05&#39;)">
-      <div class="cal-num">5</div>
-      
-    </div><div class="cal-day sat" onclick="showDayPanel(&#39;2026-06-06&#39;)">
-      <div class="cal-num">6</div>
-      
-    </div><div class="cal-day sun" onclick="showDayPanel(&#39;2026-06-07&#39;)">
-      <div class="cal-num">7</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-08&#39;)">
-      <div class="cal-num">8</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-09&#39;)">
-      <div class="cal-num">9</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-10&#39;)">
-      <div class="cal-num">10</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-11&#39;)">
-      <div class="cal-num">11</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-12&#39;)">
-      <div class="cal-num">12</div>
-      
-    </div><div class="cal-day sat" onclick="showDayPanel(&#39;2026-06-13&#39;)">
-      <div class="cal-num">13</div>
-      
-    </div><div class="cal-day sun" onclick="showDayPanel(&#39;2026-06-14&#39;)">
-      <div class="cal-num">14</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-15&#39;)">
-      <div class="cal-num">15</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-16&#39;)">
-      <div class="cal-num">16</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-17&#39;)">
-      <div class="cal-num">17</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-18&#39;)">
-      <div class="cal-num">18</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-19&#39;)">
-      <div class="cal-num">19</div>
-      
-    </div><div class="cal-day sat" onclick="showDayPanel(&#39;2026-06-20&#39;)">
-      <div class="cal-num">20</div>
-      
-    </div><div class="cal-day sun" onclick="showDayPanel(&#39;2026-06-21&#39;)">
-      <div class="cal-num">21</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-22&#39;)">
-      <div class="cal-num">22</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-23&#39;)">
-      <div class="cal-num">23</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-24&#39;)">
-      <div class="cal-num">24</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-25&#39;)">
-      <div class="cal-num">25</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-26&#39;)">
-      <div class="cal-num">26</div>
-      
-    </div><div class="cal-day sat" onclick="showDayPanel(&#39;2026-06-27&#39;)">
-      <div class="cal-num">27</div>
-      
-    </div><div class="cal-day sun" onclick="showDayPanel(&#39;2026-06-28&#39;)">
-      <div class="cal-num">28</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-29&#39;)">
-      <div class="cal-num">29</div>
-      
-    </div><div class="cal-day" onclick="showDayPanel(&#39;2026-06-30&#39;)">
-      <div class="cal-num">30</div>
-      
-    </div></div>
+      <div class="cal-grid" id="adminCalGrid"></div>
       <div id="shiftDayPanel" style="display:none;"></div>
     </div>
     <!-- Requests -->
     <div class="stab-content" id="stab-shift-req">
       <div class="section-hdr">
         <div class="section-hdr-title">ゴルフ場からの依頼</div>
-        <button class="btn btn-outline btn-sm" onclick="showModal(&#39;newReqModal&#39;)">+ 追加</button>
+        <button class="btn btn-outline btn-sm" onclick="showModal('newReqModal')">+ 追加</button>
       </div>
       <div id="reqList"></div>
     </div>
@@ -652,7 +562,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
     <div class="stab-content" id="stab-shift-notify">
       <div class="section-hdr">
         <div class="section-hdr-title">翌日出勤連絡</div>
-        <button class="btn btn-outline btn-sm" onclick="showModal(&#39;noticeModal&#39;)">+ 追加</button>
+        <button class="btn btn-outline btn-sm" onclick="showModal('noticeModal')">+ 追加</button>
       </div>
       <div id="notifyList"></div>
     </div>
@@ -661,9 +571,9 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
   <!-- ATTEND TAB -->
   <div class="tab-content" id="tab-attend">
     <div class="sub-tab-bar">
-      <button class="stab-btn active" onclick="setSTab(&#39;attend&#39;,&#39;pending&#39;,this)">承認待ち</button>
-      <button class="stab-btn" onclick="setSTab(&#39;attend&#39;,&#39;manual&#39;,this)">手動打刻</button>
-      <button class="stab-btn" onclick="setSTab(&#39;attend&#39;,&#39;list&#39;,this);renderAttList();">一覧</button>
+      <button class="stab-btn active" onclick="setSTab('attend','pending',this)">承認待ち</button>
+      <button class="stab-btn" onclick="setSTab('attend','manual',this)">手動打刻</button>
+      <button class="stab-btn" onclick="setSTab('attend','list',this);renderAttList();">一覧</button>
     </div>
     <div class="stab-content active" id="stab-attend-pending">
       <div id="attendPendingList"></div>
@@ -674,7 +584,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
       <div class="form-group"><label class="form-label">ゴルフ場</label><select class="form-input" id="manualCourse" onchange="onManualCourseChange()"></select></div>
       <div class="form-group"><label class="form-label">ラウンド数</label>
         <select class="form-input" id="manualRounds">
-          <option value="0.5">0.5R</option><option value="1" selected="">1R</option><option value="1.5">1.5R</option><option value="2">2R</option><option value="2.5">2.5R</option>
+          <option value="0.5">0.5R</option><option value="1" selected>1R</option><option value="1.5">1.5R</option><option value="2">2R</option><option value="2.5">2.5R</option>
         </select>
       </div>
       <div class="form-group" id="manualNomGroup">
@@ -687,7 +597,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
       <button class="btn btn-gold" style="width:100%;" onclick="doManualPunch()">✅ 打刻を登録</button>
     </div>
     <div class="stab-content" id="stab-attend-list">
-      <div class="form-group"><select class="form-input" id="attListMonth" onchange="renderAttList()"><option value="2026-06">2026年6月</option><option value="2026-05">2026年5月</option><option value="2026-04">2026年4月</option><option value="2026-03">2026年3月</option><option value="2026-02">2026年2月</option><option value="2026-01">2026年1月</option></select></div>
+      <div class="form-group"><select class="form-input" id="attListMonth" onchange="renderAttList()"></select></div>
       <div class="scroll-x"><table class="att-table" id="attListTable">
         <thead><tr><th>日付</th><th>氏名</th><th>ゴルフ場</th><th>R数</th><th>給料</th></tr></thead>
         <tbody id="attListBody"></tbody>
@@ -698,12 +608,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
   <!-- SALES TAB -->
   <div class="tab-content" id="tab-sales">
     <div class="sub-tab-bar">
-      <button class="stab-btn active" onclick="setSTab(&#39;sales&#39;,&#39;summary&#39;,this);renderSalesSummary();">売上</button>
-      <button class="stab-btn" onclick="setSTab(&#39;sales&#39;,&#39;invoice&#39;,this);renderCourseInvoice();">ゴルフ場請求書</button>
-      <button class="stab-btn" onclick="setSTab(&#39;sales&#39;,&#39;payroll&#39;,this);">給与明細</button>
+      <button class="stab-btn active" onclick="setSTab('sales','summary',this);renderSalesSummary();">売上</button>
+      <button class="stab-btn" onclick="setSTab('sales','invoice',this);renderCourseInvoice();">ゴルフ場請求書</button>
+      <button class="stab-btn" onclick="setSTab('sales','payroll',this);">給与明細</button>
     </div>
     <div class="stab-content active" id="stab-sales-summary">
-      <div class="form-group"><select class="form-input" id="salesMonth" onchange="renderSalesSummary()"><option value="2026-06">2026年6月</option><option value="2026-05">2026年5月</option><option value="2026-04">2026年4月</option><option value="2026-03">2026年3月</option><option value="2026-02">2026年2月</option><option value="2026-01">2026年1月</option></select></div>
+      <div class="form-group"><select class="form-input" id="salesMonth" onchange="renderSalesSummary()"></select></div>
       <div class="stats-row stats-4" style="margin-bottom:16px;">
         <div class="stat-card"><div class="stat-num mono" id="salesTotal">¥0</div><div class="stat-label">総売上</div></div>
         <div class="stat-card"><div class="stat-num mono" id="salesRounds">0R</div><div class="stat-label">ラウンド</div></div>
@@ -717,7 +627,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
     </div>
     <div class="stab-content" id="stab-sales-invoice">
       <div class="form-group"><label class="form-label">ゴルフ場</label><select class="form-input" id="invCourse" onchange="renderCourseInvoice()"></select></div>
-      <div class="form-group"><label class="form-label">対象月</label><select class="form-input" id="invMonth" onchange="renderCourseInvoice()"><option value="2026-06">2026年6月</option><option value="2026-05">2026年5月</option><option value="2026-04">2026年4月</option><option value="2026-03">2026年3月</option><option value="2026-02">2026年2月</option><option value="2026-01">2026年1月</option></select></div>
+      <div class="form-group"><label class="form-label">対象月</label><select class="form-input" id="invMonth" onchange="renderCourseInvoice()"></select></div>
       <div id="courseInvPreview"></div>
       <div style="display:flex;gap:8px;margin-top:8px;">
         <button class="btn btn-gold" style="flex:1;" onclick="printCourseInvoice()">🖨️ 印刷</button>
@@ -725,7 +635,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
     </div>
     <div class="stab-content" id="stab-sales-payroll">
       <div class="form-group"><label class="form-label">従業員</label><select class="form-input" id="payrollEmp" onchange="renderPayroll()"></select></div>
-      <div class="form-group"><label class="form-label">対象月</label><select class="form-input" id="payrollMonth" onchange="renderPayroll()"><option value="2026-06">2026年6月</option><option value="2026-05">2026年5月</option><option value="2026-04">2026年4月</option><option value="2026-03">2026年3月</option><option value="2026-02">2026年2月</option><option value="2026-01">2026年1月</option></select></div>
+      <div class="form-group"><label class="form-label">対象月</label><select class="form-input" id="payrollMonth" onchange="renderPayroll()"></select></div>
       <div id="payrollPreview"></div>
       <button class="btn btn-gold" style="width:100%;margin-top:8px;" onclick="printPayroll()">🖨️ 印刷</button>
     </div>
@@ -734,9 +644,9 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
   <!-- CONFIG TAB -->
   <div class="tab-content" id="tab-config">
     <div class="sub-tab-bar">
-      <button class="stab-btn active" onclick="setSTab(&#39;config&#39;,&#39;emps&#39;,this);renderEmpList();">従業員</button>
-      <button class="stab-btn" onclick="setSTab(&#39;config&#39;,&#39;courses&#39;,this);renderCourseList();">ゴルフ場</button>
-      <button class="stab-btn" onclick="setSTab(&#39;config&#39;,&#39;rates&#39;,this);renderRateTab();">単価設定</button>
+      <button class="stab-btn active" onclick="setSTab('config','emps',this);renderEmpList();">従業員</button>
+      <button class="stab-btn" onclick="setSTab('config','courses',this);renderCourseList();">ゴルフ場</button>
+      <button class="stab-btn" onclick="setSTab('config','rates',this);renderRateTab();">単価設定</button>
     </div>
     <div class="stab-content active" id="stab-config-emps">
       <div class="section-hdr">
@@ -774,7 +684,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
     <div class="form-group"><label class="form-label">コメント</label><input class="form-input" id="assignMemo"></div>
     <div class="form-group"><label class="form-label">従業員</label><div id="assignEmpList" style="display:flex;flex-direction:column;gap:8px;margin-top:6px;"></div></div>
     <div style="display:flex;gap:8px;margin-top:8px;">
-      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal(&#39;assignModal&#39;)">キャンセル</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal('assignModal')">キャンセル</button>
       <button class="btn btn-gold" style="flex:1;" onclick="doAssign()">確定する</button>
     </div>
   </div>
@@ -787,7 +697,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
     <div class="form-group"><label class="form-label">派遣先ゴルフ場</label><select class="form-input" id="approveCourseSel"></select></div>
     <div class="form-group"><label class="form-label">集合時間</label><input class="form-input" type="time" id="approveStart"></div>
     <div style="display:flex;gap:8px;margin-top:8px;">
-      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal(&#39;approveModal&#39;)">キャンセル</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal('approveModal')">キャンセル</button>
       <button class="btn btn-gold" style="flex:1;" onclick="doApproveShiftReq()">承認する</button>
     </div>
   </div>
@@ -804,7 +714,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
     <div class="form-group"><label class="form-label">スタート時間</label><input class="form-input" type="time" id="noticeGame"></div>
     <div class="form-group"><label class="form-label">コメント</label><input class="form-input" id="noticeMemo"></div>
     <div style="display:flex;gap:8px;margin-top:8px;">
-      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal(&#39;noticeModal&#39;)">キャンセル</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal('noticeModal')">キャンセル</button>
       <button class="btn btn-gold" style="flex:1;" onclick="doAddNotice()">送信する</button>
     </div>
   </div>
@@ -823,7 +733,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
     </div>
     <div class="form-group"><label class="form-label">備考</label><input class="form-input" id="reqMemo"></div>
     <div style="display:flex;gap:8px;margin-top:8px;">
-      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal(&#39;newReqModal&#39;)">キャンセル</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal('newReqModal')">キャンセル</button>
       <button class="btn btn-gold" style="flex:1;" onclick="doAddRequest()">追加する</button>
     </div>
   </div>
@@ -854,7 +764,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
     <div class="form-group"><label class="form-label">口座番号</label><input class="form-input" id="empModalBankAccount"></div>
     <div class="form-group"><label class="form-label">口座名義</label><input class="form-input" id="empModalBankHolder"></div>
     <div style="display:flex;gap:8px;margin-top:8px;">
-      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal(&#39;empModal&#39;)">キャンセル</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal('empModal')">キャンセル</button>
       <button class="btn btn-gold" style="flex:1;" onclick="saveEmp()">保存する</button>
     </div>
   </div>
@@ -906,7 +816,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
     <div id="cmExtraItems"></div>
     <button class="btn btn-outline btn-sm" onclick="addExtraItem()" style="margin-bottom:12px;">+ 追加項目を追加</button>
     <div style="display:flex;gap:8px;margin-top:8px;">
-      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal(&#39;courseModal&#39;)">キャンセル</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal('courseModal')">キャンセル</button>
       <button class="btn btn-gold" style="flex:1;" onclick="saveCourse()">保存する</button>
     </div>
   </div>
@@ -917,15 +827,15 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
   <div class="modal" style="border-radius:24px;max-width:320px;margin:auto;">
     <div class="modal-title" id="confirmMsg">確認</div>
     <div style="display:flex;gap:8px;margin-top:8px;">
-      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal(&#39;confirmModal&#39;);if(window._confirmNo)window._confirmNo();">キャンセル</button>
-      <button class="btn btn-gold" style="flex:1;" onclick="closeModal(&#39;confirmModal&#39;);if(window._confirmYes)window._confirmYes();">OK</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal('confirmModal');if(window._confirmNo)window._confirmNo();">キャンセル</button>
+      <button class="btn btn-gold" style="flex:1;" onclick="closeModal('confirmModal');if(window._confirmYes)window._confirmYes();">OK</button>
     </div>
   </div>
 </div>
 
-<script src="./index_files/firebase-app-compat.js.ダウンロード"></script>
-<script src="./index_files/firebase-database-compat.js.ダウンロード"></script>
-<script src="./index_files/firebase-auth-compat.js.ダウンロード"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script>
 
 const firebaseConfig = {
@@ -2346,6 +2256,5 @@ function updateSalesSelects() {
 initMonthSelects();
 renderAdminCal();
 </script>
-
-
-</body></html>
+</body>
+</html>
