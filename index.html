@@ -258,7 +258,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gd);color:var(--crea
   </div>
   <div class="top-btns">
     <button class="btn btn-gold" onclick="showScreen('pinScreen')">👤 従業員ログイン（PIN番号）</button>
-    <button class="btn btn-outline" onclick="adminLogin()">🔒 管理者ログイン（Google）</button>
+    <div style="display:flex;gap:8px;"><input class="form-input" id="adminPinInput" type="password" maxlength="4" inputmode="numeric" placeholder="管理者PIN" style="flex:1;min-height:52px;"><button class="btn btn-outline" onclick="adminLogin()" style="flex:1;">🔒 管理者ログイン</button></div>
   </div>
 </div>
 
@@ -1014,24 +1014,25 @@ window.setSTab = function(group, name, el) {
 };
 
 // ========== AUTH ==========
-window.adminLogin = async function() {
-  try {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    await auth.signInWithPopup(provider);
+window.adminLogin = function() {
+  var input = document.getElementById('adminPinInput').value;
+  if(input === '8683') {
     window._isAdmin = true;
-    updateFbStatus(true);
-    loadAllData();
     initMonthSelects();
     updateAdminSelects();
     renderDashboard(window._state);
+    renderAdminCal();
     showScreen('adminScreen');
-  } catch(e) { showToast('ログイン失敗: ' + e.message); }
+  } else {
+    showToast('パスワードが違います');
+    document.getElementById('adminPinInput').value = '';
+  }
 };
+
 window.logout = function() {
   window._isAdmin = false;
   window._currentEmp = null;
-  auth.signOut().catch(()=>{});
-  auth.signInAnonymously().then(() => { updateFbStatus(true); loadAllData(); }).catch(() => updateFbStatus(false));
+ 
   showScreen('topScreen');
   resetPin();
 };
