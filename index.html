@@ -252,6 +252,21 @@ textarea{min-height:80px;resize:vertical}
 .tbl td{padding:8px 6px;border-bottom:1px solid rgba(201,168,76,.1);white-space:nowrap}
 .tbl td.num,.tbl th.num{text-align:right;font-family:'DM Mono',monospace}
 .tbl tr:last-child td{border-bottom:none}
+
+/* ===== 請求書プレビュー（白紙） ===== */
+.inv-doc{background:#fff;color:#111;border-radius:10px;padding:18px 16px;font-size:12px;line-height:1.6}
+.inv-doc h1{font-size:20px;text-align:center;letter-spacing:8px;margin-bottom:14px;font-weight:700}
+.inv-doc .row{display:flex;justify-content:space-between;gap:12px}
+.inv-doc .to{font-size:15px;font-weight:700;margin:8px 0}
+.inv-doc .total-box{border:2px solid #111;padding:8px 12px;font-size:16px;font-weight:700;text-align:center;margin:12px 0}
+.inv-doc table{width:100%;border-collapse:collapse;margin:10px 0;font-size:11px}
+.inv-doc th,.inv-doc td{border:1px solid #999;padding:5px 6px;text-align:left}
+.inv-doc td.num,.inv-doc th.num{text-align:right;font-variant-numeric:tabular-nums}
+.inv-doc .sum{margin-top:8px}
+.inv-doc .sum div{display:flex;justify-content:space-between;padding:2px 0}
+.inv-doc .sum .grand{font-size:15px;font-weight:700;border-top:2px solid #111;margin-top:4px;padding-top:6px}
+.inv-doc .bank{margin-top:12px;padding-top:8px;border-top:1px dashed #999;font-size:11px}
+.inv-doc .co{margin-top:10px;font-size:11px;color:#333}
 </style>
 </head>
 <body>
@@ -411,9 +426,32 @@ textarea{min-height:80px;resize:vertical}
       <button class="stab" onclick="setSTab('sales','invoice',this)">ゴルフ場請求書</button>
       <button class="stab" onclick="setSTab('sales','payroll',this)">給与明細</button>
     </div>
-    <div class="stab-panel active" id="sales-summary"><div class="empty">（Stage 4で実装）</div></div>
-    <div class="stab-panel" id="sales-invoice"><div class="empty">（Stage 4で実装）</div></div>
-    <div class="stab-panel" id="sales-payroll"><div class="empty">（Stage 4で実装）</div></div>
+    <div class="stab-panel active" id="sales-summary">
+      <div class="field"><label>対象月</label><select id="salesMonth" onchange="renderSalesSummary()"></select></div>
+      <div class="stat-row c2">
+        <div class="stat"><div class="n" id="sSales">¥0</div><div class="l">総売上</div></div>
+        <div class="stat"><div class="n" id="sRounds">0</div><div class="l">総ラウンド</div></div>
+        <div class="stat"><div class="n" id="sWage">¥0</div><div class="l">総給料</div></div>
+        <div class="stat"><div class="n" id="sProfit">0%</div><div class="l">利益率</div></div>
+      </div>
+      <div class="card"><h3 style="font-size:15px;margin-bottom:10px">ゴルフ場別売上</h3><div style="overflow-x:auto"><table class="tbl" id="salesByCourse"></table></div></div>
+      <div class="card"><h3 style="font-size:15px;margin-bottom:10px">従業員別売上</h3><div style="overflow-x:auto"><table class="tbl" id="salesByEmp"></table></div></div>
+    </div>
+    <div class="stab-panel" id="sales-invoice">
+      <div class="field"><label>ゴルフ場</label><select id="ciCourse" onchange="renderCourseInvoice()"></select></div>
+      <div class="field"><label>対象月</label><select id="ciMonth" onchange="renderCourseInvoice()"></select></div>
+      <div class="card" id="ciPreview"><div class="empty">ゴルフ場と月を選択してください</div></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn block" onclick="printCourseInvoice()">🖨️ 印刷</button>
+        <button class="btn sec block" onclick="mailCourseInvoice()">📧 メールで送付</button>
+      </div>
+    </div>
+    <div class="stab-panel" id="sales-payroll">
+      <div class="field"><label>従業員</label><select id="plEmp" onchange="renderPayroll()"></select></div>
+      <div class="field"><label>対象月</label><select id="plMonth" onchange="renderPayroll()"></select></div>
+      <div class="card" id="plPreview"><div class="empty">従業員と月を選択してください</div></div>
+      <button class="btn block" onclick="printPayroll()">🖨️ 印刷</button>
+    </div>
   </div>
 
   <!-- タブ⑤設定 -->
@@ -489,7 +527,16 @@ textarea{min-height:80px;resize:vertical}
 </div>
 <div id="invoiceSub" class="subscreen">
   <div class="sub-header"><button class="back-btn" onclick="closeSub('invoiceSub')">←</button><span class="h">📄 請求書作成</span></div>
-  <div class="wrap"><div class="empty">（Stage 4で実装）</div></div>
+  <div class="wrap">
+    <div class="field"><label>対象月</label><select id="invMonthSel" onchange="renderInvoiceSub()"></select></div>
+    <div class="stat-row c2">
+      <div class="stat"><div class="n" id="invDays">0</div><div class="l">出勤日数</div></div>
+      <div class="stat"><div class="n" id="invRounds">0</div><div class="l">ラウンド数</div></div>
+      <div class="stat"><div class="n" id="invTotal">¥0</div><div class="l">請求金額(税込)</div></div>
+      <div class="stat"><div class="n" id="invTax">¥0</div><div class="l">消費税</div></div>
+    </div>
+    <button class="btn block" id="invPrintBtn" onclick="printInvoice()">🖨️ 請求書を印刷</button>
+  </div>
 </div>
 <div id="historySub" class="subscreen">
   <div class="sub-header"><button class="back-btn" onclick="closeSub('historySub')">←</button><span class="h">📋 出勤記録</span></div>
@@ -1281,6 +1328,296 @@ window.renderAll = function(node){
 };
 function isPanelActive(id){ const el=document.getElementById(id); return el && el.classList.contains('active') && document.getElementById('adminScreen').classList.contains('active'); }
 window.isPanelActive = isPanelActive;
+
+/* ===================== Stage 4: 売上・請求 ===================== */
+
+const COMPANY = {
+  name:'WIN STAR株式会社', zip:'〒287-0012', addr:'千葉県香取市大倉丁406番地2',
+  tel:'090-9819-8238', ceo:'勝俣徳洋', invoiceNo:'T9040001118011',
+  bank:'千葉銀行富里支店 普通3680646 WIN STAR株式会社'
+};
+function num(n){ return (Number(n)||0).toLocaleString('ja-JP'); }
+function wareki(d){ return `令和${d.getFullYear()-2018}年${d.getMonth()+1}月${d.getDate()}日`; }
+function warekiYM(ym){ const [y,m]=ym.split('-'); return `令和${Number(y)-2018}年${Number(m)}月`; }
+
+/* --- 売上サマリー --- */
+function salesAgg(ym){
+  const atts = Object.values(window._state.attendance||{}).filter(a=>a.status==='approved' && (a.date||'').slice(0,7)===ym);
+  const byCourse = {}, byEmp = {};
+  let totalSales=0, totalRounds=0, totalWage=0;
+  atts.forEach(a=>{
+    const sale=Number(a.contractAmount)||0, w=Number(a.wage)||0, r=Number(a.rounds)||0;
+    totalSales+=sale; totalRounds+=r; totalWage+=w;
+    (byCourse[a.courseId] ||= {name:a.courseName,sales:0,rounds:0})['sales']+=sale;
+    byCourse[a.courseId].rounds+=r;
+    (byEmp[a.empId] ||= {name:a.empName,sales:0,wage:0})['sales']+=sale;
+    byEmp[a.empId].wage+=w;
+  });
+  return {totalSales,totalRounds,totalWage,byCourse,byEmp};
+}
+function renderSalesSummary(){
+  const ym = document.getElementById('salesMonth').value || todayStr().slice(0,7);
+  const a = salesAgg(ym);
+  const profit = a.totalSales ? Math.round((a.totalSales-a.totalWage)/a.totalSales*100) : 0;
+  setText('sSales', yen(a.totalSales)); setText('sRounds', a.totalRounds);
+  setText('sWage', yen(a.totalWage)); setText('sProfit', profit+'%');
+  const ct = document.getElementById('salesByCourse');
+  const courses = Object.values(a.byCourse).sort((x,y)=>y.sales-x.sales);
+  ct.innerHTML = '<thead><tr><th>ゴルフ場</th><th class="num">売上</th><th class="num">R数</th></tr></thead><tbody>' +
+    (courses.length ? courses.map(c=>`<tr><td>${esc(c.name)}</td><td class="num">${yen(c.sales)}</td><td class="num">${c.rounds}</td></tr>`).join('')
+      : '<tr><td colspan="3"><div class="empty">データなし</div></td></tr>') + '</tbody>';
+  const et = document.getElementById('salesByEmp');
+  const emps = Object.values(a.byEmp).sort((x,y)=>y.sales-x.sales);
+  et.innerHTML = '<thead><tr><th>氏名</th><th class="num">売上</th><th class="num">給料</th><th class="num">利益率</th></tr></thead><tbody>' +
+    (emps.length ? emps.map(e=>{const p=e.sales?Math.round((e.sales-e.wage)/e.sales*100):0;return `<tr><td>${esc(e.name)}</td><td class="num">${yen(e.sales)}</td><td class="num">${yen(e.wage)}</td><td class="num">${p}%</td></tr>`;}).join('')
+      : '<tr><td colspan="4"><div class="empty">データなし</div></td></tr>') + '</tbody>';
+}
+window.renderSalesSummary = renderSalesSummary;
+
+/* --- ゴルフ場請求書 --- */
+function computeCourseInvoice(courseId, ym){
+  const course = (window._state.courses||{})[courseId] || {};
+  const atts = Object.values(window._state.attendance||{})
+    .filter(a=>a.status==='approved' && a.courseId===courseId && (a.date||'').slice(0,7)===ym)
+    .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  let caddy=0, nomination=0, cafeteria=0;
+  const rateSet = new Set();
+  atts.forEach(a=>{
+    const c = Number(a.contractAmount)||0;
+    caddy += c;
+    if(a.rounds) rateSet.add(Math.round(c/a.rounds));
+    nomination += (Number(course.nominationFee)||0) * (Number(a.nominationCount)||0);
+    if(a.cafeteriaUsed) cafeteria += (Number(course.cafeteriaFee)||0);
+  });
+  let extraAdd=0, extraSub=0;
+  (course.extraItems||[]).forEach(it=>{
+    const amt=Number(it.amount)||0;
+    if(it.type==='subtract') extraSub+=amt; else extraAdd+=amt;
+  });
+  const subtotal = caddy + nomination + extraAdd - extraSub;
+  const tax = Math.round(subtotal*0.1);
+  const total = subtotal + tax - cafeteria;
+  return {course, atts, caddy, nomination, cafeteria, extraAdd, extraSub, subtotal, tax, total, sameRate:rateSet.size<=1};
+}
+function buildCourseInvoiceHTML(courseId, ym){
+  const iv = computeCourseInvoice(courseId, ym);
+  if(!iv.atts.length) return '<div class="empty">対象月の勤怠データがありません</div>';
+  const c = iv.course;
+  // 明細: sameRate→日付別明細型 / 複数単価→単価別まとめ型
+  let rows='';
+  if(iv.sameRate){
+    rows = '<table><thead><tr><th>日付</th><th>氏名</th><th class="num">R数</th><th class="num">単価(税別)</th><th class="num">金額(税別)</th></tr></thead><tbody>' +
+      iv.atts.map(a=>{const unit=a.rounds?Math.round(a.contractAmount/a.rounds):0;return `<tr><td>${fmtDate(a.date)}</td><td>${esc(a.empName)}</td><td class="num">${a.rounds}</td><td class="num">${num(unit)}</td><td class="num">${num(a.contractAmount)}</td></tr>`;}).join('') +
+      '</tbody></table>';
+  }else{
+    const grp={};
+    iv.atts.forEach(a=>{const unit=a.rounds?Math.round(a.contractAmount/a.rounds):0;(grp[unit] ||= {rounds:0,amount:0});grp[unit].rounds+=Number(a.rounds)||0;grp[unit].amount+=Number(a.contractAmount)||0;});
+    rows = '<table><thead><tr><th class="num">単価(税別)</th><th class="num">合計R数</th><th class="num">金額(税別)</th></tr></thead><tbody>' +
+      Object.keys(grp).sort((x,y)=>y-x).map(u=>`<tr><td class="num">${num(u)}</td><td class="num">${grp[u].rounds}</td><td class="num">${num(grp[u].amount)}</td></tr>`).join('') +
+      '</tbody></table>';
+  }
+  const extraRows = (c.extraItems||[]).map(it=>`<div><span>${esc(it.name)}</span><span>${it.type==='subtract'?'△':''}${num(Math.abs(Number(it.amount)||0))}</span></div>`).join('');
+  const totalRounds = iv.atts.reduce((s,a)=>s+(Number(a.rounds)||0),0);
+  return `<div class="inv-doc">
+    <h1>請求書</h1>
+    <div class="row"><div class="to">${esc(c.name||'')} 御中</div><div>発行日：${wareki(new Date())}</div></div>
+    <div>${warekiYM(ym)}分　キャディー派遣業務</div>
+    <div class="total-box">ご請求金額　${yen(iv.total)}（税込）</div>
+    ${rows}
+    <div class="sum">
+      <div><span>キャディ業務（税別）</span><span>${num(iv.caddy)}</span></div>
+      ${iv.nomination?`<div><span>指名料（税別）</span><span>${num(iv.nomination)}</span></div>`:''}
+      ${extraRows}
+      <div><span>小計（税別）</span><span>${num(iv.subtotal)}</span></div>
+      <div><span>消費税10%</span><span>${num(iv.tax)}</span></div>
+      ${iv.cafeteria?`<div><span>食堂利用料</span><span>△${num(iv.cafeteria)}</span></div>`:''}
+      <div class="grand"><span>合計</span><span>${yen(iv.total)}</span></div>
+    </div>
+    <div class="muted" style="text-align:right;color:#333">合計ラウンド数：${totalRounds}R</div>
+    <div class="co">${COMPANY.name}　登録番号：${COMPANY.invoiceNo}<br>${COMPANY.zip} ${COMPANY.addr}　TEL：${COMPANY.tel}</div>
+    <div class="bank">お振込先：${COMPANY.bank}</div>
+  </div>`;
+}
+function renderCourseInvoice(){
+  const courseId = document.getElementById('ciCourse').value;
+  const ym = document.getElementById('ciMonth').value;
+  const box = document.getElementById('ciPreview');
+  if(!courseId || !ym){ box.innerHTML='<div class="empty">ゴルフ場と月を選択してください</div>'; return; }
+  box.innerHTML = buildCourseInvoiceHTML(courseId, ym);
+}
+window.renderCourseInvoice = renderCourseInvoice;
+function printCourseInvoice(){
+  const courseId = document.getElementById('ciCourse').value, ym = document.getElementById('ciMonth').value;
+  if(!courseId||!ym){ showToast('ゴルフ場と月を選択してください'); return; }
+  openPrint('請求書', buildCourseInvoiceHTML(courseId, ym));
+}
+window.printCourseInvoice = printCourseInvoice;
+function mailCourseInvoice(){
+  const courseId = document.getElementById('ciCourse').value, ym = document.getElementById('ciMonth').value;
+  if(!courseId||!ym){ showToast('ゴルフ場と月を選択してください'); return; }
+  const c = (window._state.courses||{})[courseId]||{};
+  const iv = computeCourseInvoice(courseId, ym);
+  const subject = encodeURIComponent(`${warekiYM(ym)}分 キャディー派遣 請求書（${COMPANY.name}）`);
+  const body = encodeURIComponent(`${c.name||''} 御中\n\nいつもお世話になっております。${COMPANY.name}です。\n${warekiYM(ym)}分の請求書をお送りいたします。\n\nご請求金額：${yen(iv.total)}（税込）\n\n${COMPANY.name}\n${COMPANY.zip} ${COMPANY.addr}\nTEL：${COMPANY.tel}`);
+  const to = c.managerEmail || '';
+  window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
+}
+window.mailCourseInvoice = mailCourseInvoice;
+
+/* --- 従業員請求書/給与明細 共通計算 --- */
+function computeEmpBilling(emp, ym){
+  const atts = Object.values(window._state.attendance||{})
+    .filter(a=>a.status==='approved' && a.empId===emp.id && (a.date||'').slice(0,7)===ym)
+    .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const days = new Set(atts.map(a=>a.date)).size;
+  const rounds = atts.reduce((s,a)=>s+(Number(a.rounds)||0),0);
+  const total = atts.reduce((s,a)=>s+(Number(a.wage)||0),0);
+  const isBusiness = (emp.contract==='invoice_yes' || emp.contract==='invoice_no');
+  const subtotal = isBusiness ? Math.round(total/1.1) : total;
+  const tax = isBusiness ? total - subtotal : 0;
+  return {atts, days, rounds, total, subtotal, tax, isBusiness};
+}
+function buildEmpBillingHTML(emp, ym){
+  const b = computeEmpBilling(emp, ym);
+  if(!b.atts.length) return '<div class="empty">対象月の勤怠データがありません</div>';
+  const rows = b.atts.map(a=>`<tr><td>${fmtDate(a.date)}</td><td>${esc(a.courseName||'')}</td><td class="num">${a.rounds}</td><td class="num">${num(a.wage)}</td></tr>`).join('');
+  if(b.isBusiness){
+    return `<div class="inv-doc">
+      <h1>請求書</h1>
+      <div class="row"><div></div><div>発行日：${wareki(new Date())}</div></div>
+      <div class="row"><div class="to">${COMPANY.name} 御中</div><div style="text-align:right">登録番号：${esc(emp.invoiceNo||'')}<br>${esc(emp.address||'')}<br>${esc(emp.companyName||emp.name||'')}</div></div>
+      <div class="total-box">ご請求金額　${yen(b.total)}（税込）</div>
+      <table><thead><tr><th>日付</th><th>ゴルフ場</th><th class="num">R数</th><th class="num">金額(税込)</th></tr></thead><tbody>${rows}</tbody></table>
+      <div class="sum">
+        <div><span>小計（税抜）</span><span>${num(b.subtotal)}</span></div>
+        <div><span>消費税10%</span><span>${num(b.tax)}</span></div>
+        <div class="grand"><span>合計（税込）</span><span>${yen(b.total)}</span></div>
+      </div>
+      <div class="muted" style="text-align:right;color:#333">合計ラウンド数：${b.rounds}R</div>
+      <div class="bank">お振込先：${esc(emp.bankName||'')} ${esc(emp.bankBranch||'')} ${esc(emp.bankAccount||'')}<br>口座名義：${esc(emp.bankHolder||'')}</div>
+    </div>`;
+  }else{
+    return `<div class="inv-doc">
+      <h1>給与明細</h1>
+      <div class="row"><div class="to">${esc(emp.name||'')} 様</div><div>${warekiYM(ym)}分</div></div>
+      <table><thead><tr><th>日付</th><th>ゴルフ場</th><th class="num">R数</th><th class="num">支給額</th></tr></thead><tbody>${rows}</tbody></table>
+      <div class="sum">
+        <div><span>出勤日数</span><span>${b.days}日</span></div>
+        <div><span>合計ラウンド数</span><span>${b.rounds}R</span></div>
+        <div class="grand"><span>支給合計</span><span>${yen(b.total)}</span></div>
+      </div>
+      <div class="co">${COMPANY.name}</div>
+    </div>`;
+  }
+}
+
+/* --- 給与明細（管理者） --- */
+function renderPayroll(){
+  const empId = document.getElementById('plEmp').value, ym = document.getElementById('plMonth').value;
+  const box = document.getElementById('plPreview');
+  if(!empId||!ym){ box.innerHTML='<div class="empty">従業員と月を選択してください</div>'; return; }
+  const emp = (window._state.employees||{})[empId];
+  box.innerHTML = buildEmpBillingHTML(emp, ym);
+}
+window.renderPayroll = renderPayroll;
+function printPayroll(){
+  const empId = document.getElementById('plEmp').value, ym = document.getElementById('plMonth').value;
+  if(!empId||!ym){ showToast('従業員と月を選択してください'); return; }
+  const emp = (window._state.employees||{})[empId];
+  openPrint(emp.contract==='invoice_yes'||emp.contract==='invoice_no'?'請求書':'給与明細', buildEmpBillingHTML(emp, ym));
+}
+window.printPayroll = printPayroll;
+
+/* --- 従業員：請求書作成 --- */
+function renderInvoiceSub(){
+  const emp = window._currentEmp; if(!emp) return;
+  const ym = document.getElementById('invMonthSel').value || todayStr().slice(0,7);
+  const b = computeEmpBilling(emp, ym);
+  setText('invDays', b.days); setText('invRounds', b.rounds);
+  setText('invTotal', yen(b.total)); setText('invTax', yen(b.tax));
+  const btn = document.getElementById('invPrintBtn');
+  if(btn) btn.textContent = b.isBusiness ? '🖨️ 請求書を印刷' : '🖨️ 給与明細を印刷';
+}
+window.renderInvoiceSub = renderInvoiceSub;
+function printInvoice(){
+  const emp = window._currentEmp; if(!emp) return;
+  const ym = document.getElementById('invMonthSel').value || todayStr().slice(0,7);
+  openPrint(emp.contract==='invoice_yes'||emp.contract==='invoice_no'?'請求書':'給与明細', buildEmpBillingHTML(emp, ym));
+}
+window.printInvoice = printInvoice;
+
+/* --- 印刷ウィンドウ --- */
+const PRINT_CSS = `
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans JP',sans-serif;color:#111;background:#fff;padding:24px}
+.inv-doc{max-width:720px;margin:0 auto;font-size:13px;line-height:1.7}
+.inv-doc h1{font-size:24px;text-align:center;letter-spacing:10px;margin-bottom:16px}
+.inv-doc .row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.inv-doc .to{font-size:17px;font-weight:700;margin:8px 0}
+.inv-doc .total-box{border:2px solid #111;padding:10px 14px;font-size:18px;font-weight:700;text-align:center;margin:14px 0}
+.inv-doc table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12px}
+.inv-doc th,.inv-doc td{border:1px solid #999;padding:6px 8px;text-align:left}
+.inv-doc td.num,.inv-doc th.num{text-align:right;font-variant-numeric:tabular-nums}
+.inv-doc .sum div{display:flex;justify-content:space-between;padding:3px 0}
+.inv-doc .sum .grand{font-size:16px;font-weight:700;border-top:2px solid #111;margin-top:6px;padding-top:8px}
+.inv-doc .bank{margin-top:14px;padding-top:10px;border-top:1px dashed #999}
+.inv-doc .co{margin-top:12px;color:#333}
+@media print{body{padding:0}}
+`;
+function openPrint(title, bodyHtml){
+  const w = window.open('', '_blank');
+  if(!w){ showToast('印刷ウィンドウを開けませんでした（ポップアップを許可してください）'); return; }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet"><style>${PRINT_CSS}</style></head><body>${bodyHtml}</body></html>`);
+  w.document.close();
+  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} }, 400);
+}
+window.openPrint = openPrint;
+
+/* --- 売上タブ描画フック追加 --- */
+const _onTabChangeStage3 = window.onTabChange;
+window.onTabChange = function(name){
+  try{ if(_onTabChangeStage3) _onTabChangeStage3(name); }catch(e){ console.error(e); }
+  if(name==='sales'){
+    fillMonthSelect('salesMonth'); renderSalesSummary();
+    fillCourseSelect('ciCourse'); fillMonthSelect('ciMonth'); renderCourseInvoice();
+    fillEmpSelect('plEmp'); fillMonthSelect('plMonth'); renderPayroll();
+  }
+};
+const _onSTabChangeStage3 = window.onSTabChange;
+window.onSTabChange = function(group, name){
+  try{ if(_onSTabChangeStage3) _onSTabChangeStage3(group, name); }catch(e){ console.error(e); }
+  if(group==='sales'){
+    if(name==='summary'){ fillMonthSelect('salesMonth', true); renderSalesSummary(); }
+    else if(name==='invoice'){ fillCourseSelect('ciCourse', true); fillMonthSelect('ciMonth', true); renderCourseInvoice(); }
+    else if(name==='payroll'){ fillEmpSelect('plEmp', true); fillMonthSelect('plMonth', true); renderPayroll(); }
+  }
+};
+
+/* --- invoiceSub を onSubOpen に追加 --- */
+const _onSubOpenStage2 = window.onSubOpen;
+window.onSubOpen = function(id){
+  try{ if(_onSubOpenStage2) _onSubOpenStage2(id); }catch(e){ console.error(e); }
+  if(id==='invoiceSub'){ fillMonthSelect('invMonthSel'); renderInvoiceSub(); }
+};
+
+/* --- ログイン時 invoiceSub 月セレクトも用意 --- */
+const _onEmpLoginStage2 = window.onEmpLogin;
+window.onEmpLogin = function(emp){
+  try{ if(_onEmpLoginStage2) _onEmpLoginStage2(emp); }catch(e){ console.error(e); }
+  fillMonthSelect('invMonthSel');
+};
+
+/* --- リアルタイム同期で売上タブ・請求書サブも再描画 --- */
+const _renderAllStage3 = window.renderAll;
+window.renderAll = function(node){
+  try{ _renderAllStage3(node); }catch(e){ console.error(e); }
+  try{
+    if(isPanelActive('sales-summary')) renderSalesSummary();
+    if(isPanelActive('sales-invoice')) renderCourseInvoice();
+    if(isPanelActive('sales-payroll')) renderPayroll();
+    if(isSubOpen('invoiceSub')) renderInvoiceSub();
+  }catch(e){ console.error(e); }
+};
 </script>
 </body>
 </html>
