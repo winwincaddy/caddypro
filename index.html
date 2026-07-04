@@ -245,6 +245,13 @@ textarea{min-height:80px;resize:vertical}
 .cal-cell.today{border-color:var(--gold)}
 .cal-cell.has{background:rgba(201,168,76,.14)}
 .cal-cell .cnt{font-size:10px;color:var(--goldl);margin-top:2px}
+
+/* ===== テーブル ===== */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;color:var(--gray);font-weight:500;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:8px 6px;border-bottom:1px solid rgba(201,168,76,.1);white-space:nowrap}
+.tbl td.num,.tbl th.num{text-align:right;font-family:'DM Mono',monospace}
+.tbl tr:last-child td{border-bottom:none}
 </style>
 </head>
 <body>
@@ -367,9 +374,34 @@ textarea{min-height:80px;resize:vertical}
       <button class="stab" onclick="setSTab('attend','manual',this)">手動打刻</button>
       <button class="stab" onclick="setSTab('attend','list',this)">勤怠一覧</button>
     </div>
-    <div class="stab-panel active" id="attend-pending"><div class="empty">（Stage 3で実装）</div></div>
-    <div class="stab-panel" id="attend-manual"><div class="empty">（Stage 3で実装）</div></div>
-    <div class="stab-panel" id="attend-list"><div class="empty">（Stage 3で実装）</div></div>
+    <div class="stab-panel active" id="attend-pending">
+      <div class="card"><h3 style="font-size:15px;margin-bottom:10px">承認待ち打刻</h3><div id="attendPendingList"><div class="empty">承認待ちはありません</div></div></div>
+    </div>
+    <div class="stab-panel" id="attend-manual">
+      <div class="card">
+        <h3 style="font-size:15px;margin-bottom:12px">手動打刻</h3>
+        <div class="field"><label>従業員</label><select id="manEmp"></select></div>
+        <div class="field"><label>日付</label><input class="input" type="date" id="manDate"></div>
+        <div class="field"><label>ゴルフ場</label><select id="manCourse" onchange="onManualCourseChange()"><option value="">選択してください</option></select></div>
+        <div class="field"><label>ラウンド数</label>
+          <select id="manRounds">
+            <option value="0.5">0.5R</option><option value="1" selected>1R</option>
+            <option value="1.5">1.5R</option><option value="2">2R</option><option value="2.5">2.5R</option>
+          </select>
+        </div>
+        <div class="field" id="manNomWrap" style="display:none"><label>指名回数</label>
+          <select id="manNom"><option value="0">なし</option><option value="1">1回</option><option value="2">2回</option><option value="3">3回</option></select>
+        </div>
+        <div class="field" id="manCafeWrap" style="display:none">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="manCafe" style="width:20px;height:20px"> 食堂を利用する</label>
+        </div>
+        <button class="btn block" onclick="doManualPunch()">打刻を登録</button>
+      </div>
+    </div>
+    <div class="stab-panel" id="attend-list">
+      <div class="field"><label>対象月</label><select id="attListMonth" onchange="renderAttList()"></select></div>
+      <div class="card" style="overflow-x:auto"><table class="tbl" id="attListTable"></table></div>
+    </div>
   </div>
 
   <!-- タブ④売上・請求 -->
@@ -1118,6 +1150,137 @@ window.renderAll = function(node){
   }catch(e){ console.error(e); }
 };
 function isSubOpen(id){ const el=document.getElementById(id); return el && el.classList.contains('active'); }
+
+/* ===================== Stage 3: 勤怠管理タブ ===================== */
+
+// 打刻計算（手動打刻・打刻共通）
+function computeAtt(emp, courseId, date, rounds, nominationCount, cafeteriaUsed){
+  const course = (window._state.courses||{})[courseId] || {};
+  const rate = getRate(emp.id, courseId);
+  const isWd = !isWeekend(date);
+  const contractBase = isWd ? (rate.contractWd || rate.contract || 0) : (rate.contractWe || rate.contract || 0);
+  const wageBase = isWd ? (rate.wageWd || rate.wage || 0) : (rate.wageWe || rate.wage || 0);
+  const contractAmount = contractBase * rounds;
+  const wage = calcWage(wageBase, emp.contract, rounds);
+  const nominationWage = calcNomination(course.nominationFee || 0, emp.contract, nominationCount);
+  const cafeteriaDeduct = (cafeteriaUsed && course.cafeteriaBurden === 'employee') ? (course.cafeteriaFee || 0) : 0;
+  return { contractAmount, totalWage: wage + nominationWage - cafeteriaDeduct, courseName: course.name || '' };
+}
+
+/* --- 承認待ち一覧 --- */
+function renderAttendPending(){
+  const box = document.getElementById('attendPendingList'); if(!box) return;
+  const list = Object.values(window._state.attendance||{})
+    .filter(a => a.status==='pending')
+    .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  box.innerHTML = list.length ? list.map(a => `
+    <div class="list-item">
+      <div><strong>${esc(a.empName)}</strong><div class="muted">${fmtDate(a.date)} ${esc(a.courseName||'')} ${a.rounds||0}R ${a.punchTime||''}</div></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn sm" onclick="approveAtt('${a.id}')">承認</button>
+        <button class="btn sm danger" onclick="rejectAtt('${a.id}')">却下</button>
+      </div>
+    </div>`).join('') : '<div class="empty">承認待ちはありません</div>';
+}
+window.renderAttendPending = renderAttendPending;
+
+/* --- 手動打刻 --- */
+function fillEmpSelect(id, keepValue){
+  const sel = document.getElementById(id); if(!sel) return;
+  const cur = keepValue ? sel.value : '';
+  const emps = Object.values(window._state.employees||{}).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ja'));
+  sel.innerHTML = '<option value="">選択してください</option>' + emps.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('');
+  if(cur) sel.value = cur;
+}
+function fillCourseSelect(id, keepValue){
+  const sel = document.getElementById(id); if(!sel) return;
+  const cur = keepValue ? sel.value : '';
+  const courses = Object.values(window._state.courses||{});
+  sel.innerHTML = '<option value="">選択してください</option>' + courses.map(c=>
+    `<option value="${c.id}" data-cafe="${c.cafeteria?1:0}" data-nom="${c.nomination?1:0}">${esc(c.name)}</option>`).join('');
+  if(cur) sel.value = cur;
+}
+function initManual(){
+  fillEmpSelect('manEmp', true);
+  fillCourseSelect('manCourse', true);
+  const dt = document.getElementById('manDate');
+  if(dt && !dt.value) dt.value = todayStr();
+  onManualCourseChange();
+}
+function onManualCourseChange(){
+  const sel = document.getElementById('manCourse');
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById('manCafeWrap').style.display = (opt && opt.dataset.cafe==='1') ? '' : 'none';
+  document.getElementById('manNomWrap').style.display = (opt && opt.dataset.nom==='1') ? '' : 'none';
+}
+window.onManualCourseChange = onManualCourseChange;
+function doManualPunch(){
+  const empId = document.getElementById('manEmp').value;
+  const courseId = document.getElementById('manCourse').value;
+  const date = document.getElementById('manDate').value;
+  if(!empId){ showToast('従業員を選択してください'); return; }
+  if(!courseId){ showToast('ゴルフ場を選択してください'); return; }
+  if(!date){ showToast('日付を入力してください'); return; }
+  const emp = (window._state.employees||{})[empId];
+  const rounds = parseFloat(document.getElementById('manRounds').value)||0;
+  const nominationCount = (document.getElementById('manNomWrap').style.display!=='none') ? (parseInt(document.getElementById('manNom').value)||0) : 0;
+  const cafeteriaUsed = (document.getElementById('manCafeWrap').style.display!=='none') && document.getElementById('manCafe').checked;
+  const { contractAmount, totalWage, courseName } = computeAtt(emp, courseId, date, rounds, nominationCount, cafeteriaUsed);
+  const id = String(Date.now());
+  const rec = {
+    id, empId, empName: emp.name, courseId, courseName,
+    date, punchTime: '', rounds, nominationCount, cafeteriaUsed,
+    status: 'approved', wage: totalWage, contractAmount
+  };
+  window.saveToFirebase('attendance/' + id, rec);
+  showToast('手動打刻を登録しました');
+  // フォームリセット（従業員・日付は保持）
+  document.getElementById('manRounds').value = '1';
+  if(document.getElementById('manCafe')) document.getElementById('manCafe').checked = false;
+  if(document.getElementById('manNom')) document.getElementById('manNom').value = '0';
+}
+window.doManualPunch = doManualPunch;
+
+/* --- 勤怠一覧 --- */
+function renderAttList(){
+  const table = document.getElementById('attListTable'); if(!table) return;
+  const ym = document.getElementById('attListMonth').value || todayStr().slice(0,7);
+  const list = Object.values(window._state.attendance||{})
+    .filter(a => a.status==='approved' && (a.date||'').slice(0,7)===ym)
+    .sort((a,b)=>(b.date||'').localeCompare(a.date||''))
+    .slice(0,30);
+  let html = '<thead><tr><th>日付</th><th>氏名</th><th>ゴルフ場</th><th class="num">R数</th><th class="num">給料</th></tr></thead><tbody>';
+  html += list.length ? list.map(a=>`<tr><td>${fmtDate(a.date)}</td><td>${esc(a.empName)}</td><td>${esc(a.courseName||'')}</td><td class="num">${a.rounds}</td><td class="num">${yen(a.wage)}</td></tr>`).join('')
+    : '<tr><td colspan="5"><div class="empty">記録がありません</div></td></tr>';
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+window.renderAttList = renderAttList;
+
+/* --- 管理者タブ/サブタブ切替時の描画 --- */
+window.onTabChange = function(name){
+  if(name==='attend'){ renderAttendPending(); initManual(); fillMonthSelect('attListMonth'); renderAttList(); }
+};
+window.onSTabChange = function(group, name){
+  if(group==='attend'){
+    if(name==='pending') renderAttendPending();
+    else if(name==='manual') initManual();
+    else if(name==='list'){ fillMonthSelect('attListMonth', true); renderAttList(); }
+  }
+};
+
+/* --- リアルタイム同期で勤怠タブも再描画 --- */
+const _renderAllStage2 = window.renderAll;
+window.renderAll = function(node){
+  try{ _renderAllStage2(node); }catch(e){ console.error(e); }
+  try{
+    if(isPanelActive('attend-pending')) renderAttendPending();
+    if(isPanelActive('attend-list')) renderAttList();
+    if(isPanelActive('attend-manual')){ fillEmpSelect('manEmp', true); fillCourseSelect('manCourse', true); }
+  }catch(e){ console.error(e); }
+};
+function isPanelActive(id){ const el=document.getElementById(id); return el && el.classList.contains('active') && document.getElementById('adminScreen').classList.contains('active'); }
+window.isPanelActive = isPanelActive;
 </script>
 </body>
 </html>
