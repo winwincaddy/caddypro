@@ -280,7 +280,11 @@ textarea{min-height:80px;resize:vertical}
     <div class="logo-sub">CADDY DISPATCH SYSTEM</div>
     <div class="login-actions">
       <button class="btn block" onclick="showScreen('pinScreen')">👤 従業員ログイン（PIN番号）</button>
-      <button class="btn sec block" onclick="adminLogin()">🔒 管理者ログイン（Google）</button>
+      <button class="btn sec block" onclick="toggleAdminPin()">🔒 管理者ログイン</button>
+      <div id="adminPinRow" style="display:none;gap:8px">
+        <input class="input mono" id="adminPinInput" type="password" maxlength="4" inputmode="numeric" placeholder="管理PIN" style="flex:1" onkeydown="if(event.key==='Enter')adminLogin()">
+        <button class="btn" style="flex:0 0 90px" onclick="adminLogin()">ログイン</button>
+      </div>
     </div>
   </div>
 </div>
@@ -777,10 +781,26 @@ window.saveToFirebase = function(path, data){
 
 // 全データ購読
 const NODES = ['employees','courses','attendance','shifts','notices','requests','sales','rates','settings','shiftRequests'];
+// レコード配列ノード（idキーで再インデックスして参照を安定させる）
+const RECORD_NODES = ['employees','courses','attendance','shifts','notices','requests','shiftRequests'];
+// 配列インデックス保存(key≠id)でもidで引けるよう再構築。idが無い値は元キーを維持。
+function reindexById(obj){
+  if(!obj || typeof obj !== 'object') return {};
+  const out = {};
+  for(const k in obj){
+    const v = obj[k];
+    if(v && v.id != null) out[String(v.id)] = v;
+    else if(v != null) out[k] = v;
+  }
+  return out;
+}
+window.reindexById = reindexById;
 function loadAllData(){
   NODES.forEach(node => {
     onValue(ref(db, 'caddypro/' + node), snap => {
-      window._state[node] = snap.val() || {};
+      let val = snap.val() || {};
+      if(RECORD_NODES.includes(node)) val = reindexById(val);
+      window._state[node] = val;
       if(node === 'employees'){
         window._fbEmps = Object.values(window._state.employees);
       }
@@ -812,16 +832,22 @@ signInAnonymously(auth).then(() => {
   loadAllData();
 }).catch(e => { console.error('auth error', e); updateFbStatus(false); });
 
-// 管理者Googleログイン
+// 管理者ログイン（管理PIN照合：settings.adminPin）
 window.adminLogin = function(){
-  const provider = new GoogleAuthProvider();
-  signInWithPopup(auth, provider).then(() => {
+  const input = document.getElementById('adminPinInput');
+  const pin = input ? input.value.trim() : '';
+  const adminPin = String((window._state.settings||{}).adminPin || '');
+  if(!adminPin){ showToast('管理PINが未設定です'); return; }
+  if(pin === adminPin){
+    if(input) input.value = '';
+    const row = document.getElementById('adminPinRow'); if(row) row.style.display = 'none';
     showScreen('adminScreen');
     showToast('管理者ログインしました');
-  }).catch(e => {
-    console.error('google login error', e);
-    showToast('ログインに失敗しました');
-  });
+    if(typeof window.onTabChange === 'function') window.onTabChange('dash');
+  }else{
+    showToast('管理PINが違います');
+    if(input){ input.value=''; input.focus(); }
+  }
 };
 </script>
 
@@ -871,13 +897,20 @@ function showToast(msg, dur=2400){
 }
 window.showToast = showToast;
 
+// 管理PIN入力の表示切替
+function toggleAdminPin(){
+  const row = document.getElementById('adminPinRow');
+  if(!row) return;
+  const show = row.style.display === 'none' || !row.style.display;
+  row.style.display = show ? 'flex' : 'none';
+  if(show){ const i=document.getElementById('adminPinInput'); if(i){ i.value=''; i.focus(); } }
+}
+window.toggleAdminPin = toggleAdminPin;
+
 // ログアウト
 function logout(){
   window._currentEmp = null;
-  if(window._auth && window._signOut){
-    // 管理者はGoogleサインアウト後、匿名認証に戻す（データ購読維持）
-    try{ window._signOut(window._auth); }catch(e){}
-  }
+  // 匿名認証はデータ同期のため維持（サインアウトしない）
   showScreen('topScreen');
   showToast('ログアウトしました');
 }
@@ -963,6 +996,9 @@ function calcNomination(nomFee, contract, count){
   if(contract === 'invoice_no') return Math.round(nomFee * 1.1 * count);
   return nomFee * count;
 }
+// id比較（実データはid型が数値/文字列で混在するため文字列で比較）
+function eqId(a,b){ return String(a)===String(b); }
+window.eqId = eqId;
 function yen(n){ return '¥' + (Number(n)||0).toLocaleString('ja-JP'); }
 const WDAY = ['日','月','火','水','木','金','土'];
 function fmtDate(ds){ const d=new Date(ds); return `${d.getMonth()+1}/${d.getDate()}(${WDAY[d.getDay()]})`; }
@@ -1032,7 +1068,7 @@ function renderDashboardBasic(){
 
   // 従業員メニューの未確認バッジ
   if(window._currentEmp){
-    const myUnconf = notices.filter(n => n.empId === window._currentEmp.id && !n.confirmed && n.date >= today);
+    const myUnconf = notices.filter(n => eqId(n.empId, window._currentEmp.id) && !n.confirmed && n.date >= today);
     const badge = document.getElementById('noticeBadge');
     if(badge){ badge.textContent = myUnconf.length; badge.classList.toggle('show', myUnconf.length>0); }
   }
@@ -1069,6 +1105,16 @@ function getRate(empId, courseId){
   const r = window._state.rates || {};
   return (r[empId] && r[empId][courseId]) ? r[empId][courseId] : {};
 }
+// courseId→名前・empId→名前の解決（既存データはcourseName等を持たない場合がある）
+function courseNameOf(courseId, fallback){
+  const c = (window._state.courses||{})[courseId];
+  return (c && c.name) || fallback || '';
+}
+function empNameOf(empId, fallback){
+  const e = (window._state.employees||{})[empId];
+  return (e && e.name) || fallback || '';
+}
+window.courseNameOf = courseNameOf; window.empNameOf = empNameOf;
 function monthList(n=6){
   const arr = []; const d = new Date();
   for(let i=0;i<n;i++){
@@ -1115,7 +1161,7 @@ function renderPunchStatus(){
   if(!box || !window._currentEmp) return;
   const today = todayStr();
   const mine = Object.values(window._state.attendance || {})
-    .find(a => a.empId === window._currentEmp.id && a.date === today && a.status !== 'rejected');
+    .find(a => eqId(a.empId, window._currentEmp.id) && a.date === today && a.status !== 'rejected');
   if(mine){
     const label = mine.status === 'approved' ? '<span class="pill ok">承認済み</span>' : '<span class="pill wait">⏳ 承認待ち</span>';
     box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${esc(mine.courseName)}</strong><div class="muted">${mine.rounds}R ${mine.punchTime||''}</div></div>${label}</div>`;
@@ -1168,7 +1214,7 @@ function renderEmpNotices(){
   const box = document.getElementById('noticeList'); if(!box || !window._currentEmp) return;
   const today = todayStr();
   const list = Object.values(window._state.notices || {})
-    .filter(n => n.empId === window._currentEmp.id && n.date >= today)
+    .filter(n => eqId(n.empId, window._currentEmp.id) && n.date >= today)
     .sort((a,b) => a.date.localeCompare(b.date));
   box.innerHTML = list.length ? list.map(n => `
     <div class="card" style="border-color:${n.confirmed?'var(--line)':'var(--red)'}">
@@ -1208,7 +1254,7 @@ function renderApplyCal(){
   const days = new Date(y,m+1,0).getDate();
   const today = todayStr();
   const myReqDates = new Set(Object.values(window._state.shiftRequests||{})
-    .filter(r => window._currentEmp && r.empId === window._currentEmp.id)
+    .filter(r => window._currentEmp && eqId(r.empId, window._currentEmp.id))
     .map(r => r.date));
   let html = '';
   for(let i=0;i<first;i++) html += '<div class="cal-cell blank"></div>';
@@ -1230,7 +1276,7 @@ window.calPrev = calPrev; window.calNext = calNext;
 function toggleDate(ds, el){
   const emp = window._currentEmp; if(!emp) return;
   const existing = Object.values(window._state.shiftRequests||{})
-    .find(r => r.empId === emp.id && r.date === ds);
+    .find(r => eqId(r.empId, emp.id) && r.date === ds);
   if(existing){
     window.saveToFirebase('shiftRequests/' + existing.id, null);
     showToast('希望を取り消しました');
@@ -1246,7 +1292,7 @@ window.toggleDate = toggleDate;
 function renderShiftApplyList(){
   const box = document.getElementById('applyReqList'); if(!box || !window._currentEmp) return;
   const list = Object.values(window._state.shiftRequests||{})
-    .filter(r => r.empId === window._currentEmp.id)
+    .filter(r => eqId(r.empId, window._currentEmp.id))
     .sort((a,b)=>a.date.localeCompare(b.date));
   box.innerHTML = list.length ? list.map(r => {
     const pill = r.status==='approved' ? '<span class="pill ok">✅ 承認済み</span>'
@@ -1261,16 +1307,16 @@ window.renderShiftApplyList = renderShiftApplyList;
 function renderShiftConfirmed(){
   const box = document.getElementById('confList'); if(!box || !window._currentEmp) return;
   const ym = document.getElementById('confMonthSel').value || todayStr().slice(0,7);
-  const meId = window._currentEmp.id;
+  const meId = String(window._currentEmp.id);
   const list = Object.values(window._state.shifts||{})
     .filter(s => {
-      const mine = s.empId === meId || (Array.isArray(s.employees) && s.employees.includes(meId));
+      const mine = eqId(s.empId, meId) || (Array.isArray(s.employees) && s.employees.some(id=>eqId(id, meId)));
       return mine && (s.date||'').slice(0,7) === ym;
     })
     .sort((a,b)=>a.date.localeCompare(b.date));
   box.innerHTML = list.length ? list.map(s => `
     <div class="list-item">
-      <div><strong>${fmtDate(s.date)}</strong><div class="muted">⛳ ${esc(s.courseName||'')}　集合 ${s.startTime||'-'}</div></div>
+      <div><strong>${fmtDate(s.date)}</strong><div class="muted">⛳ ${esc(courseNameOf(s.courseId, s.courseName))}　集合 ${s.startTime||'-'}</div></div>
       <span class="pill ok">確定</span>
     </div>`).join('') : '<div class="empty">確定シフトはありません</div>';
 }
@@ -1281,7 +1327,7 @@ function renderEmpHistory(){
   const box = document.getElementById('histList'); if(!box || !window._currentEmp) return;
   const ym = document.getElementById('histMonthSel').value || todayStr().slice(0,7);
   const list = Object.values(window._state.attendance||{})
-    .filter(a => a.empId===window._currentEmp.id && a.status==='approved' && (a.date||'').slice(0,7)===ym)
+    .filter(a => eqId(a.empId, window._currentEmp.id) && a.status==='approved' && (a.date||'').slice(0,7)===ym)
     .sort((a,b)=>b.date.localeCompare(a.date));
   box.innerHTML = list.length ? list.map(a => `
     <div class="list-item">
@@ -1534,7 +1580,7 @@ window.renderSalesSummary = renderSalesSummary;
 function computeCourseInvoice(courseId, ym){
   const course = (window._state.courses||{})[courseId] || {};
   const atts = Object.values(window._state.attendance||{})
-    .filter(a=>a.status==='approved' && a.courseId===courseId && (a.date||'').slice(0,7)===ym)
+    .filter(a=>a.status==='approved' && eqId(a.courseId, courseId) && (a.date||'').slice(0,7)===ym)
     .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   let caddy=0, nomination=0, cafeteria=0;
   const rateSet = new Set();
@@ -1623,7 +1669,7 @@ window.mailCourseInvoice = mailCourseInvoice;
 /* --- 従業員請求書/給与明細 共通計算 --- */
 function computeEmpBilling(emp, ym){
   const atts = Object.values(window._state.attendance||{})
-    .filter(a=>a.status==='approved' && a.empId===emp.id && (a.date||'').slice(0,7)===ym)
+    .filter(a=>a.status==='approved' && eqId(a.empId, emp.id) && (a.date||'').slice(0,7)===ym)
     .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   const days = new Set(atts.map(a=>a.date)).size;
   const rounds = atts.reduce((s,a)=>s+(Number(a.rounds)||0),0);
@@ -1982,7 +2028,12 @@ function showDayPanel(ds){
   const reqs=Object.values(window._state.requests||{}).filter(r=>r.date===ds && r.status!=='rejected');
   const wishEmps=Object.values(window._state.shiftRequests||{}).filter(r=>r.date===ds);
   const shifts=Object.values(window._state.shifts||{}).filter(s=>s.date===ds);
-  const assignedByEmp={}; shifts.forEach(s=>{ if(s.empId) assignedByEmp[s.empId]=s.courseName; });
+  const assignedByEmp={};
+  shifts.forEach(s=>{
+    const cn = courseNameOf(s.courseId, s.courseName);
+    const ids = s.empId ? [s.empId] : (Array.isArray(s.employees) ? s.employees : []);
+    ids.forEach(id=>{ assignedByEmp[id]=cn; });
+  });
   let reqHtml = reqs.length ? reqs.map(r=>`
     <div class="list-item">
       <div><strong>${esc(r.courseName||'')}</strong><div class="muted">必要 ${r.count||1}名 ${r.memo?'・'+esc(r.memo):''}</div></div>
@@ -2116,7 +2167,7 @@ function doAssign(){
     window.saveToFirebase('shifts/'+sid,{id:sid,date,courseId,courseName:course.name||'',empId,empName:emp.name||'',startTime:start,gameStartTime:gameStart,memo});
   });
   // 依頼を確定に
-  Object.values(window._state.requests||{}).filter(r=>r.date===date&&r.courseId===courseId&&r.status!=='rejected').forEach(r=>{r.status='confirmed';window.saveToFirebase('requests/'+r.id,r);});
+  Object.values(window._state.requests||{}).filter(r=>r.date===date&&eqId(r.courseId,courseId)&&r.status!=='rejected').forEach(r=>{r.status='confirmed';window.saveToFirebase('requests/'+r.id,r);});
   closeModal('assignModal'); showToast(`${checked.length}名を割り振りました`);
   showDayPanel(date);
 }
