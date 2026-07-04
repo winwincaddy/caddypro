@@ -4,6 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>CaddyPro</title>
+<script>
+/* 旧バージョンのService Worker／キャッシュを自動解除（キャッシュで古い画面が残るのを防止） */
+(function(){
+  try{
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.getRegistrations().then(function(regs){
+        var had = regs && regs.length > 0;
+        Promise.all((regs||[]).map(function(r){ return r.unregister(); })).then(function(){
+          if('caches' in window){
+            caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); });
+          }
+          if(had && !sessionStorage.getItem('_swCleared')){
+            sessionStorage.setItem('_swCleared','1');
+            location.reload();
+          }
+        });
+      }).catch(function(){});
+    }
+  }catch(e){}
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
