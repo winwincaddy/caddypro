@@ -222,6 +222,29 @@ textarea{min-height:80px;resize:vertical}
 .pill.wait{background:rgba(201,168,76,.18);color:var(--goldl)}
 .pill.ok{background:rgba(74,140,92,.2);color:var(--green)}
 .pill.ng{background:rgba(192,58,43,.2);color:var(--red)}
+
+/* ===== カレンダー ===== */
+.cal-nav{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:12px;font-size:16px;font-weight:700}
+.cal-arrow{width:40px;height:40px;border:1px solid var(--line);border-radius:12px;background:rgba(15,35,24,.5);color:var(--cream);font-size:20px;cursor:pointer}
+.cal-arrow:active{transform:scale(.95)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-head{text-align:center;font-size:12px;color:var(--gray);padding:4px 0}
+.cal-head.sun{color:var(--red)}
+.cal-head.sat{color:#7c86d6}
+.cal-cell{
+  aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:1px solid var(--line);border-radius:10px;background:rgba(15,35,24,.35);
+  font-size:15px;font-family:'DM Mono',monospace;cursor:pointer;position:relative;transition:all .15s;
+}
+.cal-cell:active{transform:scale(.95)}
+.cal-cell.blank{border:none;background:none;cursor:default}
+.cal-cell.sun{color:var(--red)}
+.cal-cell.sat{color:#7c86d6}
+.cal-cell.on{background:linear-gradient(160deg,rgba(74,140,92,.5),rgba(45,90,61,.6));border-color:var(--green);color:var(--cream)}
+.cal-cell.on::after{content:'';position:absolute;bottom:6px;width:5px;height:5px;border-radius:50%;background:var(--green)}
+.cal-cell.today{border-color:var(--gold)}
+.cal-cell.has{background:rgba(201,168,76,.14)}
+.cal-cell .cnt{font-size:10px;color:var(--goldl);margin-top:2px}
 </style>
 </head>
 <body>
@@ -377,19 +400,60 @@ textarea{min-height:80px;resize:vertical}
 <!-- ============ サブ画面（Stage 2以降で中身を実装） ============ -->
 <div id="punchSub" class="subscreen">
   <div class="sub-header"><button class="back-btn" onclick="closeSub('punchSub')">←</button><span class="h">🕓 出勤打刻</span></div>
-  <div class="wrap"><div class="empty">（Stage 2で実装）</div></div>
+  <div class="wrap">
+    <div class="card" id="punchStatus"><div class="muted">まだ打刻していません</div></div>
+    <div class="field">
+      <label>派遣先ゴルフ場</label>
+      <select id="punchCourse" onchange="onPunchCourseChange()"><option value="">選択してください</option></select>
+    </div>
+    <div class="field">
+      <label>ラウンド数</label>
+      <select id="punchRounds">
+        <option value="0.5">0.5R</option>
+        <option value="1" selected>1R</option>
+        <option value="1.5">1.5R</option>
+        <option value="2">2R</option>
+        <option value="2.5">2.5R</option>
+      </select>
+    </div>
+    <div class="field" id="punchNomWrap" style="display:none">
+      <label>指名回数</label>
+      <select id="punchNom">
+        <option value="0">なし</option>
+        <option value="1">1回</option>
+        <option value="2">2回</option>
+        <option value="3">3回</option>
+      </select>
+    </div>
+    <div class="field" id="punchCafeWrap" style="display:none">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+        <input type="checkbox" id="punchCafe" style="width:20px;height:20px"> 食堂を利用する
+      </label>
+    </div>
+    <button class="btn block" id="punchBtn" onclick="doPunch()">🕓 出勤する</button>
+  </div>
 </div>
 <div id="noticeSub" class="subscreen">
   <div class="sub-header"><button class="back-btn" onclick="closeSub('noticeSub')">←</button><span class="h">🔔 翌日出勤確認</span></div>
-  <div class="wrap"><div class="empty">（Stage 2で実装）</div></div>
+  <div class="wrap"><div id="noticeList"><div class="empty">出勤連絡はありません</div></div></div>
 </div>
 <div id="shiftApplySub" class="subscreen">
   <div class="sub-header"><button class="back-btn" onclick="closeSub('shiftApplySub')">←</button><span class="h">📅 シフト希望申請</span></div>
-  <div class="wrap"><div class="empty">（Stage 2で実装）</div></div>
+  <div class="wrap">
+    <div class="cal-nav"><button class="cal-arrow" onclick="calPrev()">‹</button><span id="applyCalLabel">-</span><button class="cal-arrow" onclick="calNext()">›</button></div>
+    <div class="muted" style="text-align:center;margin-bottom:10px">日付をタップして希望を追加/削除</div>
+    <div class="cal-grid" id="applyCalHead"></div>
+    <div class="cal-grid" id="applyCalGrid"></div>
+    <h3 style="font-size:15px;margin:18px 0 8px">申請済み一覧</h3>
+    <div id="applyReqList"><div class="empty">申請はありません</div></div>
+  </div>
 </div>
 <div id="shiftConfSub" class="subscreen">
   <div class="sub-header"><button class="back-btn" onclick="closeSub('shiftConfSub')">←</button><span class="h">✅ 確定シフト</span></div>
-  <div class="wrap"><div class="empty">（Stage 2で実装）</div></div>
+  <div class="wrap">
+    <div class="field"><label>対象月</label><select id="confMonthSel" onchange="renderShiftConfirmed()"></select></div>
+    <div id="confList"><div class="empty">確定シフトはありません</div></div>
+  </div>
 </div>
 <div id="invoiceSub" class="subscreen">
   <div class="sub-header"><button class="back-btn" onclick="closeSub('invoiceSub')">←</button><span class="h">📄 請求書作成</span></div>
@@ -397,11 +461,47 @@ textarea{min-height:80px;resize:vertical}
 </div>
 <div id="historySub" class="subscreen">
   <div class="sub-header"><button class="back-btn" onclick="closeSub('historySub')">←</button><span class="h">📋 出勤記録</span></div>
-  <div class="wrap"><div class="empty">（Stage 2で実装）</div></div>
+  <div class="wrap">
+    <div class="field"><label>対象月</label><select id="histMonthSel" onchange="renderEmpHistory()"></select></div>
+    <div id="histList"><div class="empty">出勤記録はありません</div></div>
+  </div>
 </div>
 <div id="myInfoSub" class="subscreen">
   <div class="sub-header"><button class="back-btn" onclick="closeSub('myInfoSub')">←</button><span class="h">👤 個人情報管理</span></div>
-  <div class="wrap"><div class="empty">（Stage 2で実装）</div></div>
+  <div class="wrap">
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:12px">基本情報</h3>
+      <div class="field"><label>氏名</label><input class="input" id="myName"></div>
+      <div class="field"><label>住所</label><input class="input" id="myAddress"></div>
+      <div class="field"><label>電話番号</label><input class="input" id="myPhone" inputmode="tel"></div>
+      <div class="field"><label>メールアドレス</label><input class="input" id="myEmail" inputmode="email"></div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:12px">雇用情報</h3>
+      <div class="field"><label>雇用形態</label>
+        <select id="myContract">
+          <option value="baito">アルバイト（税なし）</option>
+          <option value="invoice_yes">業務委託・インボイス登録あり（2割特例）</option>
+          <option value="invoice_no">業務委託・インボイス登録なし（消費税10%）</option>
+          <option value="training">研修</option>
+        </select>
+      </div>
+      <div class="field"><label>インボイス登録番号</label><input class="input" id="myInvoiceNo" placeholder="T..."></div>
+      <div class="field"><label>屋号</label><input class="input" id="myCompanyName"></div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:12px">振込先</h3>
+      <div class="field"><label>銀行名</label><input class="input" id="myBankName"></div>
+      <div class="field"><label>支店名</label><input class="input" id="myBankBranch"></div>
+      <div class="field"><label>口座番号</label><input class="input" id="myBankAccount" inputmode="numeric"></div>
+      <div class="field"><label>口座名義</label><input class="input" id="myBankHolder"></div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:12px">PINコード変更</h3>
+      <div class="field"><label>新しいPIN（4桁・変更する場合のみ）</label><input class="input mono" id="myPin" inputmode="numeric" maxlength="4" placeholder="****"></div>
+    </div>
+    <button class="btn block" onclick="saveMyInfo()">保存する</button>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -726,6 +826,298 @@ function rejectAtt(id){
 }
 window.approveAtt = approveAtt;
 window.rejectAtt = rejectAtt;
+
+/* ===================== Stage 2: 従業員サブ画面 ===================== */
+
+// 共通ヘルパー
+function getRate(empId, courseId){
+  const r = window._state.rates || {};
+  return (r[empId] && r[empId][courseId]) ? r[empId][courseId] : {};
+}
+function monthList(n=6){
+  const arr = []; const d = new Date();
+  for(let i=0;i<n;i++){
+    const y=d.getFullYear(), m=d.getMonth()-i;
+    const dt=new Date(y,m,1);
+    arr.push(`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`);
+  }
+  return arr;
+}
+function fillMonthSelect(id, keepValue){
+  const sel = document.getElementById(id); if(!sel) return;
+  const cur = keepValue ? sel.value : '';
+  sel.innerHTML = monthList(6).map(ym => {
+    const [y,m]=ym.split('-');
+    return `<option value="${ym}">${y}年${Number(m)}月</option>`;
+  }).join('');
+  if(cur) sel.value = cur;
+}
+
+/* --- 打刻 --- */
+function fillPunchCourseSelect(){
+  const sel = document.getElementById('punchCourse'); if(!sel) return;
+  const courses = Object.values(window._state.courses || {});
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">選択してください</option>' + courses.map(c =>
+    `<option value="${c.id}" data-cafe="${c.cafeteria?1:0}" data-nom="${c.nomination?1:0}">${esc(c.name)}</option>`
+  ).join('');
+  if(cur) sel.value = cur;
+  onPunchCourseChange();
+}
+function onPunchCourseChange(){
+  const sel = document.getElementById('punchCourse');
+  const opt = sel.options[sel.selectedIndex];
+  const cafe = opt && opt.dataset.cafe === '1';
+  const nom = opt && opt.dataset.nom === '1';
+  document.getElementById('punchCafeWrap').style.display = cafe ? '' : 'none';
+  document.getElementById('punchNomWrap').style.display = nom ? '' : 'none';
+}
+window.onPunchCourseChange = onPunchCourseChange;
+
+function renderPunchStatus(){
+  const box = document.getElementById('punchStatus');
+  const btn = document.getElementById('punchBtn');
+  if(!box || !window._currentEmp) return;
+  const today = todayStr();
+  const mine = Object.values(window._state.attendance || {})
+    .find(a => a.empId === window._currentEmp.id && a.date === today && a.status !== 'rejected');
+  if(mine){
+    const label = mine.status === 'approved' ? '<span class="pill ok">承認済み</span>' : '<span class="pill wait">⏳ 承認待ち</span>';
+    box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${esc(mine.courseName)}</strong><div class="muted">${mine.rounds}R ${mine.punchTime||''}</div></div>${label}</div>`;
+    if(btn){ btn.textContent = mine.status==='approved' ? '本日は打刻済み' : '⏳ 承認待ち'; btn.disabled = true; btn.style.opacity=.6; }
+  }else{
+    box.innerHTML = '<div class="muted">まだ打刻していません</div>';
+    if(btn){ btn.textContent = '🕓 出勤する'; btn.disabled = false; btn.style.opacity=1; }
+  }
+}
+function doPunch(){
+  const emp = window._currentEmp; if(!emp) return;
+  const sel = document.getElementById('punchCourse');
+  const courseId = sel.value;
+  if(!courseId){ showToast('ゴルフ場を選択してください'); return; }
+  const course = (window._state.courses||{})[courseId] || {};
+  const rounds = parseFloat(document.getElementById('punchRounds').value) || 0;
+  const nomWrap = document.getElementById('punchNomWrap');
+  const nominationCount = (nomWrap.style.display!=='none') ? (parseInt(document.getElementById('punchNom').value)||0) : 0;
+  const cafeWrap = document.getElementById('punchCafeWrap');
+  const cafeteriaUsed = (cafeWrap.style.display!=='none') && document.getElementById('punchCafe').checked;
+
+  const date = todayStr();
+  const rate = getRate(emp.id, courseId);
+  const isWd = !isWeekend(date);
+  const contractBase = isWd ? (rate.contractWd || rate.contract || 0) : (rate.contractWe || rate.contract || 0);
+  const wageBase = isWd ? (rate.wageWd || rate.wage || 0) : (rate.wageWe || rate.wage || 0);
+
+  const contractAmount = contractBase * rounds;
+  const wage = calcWage(wageBase, emp.contract, rounds);
+  const nominationWage = calcNomination(course.nominationFee || 0, emp.contract, nominationCount);
+  const cafeteriaDeduct = (cafeteriaUsed && course.cafeteriaBurden === 'employee') ? (course.cafeteriaFee || 0) : 0;
+  const totalWage = wage + nominationWage - cafeteriaDeduct;
+
+  const id = String(Date.now());
+  const now = new Date();
+  const rec = {
+    id, empId: emp.id, empName: emp.name, courseId, courseName: course.name || '',
+    date, punchTime: `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`,
+    rounds, nominationCount, cafeteriaUsed, status: 'pending',
+    wage: totalWage, contractAmount
+  };
+  window.saveToFirebase('attendance/' + id, rec);
+  showToast('出勤を打刻しました（承認待ち）');
+  renderPunchStatus();
+}
+window.doPunch = doPunch;
+
+/* --- 翌日出勤確認 --- */
+function renderEmpNotices(){
+  const box = document.getElementById('noticeList'); if(!box || !window._currentEmp) return;
+  const today = todayStr();
+  const list = Object.values(window._state.notices || {})
+    .filter(n => n.empId === window._currentEmp.id && n.date >= today)
+    .sort((a,b) => a.date.localeCompare(b.date));
+  box.innerHTML = list.length ? list.map(n => `
+    <div class="card" style="border-color:${n.confirmed?'var(--line)':'var(--red)'}">
+      <div style="font-weight:700;margin-bottom:4px">${fmtDate(n.date)}</div>
+      <div>⛳ ${esc(n.courseName||'')}</div>
+      <div class="muted" style="margin:6px 0">🕖 集合 ${n.startTime||'-'}　🏌️ スタート ${n.gameStartTime||'-'}</div>
+      ${n.memo?`<div class="muted">${esc(n.memo)}</div>`:''}
+      ${n.confirmed
+        ? '<div style="margin-top:8px"><span class="pill ok">✅ 確認済み</span></div>'
+        : `<button class="btn block sm" style="margin-top:10px" onclick="confirmNoticeById('${n.id}',this)">✅ 確認しました</button>`}
+    </div>`).join('') : '<div class="empty">出勤連絡はありません</div>';
+}
+window.renderEmpNotices = renderEmpNotices;
+function confirmNoticeById(id, btn){
+  const n = (window._state.notices||{})[id]; if(!n) return;
+  n.confirmed = true;
+  window.saveToFirebase('notices/' + id, n);
+  showToast('確認しました');
+  renderEmpNotices();
+}
+window.confirmNoticeById = confirmNoticeById;
+
+/* --- シフト希望申請カレンダー --- */
+let _applyCal = { y:new Date().getFullYear(), m:new Date().getMonth() };
+function renderApplyCalHead(){
+  const head = document.getElementById('applyCalHead'); if(!head) return;
+  head.innerHTML = WDAY.map((w,i)=>`<div class="cal-head ${i===0?'sun':i===6?'sat':''}">${w}</div>`).join('');
+}
+function renderApplyCal(){
+  renderApplyCalHead();
+  const grid = document.getElementById('applyCalGrid');
+  const label = document.getElementById('applyCalLabel');
+  if(!grid) return;
+  const {y,m} = _applyCal;
+  if(label) label.textContent = `${y}年${m+1}月`;
+  const first = new Date(y,m,1).getDay();
+  const days = new Date(y,m+1,0).getDate();
+  const today = todayStr();
+  const myReqDates = new Set(Object.values(window._state.shiftRequests||{})
+    .filter(r => window._currentEmp && r.empId === window._currentEmp.id)
+    .map(r => r.date));
+  let html = '';
+  for(let i=0;i<first;i++) html += '<div class="cal-cell blank"></div>';
+  for(let d=1;d<=days;d++){
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow = new Date(y,m,d).getDay();
+    const cls = ['cal-cell'];
+    if(dow===0) cls.push('sun'); if(dow===6) cls.push('sat');
+    if(myReqDates.has(ds)) cls.push('on');
+    if(ds===today) cls.push('today');
+    html += `<div class="${cls.join(' ')}" onclick="toggleDate('${ds}',this)">${d}</div>`;
+  }
+  grid.innerHTML = html;
+}
+window.renderApplyCal = renderApplyCal;
+function calPrev(){ _applyCal.m--; if(_applyCal.m<0){_applyCal.m=11;_applyCal.y--;} renderApplyCal(); }
+function calNext(){ _applyCal.m++; if(_applyCal.m>11){_applyCal.m=0;_applyCal.y++;} renderApplyCal(); }
+window.calPrev = calPrev; window.calNext = calNext;
+function toggleDate(ds, el){
+  const emp = window._currentEmp; if(!emp) return;
+  const existing = Object.values(window._state.shiftRequests||{})
+    .find(r => r.empId === emp.id && r.date === ds);
+  if(existing){
+    window.saveToFirebase('shiftRequests/' + existing.id, null);
+    showToast('希望を取り消しました');
+  }else{
+    const id = String(Date.now());
+    window.saveToFirebase('shiftRequests/' + id, { id, empId:emp.id, empName:emp.name, date:ds, status:'pending' });
+    showToast('希望日を追加しました');
+  }
+  // ローカル即時反映（onValueでも更新される）
+  if(el) el.classList.toggle('on');
+}
+window.toggleDate = toggleDate;
+function renderShiftApplyList(){
+  const box = document.getElementById('applyReqList'); if(!box || !window._currentEmp) return;
+  const list = Object.values(window._state.shiftRequests||{})
+    .filter(r => r.empId === window._currentEmp.id)
+    .sort((a,b)=>a.date.localeCompare(b.date));
+  box.innerHTML = list.length ? list.map(r => {
+    const pill = r.status==='approved' ? '<span class="pill ok">✅ 承認済み</span>'
+      : r.status==='rejected' ? '<span class="pill ng">❌ 却下</span>'
+      : '<span class="pill wait">⏳ 審査中</span>';
+    return `<div class="list-item"><div>${fmtDate(r.date)}</div>${pill}</div>`;
+  }).join('') : '<div class="empty">申請はありません</div>';
+}
+window.renderShiftApplyList = renderShiftApplyList;
+
+/* --- 確定シフト確認 --- */
+function renderShiftConfirmed(){
+  const box = document.getElementById('confList'); if(!box || !window._currentEmp) return;
+  const ym = document.getElementById('confMonthSel').value || todayStr().slice(0,7);
+  const meId = window._currentEmp.id;
+  const list = Object.values(window._state.shifts||{})
+    .filter(s => {
+      const mine = s.empId === meId || (Array.isArray(s.employees) && s.employees.includes(meId));
+      return mine && (s.date||'').slice(0,7) === ym;
+    })
+    .sort((a,b)=>a.date.localeCompare(b.date));
+  box.innerHTML = list.length ? list.map(s => `
+    <div class="list-item">
+      <div><strong>${fmtDate(s.date)}</strong><div class="muted">⛳ ${esc(s.courseName||'')}　集合 ${s.startTime||'-'}</div></div>
+      <span class="pill ok">確定</span>
+    </div>`).join('') : '<div class="empty">確定シフトはありません</div>';
+}
+window.renderShiftConfirmed = renderShiftConfirmed;
+
+/* --- 出勤記録 --- */
+function renderEmpHistory(){
+  const box = document.getElementById('histList'); if(!box || !window._currentEmp) return;
+  const ym = document.getElementById('histMonthSel').value || todayStr().slice(0,7);
+  const list = Object.values(window._state.attendance||{})
+    .filter(a => a.empId===window._currentEmp.id && a.status==='approved' && (a.date||'').slice(0,7)===ym)
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  box.innerHTML = list.length ? list.map(a => `
+    <div class="list-item">
+      <div><strong>${fmtDate(a.date)}</strong><div class="muted">⛳ ${esc(a.courseName||'')}　${a.rounds}R</div></div>
+      <div class="mono">${yen(a.wage)}</div>
+    </div>`).join('') : '<div class="empty">出勤記録はありません</div>';
+}
+window.renderEmpHistory = renderEmpHistory;
+
+/* --- 個人情報管理 --- */
+function fillMyInfo(){
+  const e = window._currentEmp; if(!e) return;
+  const set=(id,v)=>{const el=document.getElementById(id); if(el) el.value=v==null?'':v;};
+  set('myName',e.name); set('myAddress',e.address); set('myPhone',e.phone); set('myEmail',e.email);
+  set('myContract',e.contract||'baito'); set('myInvoiceNo',e.invoiceNo); set('myCompanyName',e.companyName);
+  set('myBankName',e.bankName); set('myBankBranch',e.bankBranch); set('myBankAccount',e.bankAccount); set('myBankHolder',e.bankHolder);
+  set('myPin','');
+}
+window.fillMyInfo = fillMyInfo;
+function saveMyInfo(){
+  const e = window._currentEmp; if(!e) return;
+  const val=id=>{const el=document.getElementById(id); return el?el.value.trim():'';};
+  const newPin = val('myPin');
+  if(newPin && !/^\d{4}$/.test(newPin)){ showToast('PINは4桁の数字で入力してください'); return; }
+  const updated = Object.assign({}, e, {
+    name:val('myName'), address:val('myAddress'), phone:val('myPhone'), email:val('myEmail'),
+    contract:val('myContract'), invoiceNo:val('myInvoiceNo'), companyName:val('myCompanyName'),
+    bankName:val('myBankName'), bankBranch:val('myBankBranch'), bankAccount:val('myBankAccount'), bankHolder:val('myBankHolder')
+  });
+  if(newPin) updated.pin = newPin;
+  window.saveToFirebase('employees/' + e.id, updated);
+  window._currentEmp = updated;
+  const nm=document.getElementById('empName'); if(nm) nm.textContent = updated.name || '従業員';
+  showToast('保存しました');
+}
+window.saveMyInfo = saveMyInfo;
+
+/* --- サブ画面オープン時の初期化 --- */
+window.onSubOpen = function(id){
+  switch(id){
+    case 'punchSub': fillPunchCourseSelect(); renderPunchStatus(); break;
+    case 'noticeSub': renderEmpNotices(); break;
+    case 'shiftApplySub':
+      _applyCal = { y:new Date().getFullYear(), m:new Date().getMonth() };
+      renderApplyCal(); renderShiftApplyList(); break;
+    case 'shiftConfSub': fillMonthSelect('confMonthSel'); renderShiftConfirmed(); break;
+    case 'historySub': fillMonthSelect('histMonthSel'); renderEmpHistory(); break;
+    case 'myInfoSub': fillMyInfo(); break;
+  }
+};
+
+/* --- 従業員ログイン直後の初期化 --- */
+window.onEmpLogin = function(emp){
+  fillPunchCourseSelect();
+  fillMonthSelect('confMonthSel');
+  fillMonthSelect('histMonthSel');
+};
+
+/* --- リアルタイム同期時、開いているサブ画面を再描画 --- */
+const _renderAllStage1 = window.renderAll;
+window.renderAll = function(node){
+  try{ _renderAllStage1(node); }catch(e){ console.error(e); }
+  try{
+    if(isSubOpen('punchSub')){ fillPunchCourseSelect(); renderPunchStatus(); }
+    if(isSubOpen('noticeSub')) renderEmpNotices();
+    if(isSubOpen('shiftApplySub')){ renderApplyCal(); renderShiftApplyList(); }
+    if(isSubOpen('shiftConfSub')) renderShiftConfirmed();
+    if(isSubOpen('historySub')) renderEmpHistory();
+  }catch(e){ console.error(e); }
+};
+function isSubOpen(id){ const el=document.getElementById(id); return el && el.classList.contains('active'); }
 </script>
 </body>
 </html>
