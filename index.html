@@ -376,10 +376,33 @@ textarea{min-height:80px;resize:vertical}
       <button class="stab" onclick="setSTab('shift','empreq',this)">従業員申請</button>
       <button class="stab" onclick="setSTab('shift','notify',this)">翌日連絡</button>
     </div>
-    <div class="stab-panel active" id="shift-cal"><div class="empty">（Stage 2で実装）</div></div>
-    <div class="stab-panel" id="shift-req"><div class="empty">（Stage 2で実装）</div></div>
-    <div class="stab-panel" id="shift-empreq"><div class="empty">（Stage 2で実装）</div></div>
-    <div class="stab-panel" id="shift-notify"><div class="empty">（Stage 2で実装）</div></div>
+    <div class="stab-panel active" id="shift-cal">
+      <div class="cal-nav"><button class="cal-arrow" onclick="adminCalPrev()">‹</button><span id="adminCalLabel">-</span><button class="cal-arrow" onclick="adminCalNext()">›</button></div>
+      <div class="cal-grid" id="adminCalHead"></div>
+      <div class="cal-grid" id="adminCalGrid"></div>
+      <div id="shiftDayPanel" style="margin-top:16px"></div>
+    </div>
+    <div class="stab-panel" id="shift-req">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 style="font-size:15px">ゴルフ場からの依頼</h3>
+        <button class="btn sm" onclick="openNewReqModal()">+ 追加</button>
+      </div>
+      <div class="card" style="border-style:dashed;text-align:center;color:var(--gray)">
+        📄 PDFアップロード（AI読み取り）<div class="muted" style="margin-top:4px">※今後対応予定</div>
+      </div>
+      <div id="reqList"><div class="empty">依頼はありません</div></div>
+    </div>
+    <div class="stab-panel" id="shift-empreq">
+      <h3 style="font-size:15px;margin-bottom:10px">シフト希望申請</h3>
+      <div id="empReqList"><div class="empty">申請はありません</div></div>
+    </div>
+    <div class="stab-panel" id="shift-notify">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 style="font-size:15px">翌日出勤連絡</h3>
+        <button class="btn sm" onclick="openNoticeModal()">+ 追加</button>
+      </div>
+      <div id="notifyList"><div class="empty">連絡はありません</div></div>
+    </div>
   </div>
 
   <!-- タブ③勤怠管理 -->
@@ -461,9 +484,25 @@ textarea{min-height:80px;resize:vertical}
       <button class="stab" onclick="setSTab('settings','courses',this)">ゴルフ場</button>
       <button class="stab" onclick="setSTab('settings','rates',this)">単価設定</button>
     </div>
-    <div class="stab-panel active" id="settings-emps"><div class="empty">（Stage 5で実装）</div></div>
-    <div class="stab-panel" id="settings-courses"><div class="empty">（Stage 5で実装）</div></div>
-    <div class="stab-panel" id="settings-rates"><div class="empty">（Stage 5で実装）</div></div>
+    <div class="stab-panel active" id="settings-emps">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 style="font-size:15px">従業員一覧</h3>
+        <button class="btn sm" onclick="openEmpModal()">+ 追加</button>
+      </div>
+      <div id="empListSettings"><div class="empty">従業員がいません</div></div>
+    </div>
+    <div class="stab-panel" id="settings-courses">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 style="font-size:15px">ゴルフ場一覧</h3>
+        <button class="btn sm" onclick="openCourseModal()">+ 追加</button>
+      </div>
+      <div id="courseListSettings"><div class="empty">ゴルフ場がありません</div></div>
+    </div>
+    <div class="stab-panel" id="settings-rates">
+      <div class="field"><label>ゴルフ場</label><select id="rateCourseSel" onchange="updateRateTable()"><option value="">選択してください</option></select></div>
+      <div id="rateTableWrap"><div class="empty">ゴルフ場を選択してください</div></div>
+      <button class="btn block" style="margin-top:12px" onclick="saveRateTable()">保存する</button>
+    </div>
   </div>
 </div>
 
@@ -580,6 +619,121 @@ textarea{min-height:80px;resize:vertical}
       <div class="field"><label>新しいPIN（4桁・変更する場合のみ）</label><input class="input mono" id="myPin" inputmode="numeric" maxlength="4" placeholder="****"></div>
     </div>
     <button class="btn block" onclick="saveMyInfo()">保存する</button>
+  </div>
+</div>
+
+<!-- ============ モーダル ============ -->
+<div id="assignModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-title"><span>従業員割り振り</span><button class="x" onclick="closeModal('assignModal')">✕</button></div>
+    <div class="muted" id="assignHead" style="margin-bottom:12px"></div>
+    <div class="field"><label>集合時間</label><input class="input" type="time" id="assignStart"></div>
+    <div class="field"><label>スタート時間</label><input class="input" type="time" id="assignGameStart"></div>
+    <div class="field"><label>コメント</label><input class="input" id="assignMemo"></div>
+    <div class="field"><label>割り振る従業員</label><div id="assignEmpList" style="max-height:220px;overflow-y:auto"></div></div>
+    <button class="btn block" onclick="doAssign()">確定する</button>
+  </div>
+</div>
+
+<div id="approveModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-title"><span>シフト希望承認</span><button class="x" onclick="closeModal('approveModal')">✕</button></div>
+    <div class="muted" id="approveHead" style="margin-bottom:12px"></div>
+    <div class="field"><label>派遣先ゴルフ場</label><select id="approveCourse"></select></div>
+    <div class="field"><label>集合時間</label><input class="input" type="time" id="approveStart"></div>
+    <button class="btn block" onclick="doApproveShiftReq()">承認する</button>
+  </div>
+</div>
+
+<div id="noticeModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-title"><span>翌日連絡を追加</span><button class="x" onclick="closeModal('noticeModal')">✕</button></div>
+    <div class="field"><label>従業員</label><select id="noticeEmp"></select></div>
+    <div class="field"><label>日付</label><input class="input" type="date" id="noticeDate"></div>
+    <div class="field"><label>ゴルフ場</label><select id="noticeCourse"></select></div>
+    <div class="field"><label>集合時間</label><input class="input" type="time" id="noticeStart"></div>
+    <div class="field"><label>スタート時間</label><input class="input" type="time" id="noticeGameStart"></div>
+    <div class="field"><label>コメント</label><input class="input" id="noticeMemo"></div>
+    <button class="btn block" onclick="doAddNotice()">送信する</button>
+  </div>
+</div>
+
+<div id="newReqModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-title"><span>出勤依頼を追加</span><button class="x" onclick="closeModal('newReqModal')">✕</button></div>
+    <div class="field"><label>ゴルフ場</label><select id="reqCourse"></select></div>
+    <div class="field"><label>日付</label><input class="input" type="date" id="reqDate"></div>
+    <div class="field"><label>必要人数</label><select id="reqCount"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+    <div class="field"><label>備考</label><input class="input" id="reqMemo"></div>
+    <button class="btn block" onclick="doAddRequest()">追加する</button>
+  </div>
+</div>
+
+<div id="empModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-title"><span id="empModalTitle">従業員を追加</span><button class="x" onclick="closeModal('empModal')">✕</button></div>
+    <input type="hidden" id="empEditId">
+    <div class="field"><label>氏名</label><input class="input" id="empName_i"></div>
+    <div class="field"><label>PIN（4桁）</label><input class="input mono" id="empPin_i" inputmode="numeric" maxlength="4"></div>
+    <div class="field"><label>雇用形態</label>
+      <select id="empContract_i">
+        <option value="baito">アルバイト（税なし）</option>
+        <option value="invoice_yes">業務委託・インボイス登録あり（2割特例）</option>
+        <option value="invoice_no">業務委託・インボイス登録なし（消費税10%）</option>
+        <option value="training">研修</option>
+      </select>
+    </div>
+    <div class="field"><label>インボイス登録番号</label><input class="input" id="empInvoiceNo_i" placeholder="T..."></div>
+    <div class="field"><label>メールアドレス</label><input class="input" id="empEmail_i" inputmode="email"></div>
+    <div class="field"><label>銀行名</label><input class="input" id="empBankName_i"></div>
+    <div class="field"><label>支店名</label><input class="input" id="empBankBranch_i"></div>
+    <div class="field"><label>口座番号</label><input class="input" id="empBankAccount_i" inputmode="numeric"></div>
+    <div class="field"><label>口座名義</label><input class="input" id="empBankHolder_i"></div>
+    <button class="btn block" onclick="saveEmp()">保存する</button>
+  </div>
+</div>
+
+<div id="courseModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-title"><span id="courseModalTitle">ゴルフ場を追加</span><button class="x" onclick="closeModal('courseModal')">✕</button></div>
+    <input type="hidden" id="courseEditId">
+    <div class="field"><label>ゴルフ場名</label><input class="input" id="cName_i"></div>
+    <div class="field"><label>住所</label><input class="input" id="cAddr_i"></div>
+    <div class="field"><label>電話</label><input class="input" id="cPhone_i" inputmode="tel"></div>
+    <div class="field"><label>担当者名</label><input class="input" id="cManager_i"></div>
+    <div class="field"><label>担当者メール</label><input class="input" id="cManagerEmail_i" inputmode="email"></div>
+    <div class="field"><label>締め日</label>
+      <select id="cClosing_i"><option value="末日">末日</option><option value="10">10日</option><option value="15">15日</option><option value="20">20日</option><option value="25">25日</option></select>
+    </div>
+    <div class="field"><label>請求書発行日（締め日の〇日後）</label><input class="input" type="number" id="cInvoiceDay_i" inputmode="numeric"></div>
+    <div class="field"><label>支払期限</label><input class="input" id="cPaymentDue_i" placeholder="末日 / 翌月末 など"></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="cWdWe_i" style="width:20px;height:20px"> 平日/土日祝で単価を区別する</label></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="cCafe_i" style="width:20px;height:20px" onchange="toggleCafeFields()"> 食堂あり</label></div>
+    <div id="cafeFields" style="display:none">
+      <div class="field"><label>食堂利用料（税込）</label><input class="input" type="number" id="cCafeFee_i" inputmode="numeric"></div>
+      <div class="field"><label>負担区分</label><select id="cCafeBurden_i"><option value="company">全員会社負担</option><option value="employee">全員従業員負担</option><option value="individual">個別設定</option></select></div>
+    </div>
+    <div class="field"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="cNom_i" style="width:20px;height:20px" onchange="toggleNomFields()"> 指名料あり</label></div>
+    <div id="nomFields" style="display:none">
+      <div class="field"><label>指名料（税別）</label><input class="input" type="number" id="cNomFee_i" inputmode="numeric"></div>
+    </div>
+    <div class="field">
+      <label>追加項目</label>
+      <div id="extraItemsWrap"></div>
+      <button class="btn sec sm" style="margin-top:8px" onclick="addExtraItem()">+ 追加項目を追加</button>
+    </div>
+    <button class="btn block" onclick="saveCourse()">保存する</button>
+  </div>
+</div>
+
+<div id="confirmModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-title"><span>確認</span><button class="x" onclick="closeModal('confirmModal')">✕</button></div>
+    <div id="confirmMsg" style="margin-bottom:16px"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn block" id="confirmOk">OK</button>
+      <button class="btn sec block" onclick="closeModal('confirmModal')">キャンセル</button>
+    </div>
   </div>
 </div>
 
@@ -887,6 +1041,8 @@ function renderDashboardBasic(){
 function setText(id,v){ const el=document.getElementById(id); if(el) el.textContent=v; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 window.esc = esc; window.setText = setText;
+// SPEC互換エイリアス
+window.renderDashboard = renderDashboardBasic;
 
 /* ===== 打刻 承認/却下（ダッシュボードから使用） ===== */
 function approveAtt(id){
@@ -1616,6 +1772,424 @@ window.renderAll = function(node){
     if(isPanelActive('sales-invoice')) renderCourseInvoice();
     if(isPanelActive('sales-payroll')) renderPayroll();
     if(isSubOpen('invoiceSub')) renderInvoiceSub();
+  }catch(e){ console.error(e); }
+};
+
+/* ===================== Stage 5: シフト管理・設定・モーダル ===================== */
+
+const CONTRACT_LABEL = { baito:'アルバイト', invoice_yes:'業務委託(IN有)', invoice_no:'業務委託(IN無)', training:'研修' };
+
+// 確認ダイアログ
+function askConfirm(msg, onOk){
+  document.getElementById('confirmMsg').textContent = msg;
+  const ok = document.getElementById('confirmOk');
+  ok.onclick = () => { closeModal('confirmModal'); onOk && onOk(); };
+  showModal('confirmModal');
+}
+window.askConfirm = askConfirm;
+
+/* ============ 設定：従業員 ============ */
+function renderEmpList(){
+  const box = document.getElementById('empListSettings'); if(!box) return;
+  const emps = Object.values(window._state.employees||{}).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ja'));
+  box.innerHTML = emps.length ? emps.map(e=>`
+    <div class="list-item">
+      <div><strong>${esc(e.name)}</strong><div class="muted">${CONTRACT_LABEL[e.contract]||e.contract||'-'}・PIN:****</div></div>
+      <button class="btn sm sec" onclick="openEmpModal('${e.id}')">編集</button>
+    </div>`).join('') : '<div class="empty">従業員がいません</div>';
+}
+window.renderEmpList = renderEmpList;
+function openEmpModal(id){
+  const e = id ? (window._state.employees||{})[id] : null;
+  document.getElementById('empModalTitle').textContent = e ? '従業員を編集' : '従業員を追加';
+  const set=(f,v)=>{document.getElementById(f).value=v==null?'':v;};
+  document.getElementById('empEditId').value = e ? e.id : '';
+  set('empName_i', e&&e.name); set('empPin_i', e&&e.pin); set('empContract_i', (e&&e.contract)||'baito');
+  set('empInvoiceNo_i', e&&e.invoiceNo); set('empEmail_i', e&&e.email);
+  set('empBankName_i', e&&e.bankName); set('empBankBranch_i', e&&e.bankBranch);
+  set('empBankAccount_i', e&&e.bankAccount); set('empBankHolder_i', e&&e.bankHolder);
+  showModal('empModal');
+}
+window.openEmpModal = openEmpModal;
+function saveEmp(){
+  const v=id=>document.getElementById(id).value.trim();
+  const name=v('empName_i'), pin=v('empPin_i');
+  if(!name){ showToast('氏名を入力してください'); return; }
+  if(!/^\d{4}$/.test(pin)){ showToast('PINは4桁の数字で入力してください'); return; }
+  const editId = document.getElementById('empEditId').value;
+  const existing = editId ? (window._state.employees||{})[editId] : null;
+  const id = editId || String(Date.now());
+  const rec = Object.assign({}, existing||{}, {
+    id, name, pin, role:(existing&&existing.role)||'キャディー', contract:v('empContract_i'),
+    invoiceNo:v('empInvoiceNo_i'), email:v('empEmail_i'),
+    bankName:v('empBankName_i'), bankBranch:v('empBankBranch_i'),
+    bankAccount:v('empBankAccount_i'), bankHolder:v('empBankHolder_i')
+  });
+  window.saveToFirebase('employees/'+id, rec);
+  closeModal('empModal'); showToast('保存しました');
+}
+window.saveEmp = saveEmp;
+
+/* ============ 設定：ゴルフ場 ============ */
+function renderCourseList(){
+  const box = document.getElementById('courseListSettings'); if(!box) return;
+  const courses = Object.values(window._state.courses||{});
+  box.innerHTML = courses.length ? courses.map(c=>`
+    <div class="list-item">
+      <div><strong>${esc(c.name)}</strong><div class="muted">締め:${esc(c.closingDay||'-')}・食堂:${c.cafeteria?'有':'無'}・指名:${c.nomination?'有':'無'}</div></div>
+      <button class="btn sm sec" onclick="openCourseModal('${c.id}')">編集</button>
+    </div>`).join('') : '<div class="empty">ゴルフ場がありません</div>';
+}
+window.renderCourseList = renderCourseList;
+function toggleCafeFields(){ document.getElementById('cafeFields').style.display = document.getElementById('cCafe_i').checked ? '' : 'none'; }
+function toggleNomFields(){ document.getElementById('nomFields').style.display = document.getElementById('cNom_i').checked ? '' : 'none'; }
+window.toggleCafeFields = toggleCafeFields; window.toggleNomFields = toggleNomFields;
+let _extraItems = [];
+function renderExtraItems(){
+  const wrap = document.getElementById('extraItemsWrap');
+  wrap.innerHTML = _extraItems.map((it,i)=>`
+    <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">
+      <input class="input" style="flex:2" placeholder="名称" value="${esc(it.name||'')}" oninput="_extraItems[${i}].name=this.value">
+      <input class="input" style="flex:1" type="number" placeholder="金額" value="${it.amount||''}" oninput="_extraItems[${i}].amount=this.value">
+      <select style="flex:1" onchange="_extraItems[${i}].type=this.value">
+        <option value="add"${it.type!=='subtract'?' selected':''}>加算</option>
+        <option value="subtract"${it.type==='subtract'?' selected':''}>減算</option>
+      </select>
+      <button class="btn sm danger" onclick="removeExtraItem(${i})">✕</button>
+    </div>`).join('');
+}
+function addExtraItem(){ _extraItems.push({name:'',amount:'',type:'add'}); renderExtraItems(); }
+function removeExtraItem(i){ _extraItems.splice(i,1); renderExtraItems(); }
+window.addExtraItem = addExtraItem; window.removeExtraItem = removeExtraItem;
+function openCourseModal(id){
+  const c = id ? (window._state.courses||{})[id] : null;
+  document.getElementById('courseModalTitle').textContent = c ? 'ゴルフ場を編集' : 'ゴルフ場を追加';
+  const set=(f,v)=>{document.getElementById(f).value=v==null?'':v;};
+  document.getElementById('courseEditId').value = c ? c.id : '';
+  set('cName_i',c&&c.name); set('cAddr_i',c&&c.address); set('cPhone_i',c&&c.phone);
+  set('cManager_i',c&&c.manager); set('cManagerEmail_i',c&&c.managerEmail);
+  set('cClosing_i',(c&&c.closingDay)||'末日'); set('cInvoiceDay_i',c&&c.invoiceDay); set('cPaymentDue_i',c&&c.paymentDue);
+  document.getElementById('cWdWe_i').checked = !!(c&&c.weekdayWeekend);
+  document.getElementById('cCafe_i').checked = !!(c&&c.cafeteria);
+  set('cCafeFee_i',c&&c.cafeteriaFee); set('cCafeBurden_i',(c&&c.cafeteriaBurden)||'company');
+  document.getElementById('cNom_i').checked = !!(c&&c.nomination);
+  set('cNomFee_i',c&&c.nominationFee);
+  _extraItems = (c&&Array.isArray(c.extraItems)) ? c.extraItems.map(x=>Object.assign({},x)) : [];
+  renderExtraItems(); toggleCafeFields(); toggleNomFields();
+  showModal('courseModal');
+}
+window.openCourseModal = openCourseModal;
+function saveCourse(){
+  const v=id=>document.getElementById(id).value.trim();
+  const name=v('cName_i');
+  if(!name){ showToast('ゴルフ場名を入力してください'); return; }
+  const editId = document.getElementById('courseEditId').value;
+  const existing = editId ? (window._state.courses||{})[editId] : null;
+  const id = editId || String(Date.now());
+  const extras = _extraItems.filter(it=>it.name).map(it=>({name:it.name, amount:Number(it.amount)||0, type:it.type||'add'}));
+  const rec = Object.assign({}, existing||{}, {
+    id, name, address:v('cAddr_i'), phone:v('cPhone_i'), manager:v('cManager_i'), managerEmail:v('cManagerEmail_i'),
+    closingDay:v('cClosing_i'), invoiceDay:Number(v('cInvoiceDay_i'))||0, paymentDue:v('cPaymentDue_i'),
+    weekdayWeekend:document.getElementById('cWdWe_i').checked,
+    cafeteria:document.getElementById('cCafe_i').checked, cafeteriaFee:Number(v('cCafeFee_i'))||0, cafeteriaBurden:v('cCafeBurden_i'),
+    nomination:document.getElementById('cNom_i').checked, nominationFee:Number(v('cNomFee_i'))||0,
+    extraItems:extras
+  });
+  window.saveToFirebase('courses/'+id, rec);
+  closeModal('courseModal'); showToast('保存しました');
+}
+window.saveCourse = saveCourse;
+
+/* ============ 設定：単価マスター ============ */
+function fillRateCourseSel(){
+  const sel=document.getElementById('rateCourseSel'); if(!sel) return;
+  const cur=sel.value;
+  const courses=Object.values(window._state.courses||{});
+  sel.innerHTML='<option value="">選択してください</option>'+courses.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  if(cur) sel.value=cur;
+}
+function updateRateTable(){
+  const courseId=document.getElementById('rateCourseSel').value;
+  const wrap=document.getElementById('rateTableWrap');
+  if(!courseId){ wrap.innerHTML='<div class="empty">ゴルフ場を選択してください</div>'; return; }
+  const course=(window._state.courses||{})[courseId]||{};
+  const wdwe=!!course.weekdayWeekend;
+  const emps=Object.values(window._state.employees||{}).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ja'));
+  const rates=window._state.rates||{};
+  let head, body;
+  if(wdwe){
+    head='<tr><th>従業員</th><th class="num">契約金(平日)</th><th class="num">契約金(土日)</th><th class="num">給料(平日)</th><th class="num">給料(土日)</th></tr>';
+    body=emps.map(e=>{const r=(rates[e.id]&&rates[e.id][courseId])||{};return `<tr><td>${esc(e.name)}</td>
+      <td><input class="input" type="number" style="min-height:38px" data-emp="${e.id}" data-f="contractWd" value="${r.contractWd||''}"></td>
+      <td><input class="input" type="number" style="min-height:38px" data-emp="${e.id}" data-f="contractWe" value="${r.contractWe||''}"></td>
+      <td><input class="input" type="number" style="min-height:38px" data-emp="${e.id}" data-f="wageWd" value="${r.wageWd||''}"></td>
+      <td><input class="input" type="number" style="min-height:38px" data-emp="${e.id}" data-f="wageWe" value="${r.wageWe||''}"></td></tr>`;}).join('');
+  }else{
+    head='<tr><th>従業員</th><th class="num">契約金</th><th class="num">給料</th></tr>';
+    body=emps.map(e=>{const r=(rates[e.id]&&rates[e.id][courseId])||{};return `<tr><td>${esc(e.name)}</td>
+      <td><input class="input" type="number" style="min-height:38px" data-emp="${e.id}" data-f="contract" value="${r.contract||''}"></td>
+      <td><input class="input" type="number" style="min-height:38px" data-emp="${e.id}" data-f="wage" value="${r.wage||''}"></td></tr>`;}).join('');
+  }
+  wrap.innerHTML=`<div class="card" style="overflow-x:auto"><table class="tbl">${head}${body}</table></div>`;
+}
+window.updateRateTable = updateRateTable;
+function saveRateTable(){
+  const courseId=document.getElementById('rateCourseSel').value;
+  if(!courseId){ showToast('ゴルフ場を選択してください'); return; }
+  const rates=JSON.parse(JSON.stringify(window._state.rates||{}));
+  document.querySelectorAll('#rateTableWrap input[data-emp]').forEach(inp=>{
+    const emp=inp.dataset.emp, f=inp.dataset.f, val=Number(inp.value)||0;
+    rates[emp] = rates[emp]||{};
+    rates[emp][courseId] = rates[emp][courseId]||{};
+    rates[emp][courseId][f]=val;
+  });
+  // 各従業員のこのコース単価を保存
+  const emps=Object.keys(rates);
+  emps.forEach(empId=>{ if(rates[empId][courseId]) window.saveToFirebase(`rates/${empId}/${courseId}`, rates[empId][courseId]); });
+  showToast('単価を保存しました');
+}
+window.saveRateTable = saveRateTable;
+
+/* ============ シフト管理：カレンダー ============ */
+let _adminCal = { y:new Date().getFullYear(), m:new Date().getMonth() };
+function renderAdminCal(){
+  const head=document.getElementById('adminCalHead');
+  if(head) head.innerHTML=WDAY.map((w,i)=>`<div class="cal-head ${i===0?'sun':i===6?'sat':''}">${w}</div>`).join('');
+  const grid=document.getElementById('adminCalGrid'); const label=document.getElementById('adminCalLabel');
+  if(!grid) return;
+  const {y,m}=_adminCal;
+  if(label) label.textContent=`${y}年${m+1}月`;
+  const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate(), today=todayStr();
+  const reqByDate={};
+  Object.values(window._state.requests||{}).forEach(r=>{ if(r.status!=='rejected'){ reqByDate[r.date]=(reqByDate[r.date]||0)+1; } });
+  let html='';
+  for(let i=0;i<first;i++) html+='<div class="cal-cell blank"></div>';
+  for(let d=1;d<=days;d++){
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow=new Date(y,m,d).getDay();
+    const cls=['cal-cell']; if(dow===0)cls.push('sun'); if(dow===6)cls.push('sat');
+    if(reqByDate[ds])cls.push('has'); if(ds===today)cls.push('today');
+    html+=`<div class="${cls.join(' ')}" onclick="showDayPanel('${ds}')">${d}${reqByDate[ds]?`<span class="cnt">依頼${reqByDate[ds]}</span>`:''}</div>`;
+  }
+  grid.innerHTML=html;
+}
+window.renderAdminCal = renderAdminCal;
+function adminCalPrev(){ _adminCal.m--; if(_adminCal.m<0){_adminCal.m=11;_adminCal.y--;} renderAdminCal(); }
+function adminCalNext(){ _adminCal.m++; if(_adminCal.m>11){_adminCal.m=0;_adminCal.y++;} renderAdminCal(); }
+window.adminCalPrev = adminCalPrev; window.adminCalNext = adminCalNext;
+function showDayPanel(ds){
+  const panel=document.getElementById('shiftDayPanel'); if(!panel) return;
+  const reqs=Object.values(window._state.requests||{}).filter(r=>r.date===ds && r.status!=='rejected');
+  const wishEmps=Object.values(window._state.shiftRequests||{}).filter(r=>r.date===ds);
+  const shifts=Object.values(window._state.shifts||{}).filter(s=>s.date===ds);
+  const assignedByEmp={}; shifts.forEach(s=>{ if(s.empId) assignedByEmp[s.empId]=s.courseName; });
+  let reqHtml = reqs.length ? reqs.map(r=>`
+    <div class="list-item">
+      <div><strong>${esc(r.courseName||'')}</strong><div class="muted">必要 ${r.count||1}名 ${r.memo?'・'+esc(r.memo):''}</div></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn sm" onclick="openAssignModal('${r.courseId}','${ds}')">割り振り</button>
+        <button class="btn sm danger" onclick="rejectRequest('${r.id}')">断る</button>
+      </div>
+    </div>`).join('') : '<div class="muted">この日のゴルフ場依頼はありません</div>';
+  let chips = wishEmps.length ? wishEmps.map(w=>{
+    const asg=assignedByEmp[w.empId];
+    return `<span class="pill ${asg?'ok':'wait'}" style="margin:3px">${asg?'★'+esc(asg)+' ':'🟢'}${esc(w.empName)}</span>`;
+  }).join('') : '<div class="muted">希望者はいません</div>';
+  panel.innerHTML=`
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:10px">${fmtDate(ds)} の割り振り</h3>
+      <div style="font-size:13px;color:var(--gray);margin-bottom:6px">ゴルフ場依頼</div>
+      ${reqHtml}
+      <div style="font-size:13px;color:var(--gray);margin:12px 0 6px">出勤希望の従業員</div>
+      <div>${chips}</div>
+    </div>`;
+}
+window.showDayPanel = showDayPanel;
+
+/* ============ シフト管理：ゴルフ場依頼 ============ */
+function renderReqList(){
+  const box=document.getElementById('reqList'); if(!box) return;
+  const list=Object.values(window._state.requests||{}).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  box.innerHTML=list.length?list.map(r=>{
+    const pill=r.status==='confirmed'?'<span class="pill ok">✅ 確定</span>':r.status==='rejected'?'<span class="pill ng">❌ 断る</span>':'<span class="pill wait">⏳ 検討中</span>';
+    return `<div class="list-item"><div><strong>${esc(r.courseName||'')}</strong><div class="muted">${fmtDate(r.date)}・${r.count||1}名</div></div>${pill}</div>`;
+  }).join(''):'<div class="empty">依頼はありません</div>';
+}
+window.renderReqList = renderReqList;
+function openNewReqModal(){
+  fillCourseSelect('reqCourse');
+  document.getElementById('reqDate').value=todayStr();
+  document.getElementById('reqCount').value='1';
+  document.getElementById('reqMemo').value='';
+  showModal('newReqModal');
+}
+window.openNewReqModal = openNewReqModal;
+function doAddRequest(){
+  const courseId=document.getElementById('reqCourse').value;
+  const date=document.getElementById('reqDate').value;
+  if(!courseId){ showToast('ゴルフ場を選択してください'); return; }
+  if(!date){ showToast('日付を入力してください'); return; }
+  const course=(window._state.courses||{})[courseId]||{};
+  const id=String(Date.now());
+  window.saveToFirebase('requests/'+id,{id,courseId,courseName:course.name||'',date,count:parseInt(document.getElementById('reqCount').value)||1,memo:document.getElementById('reqMemo').value.trim(),status:'pending'});
+  closeModal('newReqModal'); showToast('依頼を追加しました');
+}
+window.doAddRequest = doAddRequest;
+function rejectRequest(id){
+  const r=(window._state.requests||{})[id]; if(!r) return;
+  r.status='rejected'; window.saveToFirebase('requests/'+id,r); showToast('依頼を断りました');
+}
+window.rejectRequest = rejectRequest;
+
+/* ============ シフト管理：従業員申請 ============ */
+function renderEmpReqList(){
+  const box=document.getElementById('empReqList'); if(!box) return;
+  const list=Object.values(window._state.shiftRequests||{}).filter(r=>r.status==='pending').sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  box.innerHTML=list.length?list.map(r=>`
+    <div class="list-item">
+      <div><strong>${esc(r.empName)}</strong><div class="muted">${fmtDate(r.date)}</div></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn sm" onclick="openApproveModal('${r.id}')">承認</button>
+        <button class="btn sm danger" onclick="rejectEmpReq('${r.id}')">却下</button>
+      </div>
+    </div>`).join(''):'<div class="empty">申請はありません</div>';
+}
+window.renderEmpReqList = renderEmpReqList;
+let _approveReqId=null;
+function openApproveModal(reqId){
+  const r=(window._state.shiftRequests||{})[reqId]; if(!r) return;
+  _approveReqId=reqId;
+  document.getElementById('approveHead').textContent=`${r.empName}　${fmtDate(r.date)}`;
+  fillCourseSelect('approveCourse');
+  document.getElementById('approveStart').value='';
+  showModal('approveModal');
+}
+window.openApproveModal = openApproveModal;
+function doApproveShiftReq(){
+  const r=(window._state.shiftRequests||{})[_approveReqId]; if(!r) return;
+  const courseId=document.getElementById('approveCourse').value;
+  if(!courseId){ showToast('ゴルフ場を選択してください'); return; }
+  const course=(window._state.courses||{})[courseId]||{};
+  const start=document.getElementById('approveStart').value;
+  r.status='approved'; window.saveToFirebase('shiftRequests/'+r.id,r);
+  const sid=String(Date.now());
+  window.saveToFirebase('shifts/'+sid,{id:sid,date:r.date,courseId,courseName:course.name||'',empId:r.empId,empName:r.empName,startTime:start,gameStartTime:'',memo:''});
+  closeModal('approveModal'); showToast('承認してシフトを確定しました');
+}
+window.doApproveShiftReq = doApproveShiftReq;
+function rejectEmpReq(id){
+  const r=(window._state.shiftRequests||{})[id]; if(!r) return;
+  r.status='rejected'; window.saveToFirebase('shiftRequests/'+id,r); showToast('却下しました');
+}
+window.rejectEmpReq = rejectEmpReq;
+
+/* ============ シフト管理：割り振りモーダル ============ */
+let _assignCtx={courseId:null,date:null};
+function openAssignModal(courseId,ds){
+  _assignCtx={courseId,date:ds};
+  const course=(window._state.courses||{})[courseId]||{};
+  document.getElementById('assignHead').textContent=`${course.name||''}　${fmtDate(ds)}`;
+  document.getElementById('assignStart').value='';
+  document.getElementById('assignGameStart').value='';
+  document.getElementById('assignMemo').value='';
+  const wishIds=new Set(Object.values(window._state.shiftRequests||{}).filter(r=>r.date===ds).map(r=>r.empId));
+  const emps=Object.values(window._state.employees||{}).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ja'));
+  document.getElementById('assignEmpList').innerHTML=emps.map(e=>`
+    <label style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;border-bottom:1px solid rgba(201,168,76,.1)">
+      <input type="checkbox" value="${e.id}" style="width:20px;height:20px">
+      <span>${esc(e.name)}${wishIds.has(e.id)?' 🟢希望あり':''}</span>
+    </label>`).join('');
+  showModal('assignModal');
+}
+window.openAssignModal = openAssignModal;
+function doAssign(){
+  const {courseId,date}=_assignCtx;
+  const course=(window._state.courses||{})[courseId]||{};
+  const start=document.getElementById('assignStart').value;
+  const gameStart=document.getElementById('assignGameStart').value;
+  const memo=document.getElementById('assignMemo').value.trim();
+  const checked=[...document.querySelectorAll('#assignEmpList input:checked')].map(i=>i.value);
+  if(!checked.length){ showToast('従業員を選択してください'); return; }
+  checked.forEach((empId,idx)=>{
+    const emp=(window._state.employees||{})[empId]||{};
+    const sid=String(Date.now()+idx);
+    window.saveToFirebase('shifts/'+sid,{id:sid,date,courseId,courseName:course.name||'',empId,empName:emp.name||'',startTime:start,gameStartTime:gameStart,memo});
+  });
+  // 依頼を確定に
+  Object.values(window._state.requests||{}).filter(r=>r.date===date&&r.courseId===courseId&&r.status!=='rejected').forEach(r=>{r.status='confirmed';window.saveToFirebase('requests/'+r.id,r);});
+  closeModal('assignModal'); showToast(`${checked.length}名を割り振りました`);
+  showDayPanel(date);
+}
+window.doAssign = doAssign;
+
+/* ============ シフト管理：翌日連絡 ============ */
+function renderNotifyList(){
+  const box=document.getElementById('notifyList'); if(!box) return;
+  const list=Object.values(window._state.notices||{}).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  box.innerHTML=list.length?list.map(n=>`
+    <div class="list-item">
+      <div><strong>${esc(n.empName)}</strong><div class="muted">${fmtDate(n.date)}・${esc(n.courseName||'')}・集合${n.startTime||'-'}</div></div>
+      ${n.confirmed?'<span class="pill ok">✅ 確認済み</span>':'<span class="pill wait">未確認</span>'}
+    </div>`).join(''):'<div class="empty">連絡はありません</div>';
+}
+window.renderNotifyList = renderNotifyList;
+function openNoticeModal(){
+  fillEmpSelect('noticeEmp'); fillCourseSelect('noticeCourse');
+  const tm=new Date(Date.now()+86400000);
+  document.getElementById('noticeDate').value=`${tm.getFullYear()}-${String(tm.getMonth()+1).padStart(2,'0')}-${String(tm.getDate()).padStart(2,'0')}`;
+  ['noticeStart','noticeGameStart','noticeMemo'].forEach(id=>document.getElementById(id).value='');
+  showModal('noticeModal');
+}
+window.openNoticeModal = openNoticeModal;
+function doAddNotice(){
+  const empId=document.getElementById('noticeEmp').value;
+  const courseId=document.getElementById('noticeCourse').value;
+  const date=document.getElementById('noticeDate').value;
+  if(!empId){ showToast('従業員を選択してください'); return; }
+  if(!courseId){ showToast('ゴルフ場を選択してください'); return; }
+  if(!date){ showToast('日付を入力してください'); return; }
+  const emp=(window._state.employees||{})[empId]||{};
+  const course=(window._state.courses||{})[courseId]||{};
+  const id=String(Date.now());
+  window.saveToFirebase('notices/'+id,{id,empId,empName:emp.name||'',courseId,courseName:course.name||'',date,startTime:document.getElementById('noticeStart').value,gameStartTime:document.getElementById('noticeGameStart').value,memo:document.getElementById('noticeMemo').value.trim(),confirmed:false});
+  closeModal('noticeModal'); showToast('翌日連絡を送信しました');
+}
+window.doAddNotice = doAddNotice;
+
+/* ============ タブ描画フック（シフト・設定） ============ */
+const _onTabChangeStage4 = window.onTabChange;
+window.onTabChange = function(name){
+  try{ if(_onTabChangeStage4) _onTabChangeStage4(name); }catch(e){ console.error(e); }
+  if(name==='shift'){ renderAdminCal(); renderReqList(); renderEmpReqList(); renderNotifyList(); }
+  if(name==='settings'){ renderEmpList(); renderCourseList(); fillRateCourseSel(); }
+};
+const _onSTabChangeStage4 = window.onSTabChange;
+window.onSTabChange = function(group,name){
+  try{ if(_onSTabChangeStage4) _onSTabChangeStage4(group,name); }catch(e){ console.error(e); }
+  if(group==='shift'){
+    if(name==='cal') renderAdminCal();
+    else if(name==='req') renderReqList();
+    else if(name==='empreq') renderEmpReqList();
+    else if(name==='notify') renderNotifyList();
+  }
+  if(group==='settings'){
+    if(name==='emps') renderEmpList();
+    else if(name==='courses') renderCourseList();
+    else if(name==='rates'){ fillRateCourseSel(); updateRateTable(); }
+  }
+};
+
+/* ============ リアルタイム同期で再描画 ============ */
+const _renderAllStage4 = window.renderAll;
+window.renderAll = function(node){
+  try{ _renderAllStage4(node); }catch(e){ console.error(e); }
+  try{
+    if(isPanelActive('shift-cal')) renderAdminCal();
+    if(isPanelActive('shift-req')) renderReqList();
+    if(isPanelActive('shift-empreq')) renderEmpReqList();
+    if(isPanelActive('shift-notify')) renderNotifyList();
+    if(isPanelActive('settings-emps')) renderEmpList();
+    if(isPanelActive('settings-courses')) renderCourseList();
   }catch(e){ console.error(e); }
 };
 </script>
