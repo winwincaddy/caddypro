@@ -1,44 +1,23 @@
-// CaddyPro - Firebase Cloud Messaging Service Worker
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
-
-firebase.initializeApp({
-  apiKey: "AIzaSyDFWQLDjXqYaJ7QbtZlcsmNR3TywV6HGlU",
-  authDomain: "caddypro-c3a44.firebaseapp.com",
-  projectId: "caddypro-c3a44",
-  storageBucket: "caddypro-c3a44.appspot.com",
-  messagingSenderId: "956784211640",
-  appId: "1:956784211640:web:c1427c3a1ad273d4d9e64d",
-  databaseURL: "https://caddypro-c3a44-default-rtdb.firebaseio.com"
+// CaddyPro - 自己消去用 Service Worker
+// 旧バージョンが残したService Worker／キャッシュを自動的に解除し、
+// 古い画面がPCに残り続ける問題を、次回アクセス時に自動修復する。
+self.addEventListener('install', function(){
+  self.skipWaiting();
 });
 
-const messaging = firebase.messaging();
-
-// バックグラウンド通知受信
-messaging.onBackgroundMessage((payload) => {
-  console.log('[SW] バックグラウンド通知受信:', payload);
-  const { title, body, icon } = payload.notification || {};
-  self.registration.showNotification(title || '📨 CaddyPro', {
-    body: body || '新しいお知らせがあります',
-    icon: icon || 'https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/26f3.png',
-    badge: 'https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/26f3.png',
-    vibrate: [200, 100, 200],
-    tag: 'caddypro-notice',
-    requireInteraction: true
-  });
-});
-
-// 通知クリックでアプリを開く
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes('caddypro') && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      return clients.openWindow('https://winwincaddy.github.io/caddypro/');
-    })
-  );
+self.addEventListener('activate', function(event){
+  event.waitUntil((async function(){
+    // 全キャッシュを削除
+    try{
+      var keys = await caches.keys();
+      await Promise.all(keys.map(function(k){ return caches.delete(k); }));
+    }catch(e){}
+    // このService Worker自身を登録解除
+    try{ await self.registration.unregister(); }catch(e){}
+    // 開いている全ウィンドウを再読み込みして新版に切り替える
+    try{
+      var clientList = await self.clients.matchAll({ type: 'window' });
+      clientList.forEach(function(c){ try{ c.navigate(c.url); }catch(e){} });
+    }catch(e){}
+  })());
 });
